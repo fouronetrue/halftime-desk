@@ -15,7 +15,7 @@ import engine, feeds, notify
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH, STATE_PATH, LOG_PATH = os.path.join(HERE, 'config.json'), os.path.join(HERE, 'state.json'), os.path.join(HERE, 'log', 'halftime_log.csv')
 DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct=50, order='taker', sports=['nfl', 'cfb'],
-                read_push=['nfl'], realert_gain_c=2, poll_seconds=75, max_poll_minutes=22, keep_days=10, min_price_c=15, max_price_c=85)
+                read_push=['nfl'], realert_gain_c=2, poll_seconds=75, max_poll_minutes=22, keep_days=10, min_price_c=15, max_price_c=85, day_cost_pct=20)
 
 
 def load_json(path, default):
@@ -155,9 +155,14 @@ class Desk:
         m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts)
         rows = engine.price_lines(m, list(quotes), 'fg', self.cfg['margin_c'] / 100)
         bank = float(self.cfg['bankroll'])
+        # daily cap: plays already pushed today (by cost) count against day_cost_pct of bankroll
+        day = self.state.setdefault('day_spend', {})
+        spent = float(day.get(g['date_et'], 0))
+        remaining = max(0.0, bank * self.cfg['day_cost_pct'] / 100 - spent)
+        max_risk = min(bank * self.cfg['risk_pct'] / 100, remaining)
+        max_cost = min(bank * self.cfg['cost_pct'] / 100, remaining)
         sug = engine.suggest(rows, quotes, self.cfg['order'], self.cfg['margin_c'] / 100, self.cfg['trust_pct'] / 100,
-                             bank, bank * self.cfg['risk_pct'] / 100, bank * self.cfg['cost_pct'] / 100,
-                             (self.cfg['min_price_c'], self.cfg['max_price_c']))
+                             bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']))
         inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], h1a=away_pts, h1h=home_pts)
         text = engine.describe(m, inp, rows, sug, tickers={k: v.get('ticker') for k, v in quotes.items()})
         plays = [x for x in sug['mids'] if x['ok']] + [x for x in sug['singles'] if x['ok']]
@@ -172,8 +177,14 @@ class Desk:
                 alerted[key] = edge_c
                 new.append(key)
         if new:
+            if remaining < 20:
+                text += f"\nDaily cap reached (${spent:.0f} suggested today): sizes above are scaled down."
             notify.push('PLAY: ' + title, text + f"\n{ev.get('event_ticker')}", priority='high', tags='moneybag')
             self.pushed.append(title)
+            top = ([x for x in sug['mids'] if x['ok']][:1] or [x for x in sug['singles'] if x['ok']][:1])
+            if top and not rec.get('counted_day'):
+                day[g['date_et']] = round(spent + top[0]['cost'], 2)
+                rec['counted_day'] = True
         elif g['sport'] in self.cfg['read_push'] and not rec.get('read_pushed'):
             notify.push('Halftime read: ' + title, text + f"\n{ev.get('event_ticker')}", priority='default')
             rec['read_pushed'] = True
