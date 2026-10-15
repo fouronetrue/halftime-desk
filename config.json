@@ -1,0 +1,16 @@
+{
+  "bankroll": 3438,
+  "risk_pct": 2.5,
+  "cost_pct": 7.5,
+  "margin_c": 3,
+  "trust_pct": 50,
+  "order": "taker",
+  "sports": ["nfl", "cfb"],
+  "read_push": ["nfl"],
+  "realert_gain_c": 2,
+  "poll_seconds": 75,
+  "max_poll_minutes": 22,
+  "keep_days": 10,
+  "min_price_c": 15,
+  "max_price_c": 85
+}

@@ -1,0 +1,60 @@
+# Halftime Desk
+
+Watches NFL and college football games, and at the half prices every Kalshi full-game total strike with a
+second-half points model fit on 2,290 NFL and 6,506 FBS games. When a single leg or a middle (Yes on a lower
+total plus No on a higher one) clears the edge, it sends a push notification with the play, the price, how many
+shares or pairs, and the resting limits for every strike near fair.
+
+## What it does each run
+1. Reads ESPN's scoreboards (NFL, FBS). For games not yet kicked off it stores the pregame spread and total
+   (ESPN's odds block, or Kalshi's 50-50 strikes as the fallback).
+2. For games at the half, or in the first minutes of the third quarter, it pulls the Kalshi total event for that
+   game, prices each strike (fair over and under, max price to take, max resting limit), scores every single leg
+   and every Yes-low/No-high pair against the asks, and sizes anything that clears the edge.
+3. Pushes a PLAY alert (high priority) when something clears, or a quieter halftime read for NFL games
+   (`read_push` in config.json). Re-alerts only when the edge improves by `realert_gain_c` cents.
+4. Logs every priced halftime to `log/halftime_log.csv` so the real edge against the market can be measured
+   over a season, and commits `state.json` back to the repo.
+5. If any game is approaching the half (Q2 under 5:00) or at the half, the run keeps polling every
+   `poll_seconds` for up to `max_poll_minutes`, so a 5-minute cron still covers the whole halftime window.
+
+## Setup (10 minutes)
+1. Create a GitHub repo (public is free for Actions minutes; private gets 2,000 minutes a month, enough if you
+   trim the cron windows). Upload these files, or let Claude push them once GitHub is connected in claude.ai.
+2. Install the ntfy app on your phone (free) and subscribe to a topic with a name nobody would guess, for example
+   `halftime-desk-7k2m9q`. In the repo: Settings > Secrets and variables > Actions > New repository secret:
+   name `NTFY_TOPIC`, value the topic name. (Pushover works too: `PUSHOVER_TOKEN` and `PUSHOVER_USER`.)
+3. Actions tab > enable workflows. `halftime watch` runs on its own schedule; use Run workflow to test it now.
+4. Edit `config.json` when the bankroll changes:
+
+| key | meaning | default |
+|---|---|---|
+| bankroll | Kalshi balance used for sizing | 3438 |
+| risk_pct | most to lose on one game, % of bankroll | 2.5 |
+| cost_pct | most to spend on one game, % | 7.5 |
+| margin_c | edge needed before a play is called, cents | 3 |
+| trust_pct | weight on the model vs the market price in the fair number | 50 |
+| order | taker (fee) or maker (resting, no fee) when pricing the asks | taker |
+| read_push | sports that get a halftime read even with no play | ["nfl"] |
+| min_price_c, max_price_c | ignore legs priced outside this band (model tails are not trusted) | 15, 85 |
+| realert_gain_c | re-push the same play only if the edge grew by this much | 2 |
+| poll_seconds, max_poll_minutes | in-run polling during a halftime | 75, 22 |
+
+## Manual use
+```
+python cli.py --sport nfl --away BUF --home LAR --spread -3.5 --total 55.5 --half 13-7 --quotes "45.5y59,48.5y47,51.5n66"
+```
+Quotes are Kalshi asks in cents. Same engine, same output as the push.
+
+## Honest limits
+- The model knows the lines, the score and the clock. It does not know injuries, weather or pace. That is why the
+  market price gets half the weight once it is known, and why a 3-cent edge is required.
+- Kalshi's second-half line already discounts blowouts. The edge the desk reports is the gap between the model
+  and the price you can actually get, nothing more.
+- GitHub's cron can run a few minutes late. In-run polling covers most of it; the log shows what was missed.
+- Nothing here places orders. You tap buy. Auto-execution needs a Kalshi API key and a different risk discussion.
+
+## Files
+`engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
+state and alerts. `notify.py` push. `cli.py` manual desk. `model.json` fitted coefficients and residual quantiles.
+`tests/` parity check against the ledger artifact and an offline run on fixtures.
