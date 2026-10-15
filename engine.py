@@ -173,24 +173,51 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
     return dict(legs=legs, singles=singles, mids=mids)
 
 
-def describe(model, inp, rows, sug, mode='fg', top=3):
-    """Compact text block for a push notification or terminal."""
+def describe(model, inp, rows, sug, mode='fg', top=3, tickers=None):
+    """Plain-language order sheet for a push notification or the terminal."""
     away, home = inp.get('away', 'Away'), inp.get('home', 'Home')
-    lines = [f"{away} {inp['h1a']}, {home} {inp['h1h']} at the half. Fair {'2H' if mode == '2h' else 'game'} total {fair_line(model, mode):.1f}, 2H expected {model.mu:.1f} ±{model.sd:.0f}. {model.spot()}."]
-    plays = [m for m in sug['mids'] if m['ok']][:top]
-    for m in plays:
-        lines.append(f"MIDDLE Yes {m['a']['line']:.1f} @{m['a']['price_c']} + No {m['b']['line']:.1f} @{m['b']['price_c']}: ${m['c']:.2f}/pair, lands {m['lo']:.0f}-{m['hi']:.0f} {100*m['p_mid']:.0f}%, edge +{100*m['ev']:.1f}c. {m['pairs']} pairs = ${m['cost']:.0f}: middle +${m['best']:.0f}, miss {m['worst']:+.0f}.")
-    for s in [s for s in sug['singles'] if s['ok']][:top]:
-        lines.append(f"BET {'Yes' if s['kind']=='over' else 'No'} {s['line']:.1f} @{s['price_c']}: fair {100*s['fair_used']:.0f}, edge +{100*s['edge']:.1f}c. {s['contracts']} shares = ${s['cost']:.0f}, wins ${s['win']:.0f}.")
-    if not plays and not any(s['ok'] for s in sug['singles']):
+    tk = tickers or {}
+    fl = fair_line(model, mode)
+    what = '2nd-half total' if mode == '2h' else 'game total'
+    def mk(line):
+        t = tk.get(line)
+        return f" ({t.split('-')[-1]})" if t else ''
+    lines = [f"{away} {inp['h1a']}, {home} {inp['h1h']} at the half. Fair {what} {fl:.1f}. 2H expected {model.mu:.1f} points. {model.spot().capitalize()}."]
+    n = 0
+    mids = [m for m in sug['mids'] if m['ok']][:top]
+    used = set()
+    for i, m in enumerate(mids):
+        n += 1
+        a, b = m['a'], m['b']
+        ca, cb = round(m['pairs'] * a['price_c'] / 100, 0), round(m['pairs'] * b['price_c'] / 100, 0)
+        head = f"PLAY {n}, MIDDLE" if i == 0 else f"ALT {n}, same middle idea (place this OR play 1, not both)"
+        lines.append(f"{head}: Buy YES on Over {a['line']:.1f}{mk(a['line'])}, {m['pairs']} shares at {a['price_c']}c (${ca:.0f}). "
+                     f"Buy NO on Over {b['line']:.1f}{mk(b['line'])}, {m['pairs']} shares at {b['price_c']}c (${cb:.0f}). "
+                     f"Total in: ${m['cost']:.0f}. Final {m['lo']:.0f} to {m['hi']:.0f} = both pay, +${m['best']:.0f}. Any other final = {m['worst']:+.0f}. Hits {100*m['p_mid']:.0f}%, edge +{100*m['ev']:.1f}c a pair.")
+        if i == 0:
+            used.update({('over', a['line']), ('under', b['line'])})
+    seen = set()
+    for s in [s for s in sug['singles'] if s['ok']]:
+        if (s['kind'], s['line']) in used or s['line'] in seen:
+            continue
+        seen.add(s['line'])
+        n += 1
+        side = 'YES' if s['kind'] == 'over' else 'NO'
+        wins_when = f"final {s['line'] + 0.5:.0f} or more" if s['kind'] == 'over' else f"final {s['line'] - 0.5:.0f} or less"
+        lines.append(f"PLAY {n}, SINGLE: Buy {side} on Over {s['line']:.1f}{mk(s['line'])}, {s['contracts']} shares at {s['price_c']}c = ${s['cost']:.0f}. Wins ${s['win']:.0f} on a {wins_when}. Fair {100*s['fair_used']:.0f}c, edge +{100*s['edge']:.1f}c.")
+        if len(seen) >= top:
+            break
+    if n == 0:
         wide = [m for m in sug['mids'] if m['hi'] - m['lo'] >= 2]
         best = (wide[:1] or sug['mids'][:1] or [None])[0]
+        msg = 'NO BET at these prices.'
         if best:
-            lines.append(f"No edge at the asks. Closest middle Yes {best['a']['line']:.1f}/No {best['b']['line']:.1f}: ${best['c']:.2f}/pair, lands {100*best['p_mid']:.0f}%, edge {100*best['ev']:+.1f}c.")
+            msg += f" Closest: YES Over {best['a']['line']:.1f} at {best['a']['price_c']}c + NO Over {best['b']['line']:.1f} at {best['b']['price_c']}c is ${best['c']:.2f} a pair, hits {100*best['p_mid']:.0f}%, edge {100*best['ev']:+.1f}c (needs +3)."
+        lines.append(msg)
     rest = []
     for r in rows:
-        if abs(r['line'] - fair_line(model, mode)) <= 3.5:
-            rest.append(f"{r['line']:.1f}: Y≤{r['over_rest']} N≤{r['under_rest']}")
+        if abs(r['line'] - fl) <= 3.5:
+            rest.append(f"Over {r['line']:.1f}: YES at {r['over_rest']}c or less, NO at {r['under_rest']}c or less")
     if rest:
-        lines.append('Rest limits ' + ' · '.join(rest))
+        lines.append('Resting limit orders worth posting: ' + '; '.join(rest) + '.')
     return '\n'.join(lines)

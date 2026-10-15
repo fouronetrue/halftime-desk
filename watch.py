@@ -159,7 +159,7 @@ class Desk:
                              bank, bank * self.cfg['risk_pct'] / 100, bank * self.cfg['cost_pct'] / 100,
                              (self.cfg['min_price_c'], self.cfg['max_price_c']))
         inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], h1a=away_pts, h1h=home_pts)
-        text = engine.describe(m, inp, rows, sug)
+        text = engine.describe(m, inp, rows, sug, tickers={k: v.get('ticker') for k, v in quotes.items()})
         plays = [x for x in sug['mids'] if x['ok']] + [x for x in sug['singles'] if x['ok']]
         self.log_row(g, rec, m, total, spread, quotes, sug, ev)
         title = f"{g['away']['abbr']} {away_pts}, {g['home']['abbr']} {home_pts} at the half ({g['sport'].upper()})"
