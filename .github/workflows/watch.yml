@@ -1,0 +1,40 @@
+name: halftime watch
+on:
+  schedule:
+    - cron: '*/5 23 * * 4'
+    - cron: '*/5 0-3 * * 5'
+    - cron: '*/5 23 * * 5'
+    - cron: '*/5 0-3 * * 6'
+    - cron: '*/5 15-23 * * 6'
+    - cron: '*/5 0-4 * * 0'
+    - cron: '*/5 16-23 * * 0'
+    - cron: '*/5 0-4 * * 1'
+    - cron: '*/5 23 * * 1'
+    - cron: '*/5 0-4 * * 2'
+  workflow_dispatch:
+concurrency:
+  group: halftime-watch
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q requests
+      - name: Watch
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python watch.py
+      - name: Save state and log
+        run: |
+          git config user.name "halftime-desk bot"
+          git config user.email "bot@users.noreply.github.com"
+          git pull --rebase --autostash -q || true
+          git add state.json log/
+          git diff --cached --quiet || (git commit -q -m "state $(date -u +%FT%TZ)" && git push -q)
