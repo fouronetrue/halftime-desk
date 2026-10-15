@@ -36,5 +36,5 @@ jobs:
           git config user.name "halftime-desk bot"
           git config user.email "bot@users.noreply.github.com"
           git pull --rebase --autostash -q || true
-          git add state.json log/
+          mkdir -p log && git add state.json log
           git diff --cached --quiet || (git commit -q -m "state $(date -u +%FT%TZ)" && git push -q)
