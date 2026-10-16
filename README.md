@@ -26,6 +26,13 @@ shares or pairs, and the resting limits for every strike near fair.
    every run prints it too. Both files and `state.json` are committed back to the repo.
 5. If any game is approaching the half (Q2 under 5:00) or at the half, the run keeps polling every
    `poll_seconds` for up to `max_poll_minutes`, so a 5-minute cron still covers the whole halftime window.
+6. With Supabase keys set, everything above also lands in Supabase as it happens: `games`, `quote_snapshots`
+   (every strike's bid and ask next to the model's number, every poll), `suggestions`, `alerts` (the exact push
+   text) and `results`. The CSVs stay the source of truth; a failed write prints one line and the watch goes on.
+7. With a Kalshi API key set, the run ends by pulling your balance, positions and fills (read-only) into
+   `portfolio_snapshots`, `positions` and `bets`. A separate `portfolio sync` workflow does the same every two
+   hours between game windows. Fills in a market the watcher priced at the half, filled after the half, are
+   tagged `halftime`; everything else is `personal` until you retag it. The sync never overwrites a tag.
 
 ## Setup (10 minutes)
 1. Create a GitHub repo (public is free for Actions minutes; private gets 2,000 minutes a month, enough if you
@@ -49,6 +56,24 @@ shares or pairs, and the resting limits for every strike near fair.
 | day_cost_pct | most to suggest across all plays in one day, % of bankroll | 20 |
 | poll_seconds, max_poll_minutes | in-run polling during a halftime | 60, 22 |
 
+## Supabase (optional, 10 minutes)
+1. Create a free project at supabase.com. In the SQL Editor paste `supabase/schema.sql` and run it (safe to run
+   again). Every table has row level security on with no policies, so only the secret key can read or write.
+2. Settings > API Keys: copy the project URL and the **secret** key (`sb_secret_...`). Add two repository secrets:
+   `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. The publishable key is for the app later, not for the worker.
+
+## Kalshi portfolio sync (optional, 10 minutes)
+1. kalshi.com > profile > API Keys > Create New API Key. Ed25519 (the default) or RSA both work. Save the
+   private key file; Kalshi shows it once.
+2. Add two repository secrets: `KALSHI_API_KEY_ID` (the key id) and `KALSHI_PRIVATE_KEY` (paste the whole PEM
+   file, BEGIN and END lines included).
+3. Actions > portfolio sync > Run workflow with backfill checked, once, to pull your fill history.
+
+Kalshi API keys have no permission scopes: a key that can read your fills could also trade. The read-only
+guarantee lives in the code instead. `portfolio.py` signs GET requests only, nothing in the repo names an order
+endpoint, and `tests/readonly.py` fails the build if either changes. Nothing here places, cancels or changes an
+order.
+
 ## Manual use
 ```
 python cli.py --sport nfl --away BUF --home LAR --spread -3.5 --total 55.5 --half 13-7 --quotes "45.5y59,48.5y47,51.5n66"
@@ -61,9 +86,10 @@ Quotes are Kalshi asks in cents. Same engine, same PLAY/UPDATE text as the push,
 - Kalshi's second-half line already discounts blowouts. The edge the desk reports is the gap between the model
   and the price you can actually get, nothing more.
 - GitHub's cron can run a few minutes late. In-run polling covers most of it; the log shows what was missed.
-- Nothing here places orders. You tap buy. Auto-execution needs a Kalshi API key and a different risk discussion.
+- Nothing here places orders. You tap buy. Auto-execution is a different risk discussion.
 
 ## Files
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
-state and alerts. `notify.py` push. `cli.py` manual desk. `model.json` fitted coefficients and residual quantiles.
-`tests/` parity check against the ledger artifact and an offline run on fixtures.
+state and alerts. `notify.py` push. `store.py` Supabase writer. `portfolio.py` read-only Kalshi sync.
+`cli.py` manual desk. `model.json` fitted coefficients and residual quantiles. `supabase/schema.sql` the tables.
+`tests/` parity check against the ledger artifact, the read-only proof, the mirror check, and an offline run on fixtures.
