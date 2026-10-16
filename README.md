@@ -11,10 +11,19 @@ shares or pairs, and the resting limits for every strike near fair.
 2. For games at the half, or in the first minutes of the third quarter, it pulls the Kalshi total event for that
    game, prices each strike (fair over and under, max price to take, max resting limit), scores every single leg
    and every Yes-low/No-high pair against the asks, and sizes anything that clears the edge.
-3. Pushes a PLAY alert (high priority) when something clears, or a quieter halftime read for NFL games
-   (`read_push` in config.json). Re-alerts only when the edge improves by `realert_gain_c` cents.
-4. Logs every priced halftime to `log/halftime_log.csv` so the real edge against the market can be measured
-   over a season, and commits `state.json` back to the repo.
+3. Pushes exactly twice per game: once the first time the game is seen at the half (within about a minute of
+   the end of Q2), once the first time it is seen after the Q3 kick with the score unchanged. The title is
+   `PLAY: Away 21, Home 45 (half, CFB)` when something clears, `UPDATE: ...` when nothing does.
+   - PLAY body: `Buy UNDER 102.5 for $90 at 55c (-122)` lines (best first, the rest are backups, not a stack),
+     then `MIDDLE:` with both legs as `Buy OVER 93.5 at 60c (227 shares for $136)` and the win/lose line.
+   - UPDATE body: `POSSIBLE MIDDLE (post as limit orders):` with the most you should pay on each side for the
+     pair to still carry the edge, shares and dollars, and what happens if both fill. If they don't fill, you
+     didn't want it.
+   The priority of an UPDATE comes from `read_push` per sport; a PLAY is always high priority.
+4. Logs every priced halftime to `log/halftime_log.csv`, and when the game goes final grades what the first push
+   said against the final total in `log/results.csv` (first single, middle, and the what-if resting middle),
+   plus the model's fair line against the market's. `python watch.py --scorecard` prints the season to date;
+   every run prints it too. Both files and `state.json` are committed back to the repo.
 5. If any game is approaching the half (Q2 under 5:00) or at the half, the run keeps polling every
    `poll_seconds` for up to `max_poll_minutes`, so a 5-minute cron still covers the whole halftime window.
 
@@ -29,22 +38,22 @@ shares or pairs, and the resting limits for every strike near fair.
 
 | key | meaning | default |
 |---|---|---|
-| bankroll | Kalshi balance used for sizing | 3438 |
+| bankroll | Kalshi balance used for sizing | 3590 |
 | risk_pct | most to lose on one game, % of bankroll | 2.5 |
 | cost_pct | most to spend on one game, % | 7.5 |
 | margin_c | edge needed before a play is called, cents | 3 |
 | trust_pct | weight on the model vs the market price in the fair number | 50 |
 | order | taker (fee) or maker (resting, no fee) when pricing the asks | taker |
-| read_push | sports that get a halftime read even with no play | ["nfl"] |
+| read_push | per sport, the ntfy priority of an UPDATE: default (normal), min (silent, shows in the app list only), off | nfl default, cfb default |
 | min_price_c, max_price_c | ignore legs priced outside this band (model tails are not trusted) | 15, 85 |
-| realert_gain_c | re-push the same play only if the edge grew by this much | 2 |
-| poll_seconds, max_poll_minutes | in-run polling during a halftime | 75, 22 |
+| day_cost_pct | most to suggest across all plays in one day, % of bankroll | 20 |
+| poll_seconds, max_poll_minutes | in-run polling during a halftime | 60, 22 |
 
 ## Manual use
 ```
 python cli.py --sport nfl --away BUF --home LAR --spread -3.5 --total 55.5 --half 13-7 --quotes "45.5y59,48.5y47,51.5n66"
 ```
-Quotes are Kalshi asks in cents. Same engine, same output as the push.
+Quotes are Kalshi asks in cents. Same engine, same PLAY/UPDATE text as the push, then the full ladder.
 
 ## Honest limits
 - The model knows the lines, the score and the clock. It does not know injuries, weather or pace. That is why the
