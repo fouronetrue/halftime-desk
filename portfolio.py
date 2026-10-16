@@ -188,7 +188,7 @@ def fill_row(f):
                 fee=fee_of(f), is_taker=f.get('is_taker'), filled_at=when(f))
 
 
-def pull_fills(key, since_ts=None, limit=200):
+def pull_fills(key, since_ts=None, limit=200, path='/portfolio/fills'):
     out, cursor = [], None
     for _ in range(200):
         params = {'limit': limit}
@@ -196,11 +196,28 @@ def pull_fills(key, since_ts=None, limit=200):
             params['min_ts'] = int(since_ts)
         if cursor:
             params['cursor'] = cursor
-        data = kalshi_get('/portfolio/fills', params, key)
+        data = kalshi_get(path, params, key)
         out.extend(data.get('fills') or [])
         cursor = data.get('cursor')
         if not cursor:
             break
+    return out
+
+
+def pull_all_fills(key, since_ts=None, backfill=False):
+    """Recent fills, plus the archived ones from /historical/fills when backfilling. Same schema, same paging."""
+    fills = pull_fills(key, since_ts)
+    if backfill:
+        try:
+            fills += pull_fills(key, None, path='/historical/fills')
+        except Exception as e:   # endpoint missing or empty for this account: the recent pull still stands
+            print(f'historical fills skipped: {e}')
+    seen, out = set(), []
+    for f in fills:
+        fid = f.get('fill_id') or f.get('trade_id')
+        if fid and fid not in seen:
+            seen.add(fid)
+            out.append(f)
     return out
 
 
@@ -252,7 +269,7 @@ def sync(backfill=False, dry_run=False):
     since = None if backfill else newest_fill_ts()
     if since:
         since -= 86400   # a day of overlap; duplicates are ignored on insert
-    fills = pull_fills(key, since)
+    fills = pull_all_fills(key, since, backfill)
     halves = halftime_map()
     rows = []
     for f in fills:
