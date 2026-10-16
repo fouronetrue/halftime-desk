@@ -10,11 +10,13 @@ Usage:
   python watch.py --fixtures DIR  # run against saved JSON instead of the network (tests)
 """
 import os, sys, json, csv, time, argparse, datetime as dt
-import engine, feeds, notify
+import engine, feeds, notify, store
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH, STATE_PATH, LOG_PATH = os.path.join(HERE, 'config.json'), os.path.join(HERE, 'state.json'), os.path.join(HERE, 'log', 'halftime_log.csv')
 RESULTS_PATH = os.path.join(HERE, 'log', 'results.csv')
+RESULTS_COLUMNS = ['settled_utc', 'sport', 'game', 'date', 'half', 'total', 'home_spread', 'fair', 'mkt', 'final', 'final_total',
+                   'model_err', 'mkt_err', 'n_plays', 'plays_cost', 'plays_pnl', 'mid_pnl', 'plays', 'rest_mid', 'rest_mid_pnl']
 DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct=50, order='taker', sports=['nfl', 'cfb'],
                 read_push={'nfl': 'default', 'cfb': 'default'}, poll_seconds=75, max_poll_minutes=22, keep_days=10, min_price_c=15, max_price_c=85, day_cost_pct=20)
 
@@ -46,6 +48,7 @@ class Desk:
         self.fixtures = fixtures
         self._events = {}
         self.pushed = []
+        self._db_games = {}   # game id -> (row hash, time sent), so Supabase only hears about games that changed
 
     # ---- feeds (fixture-aware) ----
     def games(self, sport):
@@ -70,6 +73,7 @@ class Desk:
     # ---- one pass over both sports ----
     def run_pass(self):
         active = False
+        seen = []
         for sport in self.cfg['sports']:
             try:
                 games = self.games(sport)
@@ -94,8 +98,69 @@ class Desk:
                         self.settle(g, rec)
                     except Exception as e:  # grading must never block the watch
                         print(f"settle {g.get('short')} failed: {e}")
+                seen.append((g, rec))
         self.prune()
+        self.db_games(seen)
         return active
+
+    # ---- Supabase mirror: the same facts the CSVs and state.json hold, one request per table per pass ----
+    def db_games(self, seen):
+        """Upsert the games this pass saw. A game is sent when anything about it changed, and at least every
+        ten minutes so last_seen stays fresh."""
+        if not store.enabled():
+            return
+        rows, now = [], time.time()
+        for g, rec in seen:
+            pre, half, post = rec.get('pre') or {}, rec.get('half') or {}, g['state'] == 'post'
+            row = dict(id=g['id'], sport=g['sport'], name=g['name'], short=g['short'], date_et=g['date_et'], start_utc=g['start_utc'],
+                       away_abbr=g['away']['abbr'], home_abbr=g['home']['abbr'],
+                       away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'],
+                       pre_total=pre.get('total'), pre_home_spread=pre.get('home_spread'), pre_source=pre.get('source'), pre_at=pre.get('at'),
+                       kalshi_total_event=rec.get('kalshi_total_event'), phase=rec.get('phase'), status=g['status'],
+                       half_away=half.get('away'), half_home=half.get('home'), half_at=rec.get('half_at'),
+                       final_away=g['away']['score'] if post else None, final_home=g['home']['score'] if post else None,
+                       first_seen=rec.get('first_seen'))
+            h = hash(json.dumps(row, sort_keys=True, default=str))
+            prev = self._db_games.get(g['id'])
+            if prev and prev[0] == h and now - prev[1] < 600:
+                continue
+            self._db_games[g['id']] = (h, now)
+            rows.append(dict(row, last_seen=rec.get('last_seen'), updated_at=now_iso()))
+        store.write('games', rows, on_conflict='id')
+
+    def db_eval(self, ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing):
+        """One suggestions row (the halftime_log row plus the full ranked singles and middles) and one
+        quote_snapshots row per strike: Kalshi's bid and ask next to the model's fair probability and limits."""
+        if not store.enabled():
+            return
+        best_mid = sug['mids'][0] if sug['mids'] else None
+        best_single = sug['singles'][0] if sug['singles'] else None
+        store.write('suggestions', [dict(
+            taken_at=ts, game_id=g['id'], sport=g['sport'], game=g['short'], date_et=g['date_et'], event_ticker=ev.get('event_ticker'),
+            phase=rec.get('phase'), total=total, home_spread=spread, half_away=rec['half']['away'], half_home=rec['half']['home'],
+            mu=round(m.mu, 2), sd=round(m.sd, 2), fair_line=engine.fair_line(m), market_line=feeds.kalshi_total_line(ev),
+            best_single=f"{best_single['kind']} {best_single['line']} @{best_single['price_c']}" if best_single else None,
+            best_single_edge_c=round(100 * best_single['edge'], 1) if best_single else None,
+            best_mid=f"Y{best_mid['a']['line']}@{best_mid['a']['price_c']}+N{best_mid['b']['line']}@{best_mid['b']['price_c']}" if best_mid else None,
+            best_mid_edge_c=round(100 * best_mid['ev'], 1) if best_mid else None,
+            n_plays=sum(1 for x in sug['mids'] + sug['singles'] if x['ok']),
+            singles=sug['singles'], mids=sug['mids'],
+            bankroll=sizing['bankroll'], max_risk=sizing['max_risk'], max_cost=sizing['max_cost'])], on_conflict='taken_at,game_id')
+        snaps = []
+        for r in rows:
+            q = quotes.get(r['line']) or {}
+            snaps.append(dict(taken_at=ts, game_id=g['id'], event_ticker=ev.get('event_ticker'), market_ticker=q.get('ticker'),
+                              strike=r['line'], phase=rec.get('phase'), yes_bid=q.get('yb'), yes_ask=q.get('y'), no_bid=q.get('nb'), no_ask=q.get('n'),
+                              p_over=r['p_over'], p_push=r['p_push'], over_take=r['over_take'], over_rest=r['over_rest'],
+                              under_take=r['under_take'], under_rest=r['under_rest']))
+        store.write('quote_snapshots', snaps, on_conflict='taken_at,game_id,strike')
+
+    def db_alert(self, ts, g, slot, kind, priority, title, body, ev, sent):
+        if not store.enabled():
+            return
+        store.write('alerts', [dict(sent_at=now_iso(), game_id=g['id'], sport=g['sport'], slot=slot, kind=kind, priority=priority,
+                                    title=title, body=body, event_ticker=ev.get('event_ticker'), channels=', '.join(sent), suggestion_at=ts)],
+                    on_conflict='game_id,slot')
 
     def capture_pregame(self, g, rec, late=False):
         """Lines at kickoff: ESPN odds when present, Kalshi's 50-50 strikes as the fallback. Kept fresh until kickoff."""
@@ -155,6 +220,7 @@ class Desk:
                 print(f"{g['short']}: no Kalshi total market, skipping")
                 rec['noted_no_market'] = True
             return
+        rec['kalshi_total_event'] = ev.get('event_ticker')
         quotes = feeds.total_quotes(ev)
         if not quotes:
             return
@@ -173,7 +239,10 @@ class Desk:
         sizing = dict(bankroll=bank, max_risk=max_risk, max_cost=max_cost, margin=self.cfg['margin_c'] / 100)
         kind, head, text = engine.order_sheet(m, inp, rows, sug, sizing)
         plays = [x for x in sug['mids'] if x['ok']] + [x for x in sug['singles'] if x['ok']]
-        self.log_row(g, rec, m, total, spread, quotes, sug, ev)
+        ts = now_iso()
+        rec.setdefault('half_at', ts)
+        self.log_row(g, rec, m, total, spread, quotes, sug, ev, ts)
+        self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing)
         if 'sheet' not in rec:
             rec['sheet'] = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing)
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
@@ -195,17 +264,21 @@ class Desk:
         if plays:
             if remaining < 20:
                 text += f"\nDaily cap reached (${spent:.0f} suggested today): sizes above are scaled down."
-            notify.push(title, text + f"\n\n{ev.get('event_ticker')}", priority='high', tags='moneybag')
+            body = text + f"\n\n{ev.get('event_ticker')}"
+            sent = notify.push(title, body, priority='high', tags='moneybag')
             slots[slot] = 'play'
             self.pushed.append(title)
+            self.db_alert(ts, g, slot, 'play', 'high', title, body, ev, sent)
             top = ([x for x in sug['mids'] if x['ok']][:1] or [x for x in sug['singles'] if x['ok']][:1])
             if top and not rec.get('counted_day'):
                 day[g['date_et']] = round(spent + top[0]['cost'], 2)
                 rec['counted_day'] = True
         elif read_pri != 'off':
-            notify.push(title, text + f"\n\n{ev.get('event_ticker')}", priority=read_pri)
+            body = text + f"\n\n{ev.get('event_ticker')}"
+            sent = notify.push(title, body, priority=read_pri)
             slots[slot] = 'read'
             self.pushed.append(title)
+            self.db_alert(ts, g, slot, 'update', read_pri, title, body, ev, sent)
         rec['last_eval'] = now_iso()
 
     def sheet(self, g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing):
@@ -251,22 +324,27 @@ class Desk:
             hit = rm['a_line'] < T < rm['b_line']
             rest_pnl = round((2 * rm['pairs'] - rm['cost']) if hit else (rm['pairs'] - rm['cost']), 2)
         fair, mkt = sh.get('fair'), sh.get('mkt')
+        row = [now_iso(), g['sport'], g['short'], g['date_et'], f"{sh['h1a']}-{sh['h1h']}", sh['total'], sh['spread'], fair, mkt,
+               f"{g['away']['abbr']} {g['away']['score']}, {g['home']['abbr']} {g['home']['score']}", T,
+               round(abs(T - fair), 1) if fair is not None else '', round(abs(T - mkt), 1) if mkt is not None else '',
+               len(sh['singles']) + (1 if m else 0), round(cost, 2), round(pnl, 2), mid_pnl, '; '.join(detail),
+               f"over {rm['a_line']:g}@{rm['a_price']} / under {rm['b_line']:g}@{rm['b_price']} x{rm['pairs']}" if rm else '', rest_pnl]
         os.makedirs(os.path.dirname(RESULTS_PATH), exist_ok=True)
         newfile = not os.path.exists(RESULTS_PATH)
         with open(RESULTS_PATH, 'a', newline='') as f:
             wr = csv.writer(f)
             if newfile:
-                wr.writerow(['settled_utc', 'sport', 'game', 'date', 'half', 'total', 'home_spread', 'fair', 'mkt', 'final', 'final_total',
-                             'model_err', 'mkt_err', 'n_plays', 'plays_cost', 'plays_pnl', 'mid_pnl', 'plays', 'rest_mid', 'rest_mid_pnl'])
-            wr.writerow([now_iso(), g['sport'], g['short'], g['date_et'], f"{sh['h1a']}-{sh['h1h']}", sh['total'], sh['spread'], fair, mkt,
-                         f"{g['away']['abbr']} {g['away']['score']}, {g['home']['abbr']} {g['home']['score']}", T,
-                         round(abs(T - fair), 1) if fair is not None else '', round(abs(T - mkt), 1) if mkt is not None else '',
-                         len(sh['singles']) + (1 if m else 0), round(cost, 2), round(pnl, 2), mid_pnl, '; '.join(detail),
-                         f"over {rm['a_line']:g}@{rm['a_price']} / under {rm['b_line']:g}@{rm['b_price']} x{rm['pairs']}" if rm else '', rest_pnl])
+                wr.writerow(RESULTS_COLUMNS)
+            wr.writerow(row)
         rec['settled'] = dict(at=now_iso(), final_total=T, plays_pnl=round(pnl, 2), mid_pnl=mid_pnl)
+        if store.enabled():
+            # same row, same column names (settled_utc becomes settled_at), blanks become nulls, plus the graded sheet
+            db = {('settled_at' if k == 'settled_utc' else 'date_et' if k == 'date' else k): (None if v == '' else v) for k, v in zip(RESULTS_COLUMNS, row)}
+            db['game_id'], db['sheet'] = g['id'], sh
+            store.write('results', [db], on_conflict='game_id')
         print(f"settled {g['short']}: final {T}, fair {fair}, market {mkt}, single {pnl:+.0f}, middle {mid_pnl or 0:+.0f}")
 
-    def log_row(self, g, rec, m, total, spread, quotes, sug, ev):
+    def log_row(self, g, rec, m, total, spread, quotes, sug, ev, ts=None):
         os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
         newfile = not os.path.exists(LOG_PATH)
         best_mid = sug['mids'][0] if sug['mids'] else None
@@ -277,7 +355,7 @@ class Desk:
                 w.writerow(['time_utc', 'sport', 'game', 'date', 'event', 'phase', 'total', 'home_spread', 'half_away', 'half_home', 'mu', 'sd', 'fair_line',
                             'quotes', 'best_single', 'best_single_edge_c', 'best_mid', 'best_mid_edge_c', 'plays'])
             q = ' '.join(f"{k:g}:{v['y']}/{v['n']}" for k, v in sorted(quotes.items()))
-            w.writerow([now_iso(), g['sport'], g['short'], g['date_et'], ev.get('event_ticker'), rec.get('phase'), total, spread, rec['half']['away'], rec['half']['home'],
+            w.writerow([ts or now_iso(), g['sport'], g['short'], g['date_et'], ev.get('event_ticker'), rec.get('phase'), total, spread, rec['half']['away'], rec['half']['home'],
                         round(m.mu, 1), round(m.sd, 1), engine.fair_line(m), q,
                         f"{best_single['kind']} {best_single['line']} @{best_single['price_c']}" if best_single else '', round(100 * best_single['edge'], 1) if best_single else '',
                         f"Y{best_mid['a']['line']}@{best_mid['a']['price_c']}+N{best_mid['b']['line']}@{best_mid['b']['price_c']}" if best_mid else '', round(100 * best_mid['ev'], 1) if best_mid else '',
@@ -343,6 +421,12 @@ def main():
         desk._events = {}
         time.sleep(desk.cfg['poll_seconds'])
     print(f"done. pushes: {len(desk.pushed)}")
+    if not args.fixtures:
+        try:   # read-only pull of balance, positions and fills into Supabase; never blocks the watch
+            import portfolio
+            portfolio.sync()
+        except Exception as e:
+            print(f'portfolio sync failed: {e}')
     print(scorecard())
 
 
