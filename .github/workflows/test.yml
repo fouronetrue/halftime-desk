@@ -8,6 +8,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install -q requests
+      - run: pip install -q -r requirements.txt
       - run: python tests/parity.py
+      - run: python tests/readonly.py
+      - run: python tests/mirror.py
       - run: cp state.json /tmp/state.bak && python watch.py --fixtures tests/fixtures && cp /tmp/state.bak state.json

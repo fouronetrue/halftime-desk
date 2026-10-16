@@ -1,0 +1,34 @@
+# Pulls balance, positions and fills from Kalshi into Supabase between game windows, so Sharp picks placed
+# on a Tuesday show up in the ledger the same day. Read-only; commits nothing to the repo.
+name: portfolio sync
+on:
+  schedule:
+    - cron: '23 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: 'Pull every fill Kalshi still serves, not just new ones (run once, the first time)'
+        type: boolean
+        default: false
+concurrency:
+  group: portfolio-sync
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q -r requirements.txt
+      - name: Sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+        run: python portfolio.py ${{ inputs.backfill == true && '--backfill' || '' }}
