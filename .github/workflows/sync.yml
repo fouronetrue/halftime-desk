@@ -10,6 +10,10 @@ on:
         description: 'Pull every fill Kalshi still serves, not just new ones (run once, the first time)'
         type: boolean
         default: false
+      backfill_logs:
+        description: 'Load log/halftime_log.csv (the halftimes priced before the mirror existed) into Supabase'
+        type: boolean
+        default: false
 concurrency:
   group: portfolio-sync
   cancel-in-progress: false
@@ -32,3 +36,9 @@ jobs:
           KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
         run: python portfolio.py ${{ inputs.backfill == true && '--backfill' || '' }}
+      - name: Backfill logged halftimes
+        if: ${{ inputs.backfill_logs == true }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python scripts/backfill_logs.py
