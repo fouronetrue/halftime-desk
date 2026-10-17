@@ -102,8 +102,11 @@ export function sizeMiddle({ a, b, oFill = 'take', uFill = 'take', numbers, spor
   let costCapped = over <= 0;
   if (maxCost > 0 && pairs * c > maxCost) { pairs = Math.floor(maxCost / c + 1e-9); costCapped = true; }
   pairs = Math.max(0, pairs);
+  const costOf = (n) => Math.round((n * (pa + pb) + (oFill === 'take' ? orderFee(n, pa) : 0) + (uFill === 'take' ? orderFee(n, pb) : 0)) * 100) / 100;
+  // fee rounding can push the real loss a cent past the budget: step down until it fits
+  while (over > 0 && pairs > 0 && costOf(pairs) - pairs > budget + 1e-9) pairs -= 1;
   const feeA = oFill === 'take' ? orderFee(pairs, pa) : 0, feeB = uFill === 'take' ? orderFee(pairs, pb) : 0;
-  const cost = Math.round((pairs * (pa + pb) + feeA + feeB) * 100) / 100;
+  const cost = costOf(pairs);
   return {
     c, over, breakeven, pairs, cost, costCapped,
     dollarsA: Math.round(pairs * pa * 100) / 100,

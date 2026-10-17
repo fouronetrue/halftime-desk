@@ -190,3 +190,27 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .mcl-n { font: 700 16px/1.1 var(--cond); }
 .mc-more { justify-self: start; font-size: 14px; }
 @media (max-width: 400px) { .mclist button { grid-template-columns: repeat(3, minmax(0, 1fr)); } .mcl-pair { grid-column: 1 / -1; } }
+
+/* Around fair */
+.fairmid { background: var(--field); border-radius: 12px; padding: 14px; margin: 4px 0 16px; display: grid; gap: 10px; }
+.fairmid h3 { font: 700 22px var(--cond); margin: 0; }
+.fm-cap { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: 14px; }
+.fm-cap input { width: 64px; font: 700 20px var(--cond); text-align: center; background: var(--sky); color: var(--chalk); border: 1px solid var(--line); border-radius: 8px; padding: 4px; }
+.fm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fm-col { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.fm-col > b { font: 600 13px var(--cond); color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.fm-box { display: grid; gap: 4px; }
+.fm-box > span { font: 700 17px var(--cond); }
+.fm-src { font-size: 13px; color: var(--dim); margin: 0; }
+.fm-best { display: grid; gap: 6px; text-align: left; padding: 12px; border-radius: 12px; background: var(--field-2); border-left: 4px solid var(--win); width: 100%; font-variant-numeric: tabular-nums; }
+.fm-best.thin { border-left-color: var(--amber); }
+.fm-best.pass { border-left-color: var(--loss); opacity: 0.8; }
+.fm-verdict { font: 700 14px var(--cond); text-transform: uppercase; letter-spacing: 0.6px; color: var(--dim); }
+.fm-line { font: 600 17px var(--cond); }
+.fm-shares { font: 700 44px/1 var(--cond); }
+.fm-shares small { font-size: 17px; color: var(--dim); font-weight: 600; }
+.fm-row { display: flex; flex-wrap: wrap; gap: 4px 14px; font: 600 17px var(--cond); }
+.fm-alts { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.fm-alts button { width: 100%; display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 0.8fr; gap: 4px; padding: 8px 10px; border-radius: 8px; background: var(--field-2); font: 600 15px var(--cond); text-align: right; font-variant-numeric: tabular-nums; }
+.fm-alts button span:first-child { text-align: left; }
+.fm-alts button.pass { opacity: 0.5; }

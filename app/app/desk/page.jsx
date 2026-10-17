@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import MiddleCalc from '@/components/MiddleCalc';
 import MiddleCompare from '@/components/MiddleCompare';
+import FairMiddle from '@/components/FairMiddle';
 import { ago, etTime, isHalfish, middle, money, phaseLabel, seriesOf, spreadText } from '@/lib/desk';
 
 function lastGame() {
@@ -155,6 +156,7 @@ function DeskView() {
             <div><span>2H points</span><b>{Number(sug.mu).toFixed(1)}</b></div>
           </div>
           <p className="stamp">Priced {ago(sug.taken_at)} ({etTime(sug.taken_at)}). {cleared.length ? `${cleared.length} line${cleared.length === 1 ? '' : 's'} clear the 3c edge.` : 'Nothing clears the 3c edge.'}</p>
+          <FairMiddle rows={rows} fair={Number(sug.fair_line)} sport={game.sport} maxCost={Number(sug?.max_cost || 0)} mids={sug?.mids} takenAt={sug.taken_at} onPick={(o, u) => setPick({ over: o, under: u })} />
           <Ladder rows={rows} legs={legs} pick={pick} onPick={onPick} />
           <MiddleCompare rows={rows} sport={game.sport} budget={Number(budget) || 0} maxCost={Number(sug?.max_cost || 0)} mids={sug?.mids} pick={pick} onPick={(o, u) => setPick({ over: o, under: u })} />
           <MiddleBuilder m={m} pick={pick} sport={game.sport} sug={sug} budget={budget} setBudget={setBudget} clear={() => setPick({ over: null, under: null })} />
