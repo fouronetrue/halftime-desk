@@ -1,7 +1,7 @@
 """Halftime Desk always-on worker (Railway). Same Desk as watch.py, run in a loop that never sleeps through a half.
 
 Pace:
-  15 s   any game in Q2 under 5:00, at the half, or early Q3
+  5 s    any game in Q2 under 5:00, at the half, or early Q3
   60 s   any game live, or a kickoff within 20 minutes
   5 min  nothing going on
 Portfolio sync every 10 minutes while games are live, every 30 otherwise.
@@ -17,7 +17,7 @@ Env: SUPABASE_URL, SUPABASE_SECRET_KEY, NTFY_TOPIC, KALSHI_API_KEY_ID, KALSHI_PR
 import os, sys, time, json, signal, datetime as dt
 import watch, store, portfolio
 
-FAST, LIVE, IDLE = 15, 60, 300
+FAST, LIVE, IDLE = 5, 60, 300
 STATE_ID = 'worker'
 _stop = False
 

@@ -2,7 +2,7 @@
 1. Two watchers (the Railway worker and the GitHub Actions backup) on the same fixtures with a shared alerts
    table: exactly one push goes out, and the second marks the slot as pushed elsewhere.
 2. With Supabase unreachable, claim() lets the push through (a duplicate beats a miss).
-3. pace() picks 15 s around the half, 60 s when live or near kickoff, 5 min otherwise.
+3. pace() picks 5 s around the half, 60 s when live or near kickoff, 5 min otherwise.
 4. State round-trips through desk_state."""
 import sys, os, copy, tempfile, datetime as dt
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -55,13 +55,13 @@ print('claim: Supabase down still pushes')
 # pacing
 d = watch.Desk(cfg, {}, FIX)
 now = dt.datetime(2026, 10, 17, 16, 0, tzinfo=dt.timezone.utc)
-d.phases, d.next_kick = {'half': 1, 'pre': 5}, None;                 assert worker.pace(d, now) == 15
-d.phases = {'approaching': 1};                                          assert worker.pace(d, now) == 15
+d.phases, d.next_kick = {'half': 1, 'pre': 5}, None;                 assert worker.pace(d, now) == 5
+d.phases = {'approaching': 1};                                          assert worker.pace(d, now) == 5
 d.phases = {'live': 3, 'pre': 2};                                       assert worker.pace(d, now) == 60
 d.phases, d.next_kick = {'pre': 4}, '2026-10-17T16:10:00+00:00';        assert worker.pace(d, now) == 60
 d.phases, d.next_kick = {'pre': 4}, '2026-10-17T19:30:00+00:00';        assert worker.pace(d, now) == 300
 d.phases, d.next_kick = {'post': 8}, None;                              assert worker.pace(d, now) == 300
-print('pace: 15 / 60 / 300 as designed')
+print('pace: 5 / 60 / 300 as designed')
 
 # state round trip
 worker.store.write, worker.store.read = fake_write, fake_read

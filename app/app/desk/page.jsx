@@ -108,7 +108,7 @@ function DeskView() {
     if (id) { try { localStorage.setItem('hd-last-game', id); } catch { /* private mode */ } }
     load();
     const fast = game && isHalfish(game);
-    const t = setInterval(() => { if (document.visibilityState === 'visible') load(); }, fast ? 15000 : 60000);
+    const t = setInterval(() => { if (document.visibilityState === 'visible') load(); }, fast ? 5000 : 60000);
     return () => clearInterval(t);
   }, [id, load, game && isHalfish(game)]); // eslint-disable-line react-hooks/exhaustive-deps
 

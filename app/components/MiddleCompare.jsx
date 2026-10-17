@@ -71,7 +71,7 @@ export default function MiddleCompare({ rows, sport, budget, maxCost, mids, pick
         </ol>
       )}
       {hidden > 0 && <button type="button" className="link mc-more" onClick={() => setShowPass(!showPass)}>{showPass ? 'Hide passes' : `Show ${hidden} that fail breakeven or the 15 to 85c band`}</button>}
-      <p className="mc-note">Every row risks the same budget, so a miss costs about the same everywhere. What changes is how much a hit pays and how often it hits. <b>Edge</b> is the average result per try at the model's hit rate: the fairest single number for comparing pairs. Prices are the last asks the watcher saw (every 15 seconds at the half), taken, fees in. "Cost cap" means size stopped at 7.5% of bankroll before it reached your budget, so the miss is smaller than the budget. Model hit rates under 15c or over 85c are not trusted; tap a row to size it at what Kalshi shows.</p>
+      <p className="mc-note">Every row risks the same budget, so a miss costs about the same everywhere. What changes is how much a hit pays and how often it hits. <b>Edge</b> is the average result per try at the model's hit rate: the fairest single number for comparing pairs. Prices are the last asks the watcher saw (every 5 seconds at the half), taken, fees in. "Cost cap" means size stopped at 7.5% of bankroll before it reached your budget, so the miss is smaller than the budget. Model hit rates under 15c or over 85c are not trusted; tap a row to size it at what Kalshi shows.</p>
     </section>
   );
 }

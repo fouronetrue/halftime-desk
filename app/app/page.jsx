@@ -106,7 +106,7 @@ export default function Today() {
   useEffect(() => {
     load();
     const fast = games.some(isHalfish);
-    const id = setInterval(() => { if (document.visibilityState === 'visible') load(); }, fast ? 15000 : 60000);
+    const id = setInterval(() => { if (document.visibilityState === 'visible') load(); }, fast ? 5000 : 60000);
     const onVis = () => document.visibilityState === 'visible' && load();
     document.addEventListener('visibilitychange', onVis);
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVis); };

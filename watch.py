@@ -48,6 +48,7 @@ class Desk:
         self.fixtures = fixtures
         self._events = {}
         self.pushed = []
+        self._db_evals = {}   # game id -> (quote key, time written): skip identical priced rows inside 30 s
         self._db_games = {}   # game id -> (row hash, time sent), so Supabase only hears about games that changed
 
     # ---- feeds (fixture-aware) ----
@@ -138,6 +139,15 @@ class Desk:
         quote_snapshots row per strike: Kalshi's bid and ask next to the model's fair probability and limits."""
         if not store.enabled():
             return
+        # At a 5-second pace most passes see the same quotes. Write a priced row only when the quotes, score or
+        # phase changed, or 30 seconds have passed, so Supabase keeps a full record without 3x the rows.
+        key = (rec.get('phase'), rec['half']['away'], rec['half']['home'], total,
+               tuple((r['line'],) + tuple((quotes.get(r['line']) or {}).get(k) for k in ('yb', 'y', 'nb', 'n')) for r in rows))
+        last = self._db_evals.get(g['id'])
+        now = time.time()
+        if last and last[0] == key and now - last[1] < 30:
+            return
+        self._db_evals[g['id']] = (key, now)
         best_mid = sug['mids'][0] if sug['mids'] else None
         best_single = sug['singles'][0] if sug['singles'] else None
         store.write('suggestions', [dict(

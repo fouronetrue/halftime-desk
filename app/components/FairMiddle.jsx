@@ -76,7 +76,7 @@ export default function FairMiddle({ rows, fair, sport, maxCost, mids, takenAt, 
         <div className="fm-col"><b>Buy Yes below</b>{below.map((k) => box(k, 'o'))}</div>
         <div className="fm-col"><b>Buy No above</b>{above.map((k) => box(k, 'u'))}</div>
       </div>
-      <p className="fm-src">{edited ? <>Your prices. <button type="button" className="link" onClick={reset}>Reset to watcher</button></> : 'Watcher asks, up to 15 seconds old. Type over any box with what Kalshi shows.'}</p>
+      <p className="fm-src">{edited ? <>Your prices. <button type="button" className="link" onClick={reset}>Reset to watcher</button></> : 'Watcher asks, up to 5 seconds old. Type over any box with what Kalshi shows.'}</p>
 
       {best && (
         <button type="button" className={`fm-best ${bestOk ? best.verdict : 'pass'}`} onClick={() => onPick(best.lo, best.hi)}>
