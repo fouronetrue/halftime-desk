@@ -29,12 +29,14 @@ function Fill({ name, value, set }) {
 }
 
 // The calculator under the Desk's middle builder and on /calc/. Prices start at the ladder's asks; nudge them to what Kalshi shows.
-export default function MiddleCalc({ sport, overLine, underLine, askA, askB, budget0, maxCost, pHit }) {
+export default function MiddleCalc({ sport, overLine, underLine, askA, askB, budget0, budget: budgetIn, setBudget: setBudgetIn, maxCost, pHit }) {
   const [a, setA] = useState(askA ?? '');
   const [b, setB] = useState(askB ?? '');
   const [oFill, setOFill] = useState('take');
   const [uFill, setUFill] = useState('take');
-  const [budget, setBudget] = useState(budget0 ? Math.round(budget0) : 10);
+  const [budgetOwn, setBudgetOwn] = useState(budget0 ? Math.round(budget0) : 10);
+  // The Desk owns the budget so Compare middles and this calculator size to the same number.
+  const budget = budgetIn ?? budgetOwn, setBudget = setBudgetIn ?? setBudgetOwn;
 
   // A new pick resets the prices to that pick's asks; a ladder refresh on the same pick leaves your nudges alone.
   useEffect(() => { setA(askA ?? ''); setB(askB ?? ''); }, [overLine, underLine]); // eslint-disable-line react-hooks/exhaustive-deps

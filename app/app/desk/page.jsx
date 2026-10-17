@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import MiddleCalc from '@/components/MiddleCalc';
+import MiddleCompare from '@/components/MiddleCompare';
 import { ago, etTime, isHalfish, middle, money, phaseLabel, seriesOf, spreadText } from '@/lib/desk';
 
 function lastGame() {
@@ -45,7 +46,7 @@ function Ladder({ rows, legs, pick, onPick }) {
   );
 }
 
-function MiddleBuilder({ m, pick, sport, clear, sug }) {
+function MiddleBuilder({ m, pick, sport, clear, sug, budget, setBudget }) {
   if (pick.over === null && pick.under === null) return <p className="hint">Tap an Over price, then an Under price on a higher line, to build a middle.</p>;
   if (pick.over === null || pick.under === null) return <p className="hint">{pick.over === null ? `Under ${pick.under} picked. Now tap an Over price on a lower line.` : `Over ${pick.over} picked. Now tap an Under price on a higher line.`} <button className="link" onClick={clear}>Clear</button></p>;
   if (!m) return <p className="hint">Over {pick.over ?? '?'}, under {pick.under ?? '?'}. The under line has to sit above the over line. <button className="link" onClick={clear}>Clear</button></p>;
@@ -73,7 +74,7 @@ function MiddleBuilder({ m, pick, sport, clear, sug }) {
         <div><dt>Edge a pair</dt><dd className={m.ev >= 0.03 ? 'pos' : 'neg'}>{(100 * m.ev).toFixed(1)}c</dd></div>
       </dl>
       <h4 className="mc-head">Size it at the prices Kalshi shows</h4>
-      <MiddleCalc sport={sport} overLine={pick.over} underLine={pick.under} askA={m.a} askB={m.b} budget0={10} maxCost={Number(sug?.max_cost || 0)} pHit={m.pHit} />
+      <MiddleCalc sport={sport} overLine={pick.over} underLine={pick.under} askA={m.a} askB={m.b} budget={budget} setBudget={setBudget} maxCost={Number(sug?.max_cost || 0)} pHit={m.pHit} />
     </section>
   );
 }
@@ -85,6 +86,7 @@ function DeskView() {
   const [sug, setSug] = useState(null);
   const [rows, setRows] = useState([]);
   const [pick, setPick] = useState({ over: null, under: null });
+  const [budget, setBudget] = useState(10);
   const [err, setErr] = useState('');
 
   const load = useCallback(async () => {
@@ -154,7 +156,8 @@ function DeskView() {
           </div>
           <p className="stamp">Priced {ago(sug.taken_at)} ({etTime(sug.taken_at)}). {cleared.length ? `${cleared.length} line${cleared.length === 1 ? '' : 's'} clear the 3c edge.` : 'Nothing clears the 3c edge.'}</p>
           <Ladder rows={rows} legs={legs} pick={pick} onPick={onPick} />
-          <MiddleBuilder m={m} pick={pick} sport={game.sport} sug={sug} clear={() => setPick({ over: null, under: null })} />
+          <MiddleCompare rows={rows} sport={game.sport} budget={Number(budget) || 0} maxCost={Number(sug?.max_cost || 0)} mids={sug?.mids} pick={pick} onPick={(o, u) => setPick({ over: o, under: u })} />
+          <MiddleBuilder m={m} pick={pick} sport={game.sport} sug={sug} budget={budget} setBudget={setBudget} clear={() => setPick({ over: null, under: null })} />
           {series && <a className="cta" href={`https://kalshi.com/markets/${series}`} target="_blank" rel="noopener noreferrer">Open on Kalshi</a>}
         </>
       )}
