@@ -4,7 +4,9 @@ Pace:
   5 s    any game in Q2 under 5:00, at the half, or early Q3
   60 s   any game live, or a kickoff within 3 hours (keeps the pregame Kalshi market fresh)
   5 min  nothing going on
-Portfolio sync every 10 minutes while games are live, every 30 otherwise.
+Portfolio sync every 2 minutes while anything is live or a kickoff is within 3 hours, every 30 otherwise, and a
+held-position check (held.py) once a minute in that same window: a MIDDLE OPEN push when a total you own can be
+paired cheaply enough.
 
 State lives in Supabase (desk_state, id 'worker') so a redeploy or restart picks up where it left off, with
 every alert slot already pushed still marked. The GitHub Actions watcher can keep running as a backup: before
@@ -15,7 +17,7 @@ Nothing here places, cancels or changes an order.
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY, NTFY_TOPIC, KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (the last two optional).
 """
 import os, sys, time, json, signal, datetime as dt
-import watch, store, portfolio
+import watch, store, portfolio, held
 
 FAST, LIVE, IDLE = 5, 60, 300
 STATE_ID = 'worker'
@@ -71,7 +73,7 @@ def main():
     desk = watch.Desk(cfg, load_state())
     print(f"worker up: {len(desk.state.get('games', {}))} games in state, ntfy {'on' if os.environ.get('NTFY_TOPIC') else 'OFF'}, "
           f"kalshi sync {'on' if portfolio.enabled() else 'off'}", flush=True)
-    last_sync, passes = 0.0, 0
+    last_sync, last_held, passes = 0.0, 0.0, 0
     while not _stop:
         started = time.time()
         desk._events = {}
@@ -86,13 +88,20 @@ def main():
         passes += 1
         if passes == 1 or wait == FAST or passes % 12 == 0:
             print(f'{watch.now_iso()} {note}', flush=True)
-        sync_every = 600 if (ph.get('live') or wait == FAST) else 1800
+        sync_every = 120 if wait <= LIVE else 1800
         if portfolio.enabled() and time.time() - last_sync > sync_every:
             last_sync = time.time()
             try:
                 portfolio.sync()
             except Exception as e:
                 print(f'portfolio sync failed: {e}', flush=True)
+        if wait <= LIVE and time.time() - last_held > 60:
+            last_held = time.time()
+            try:
+                for title, _ in held.check(desk):
+                    print(f'{watch.now_iso()} pushed {title}', flush=True)
+            except Exception as e:   # a bad look at the ledger never touches the watch
+                print(f'held check failed: {e}', flush=True)
         while not _stop and time.time() - started < wait:
             time.sleep(1)
     save_state(desk.state, 'stopped')

@@ -74,6 +74,13 @@ guarantee lives in the code instead. `portfolio.py` signs GET requests only, not
 endpoint, and `tests/readonly.py` fails the build if either changes. Nothing here places, cancels or changes an
 order.
 
+With the key in place the worker also watches what you hold (`held.py`). For every open full-game total, once a
+minute from three hours before kickoff, it prices the other side on nearby strikes from the live Kalshi book. When
+owning both would clear the middle breakeven (pair cost with fees under 0.97 + 3.5c per winning number NFL, 2.4c
+CFB, with at least 1c of room and both prices inside 15 to 85c) it pushes MIDDLE OPEN: the leg to buy, the share
+count (held to a $15 miss), both outcomes, and what selling at the bid would make instead. It pushes once, and
+again only when the pair gets 2c better. Games at the half are the engine's; live games are skipped.
+
 ## Manual use
 ```
 python cli.py --sport nfl --away BUF --home LAR --spread -3.5 --total 55.5 --half 13-7 --quotes "45.5y59,48.5y47,51.5n66"
@@ -92,4 +99,4 @@ Quotes are Kalshi asks in cents. Same engine, same PLAY/UPDATE text as the push,
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
 state and alerts. `notify.py` push. `store.py` Supabase writer. `portfolio.py` read-only Kalshi sync.
 `cli.py` manual desk. `model.json` fitted coefficients and residual quantiles. `supabase/schema.sql` the tables.
-`tests/` parity check against the ledger artifact, the read-only proof, the mirror check, and an offline run on fixtures.
+`tests/` parity check against the ledger artifact, the read-only proof, the mirror check, the held-position watch, and an offline run on fixtures.
