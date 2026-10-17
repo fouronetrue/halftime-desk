@@ -142,3 +142,34 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .tab.on { color: var(--chalk); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Middle calculator (Desk middle builder and /calc/) */
+.mcalc { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; display: grid; gap: 10px; }
+.mc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mc-leg { display: grid; gap: 6px; min-width: 0; }
+.mc-name { font: 700 18px var(--cond); }
+.mc-fill { margin: 0; justify-self: start; }
+.mc-fill button { padding: 4px 10px; font-size: 13px; }
+.mc-price label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.mc-step { display: grid; grid-template-columns: 38px minmax(0, 1fr) 38px; gap: 4px; }
+.mc-step button { font: 700 22px var(--cond); background: var(--field-2); color: var(--chalk); border-radius: 8px; min-height: 44px; }
+.mc-step input, .mc-budget input, .mc-lines input { font: 700 22px var(--cond); text-align: center; background: var(--sky); color: var(--chalk); border: 1px solid var(--line); border-radius: 8px; padding: 6px 4px; min-width: 0; width: 100%; box-sizing: border-box; font-variant-numeric: tabular-nums; }
+.mc-budget { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.mc-budget > span { color: var(--dim); font-size: 14px; flex-basis: 100%; }
+.mc-budget button { font: 600 17px var(--cond); padding: 6px 12px; border-radius: 8px; background: var(--field-2); color: var(--dim); min-height: 40px; }
+.mc-budget button.on { background: var(--amber); color: var(--amber-ink); }
+.mc-budget input { width: 72px; flex: 0 0 72px; font-size: 18px; }
+.mc-verdict { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; font-size: 14px; color: var(--dim); }
+.mc-verdict b { font: 700 16px/1 var(--cond); letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; }
+.mc-verdict.play b { background: var(--win); color: var(--sky); }
+.mc-verdict.thin b { background: var(--amber); color: var(--amber-ink); }
+.mc-verdict.pass b { background: var(--loss); color: var(--chalk); }
+.mc-big { font: 700 46px/1 var(--cond); margin: 0; font-variant-numeric: tabular-nums; }
+.mc-big small { font-size: 18px; color: var(--dim); font-weight: 600; }
+.mc-note { font-size: 13px; color: var(--dim); margin: 0; }
+.mc-note b { color: var(--chalk); }
+.mc-lines { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 4px; }
+.mc-lines label { display: grid; gap: 4px; color: var(--dim); font-size: 14px; }
+.deskhead .back { display: flex; justify-content: space-between; }
+.mc-head { font: 600 15px var(--cond); color: var(--dim); margin: 16px 0 0; letter-spacing: 0.4px; text-transform: uppercase; }
+.back a + a { color: var(--amber); }

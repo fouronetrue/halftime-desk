@@ -88,3 +88,32 @@ export function middle(over, under, sport, sizing, pMidOverride) {
 export function seriesOf(eventTicker) {
   return (eventTicker || '').split('-')[0].toLowerCase();
 }
+
+// Size a middle from the prices you actually see, against a loss budget you pick. a, b in cents; fills 'take' or 'rest'.
+// Taker fees use orderFee (rounded up per order); a resting fill pays none. budget and maxCost in dollars.
+export function sizeMiddle({ a, b, oFill = 'take', uFill = 'take', numbers, sport, budget, maxCost, pHit }) {
+  if (!(a > 0 && a < 100 && b > 0 && b < 100) || !(numbers >= 1)) return null;
+  const pa = a / 100, pb = b / 100;
+  const fa = oFill === 'take' ? feePer(pa) : 0, fb = uFill === 'take' ? feePer(pb) : 0;
+  const c = pa + fa + pb + fb;                              // all-in cost of one pair, dollars
+  const over = c - 1;                                       // lost per pair when the total misses the window
+  const breakeven = 0.97 + perNumber(sport) * numbers;
+  let pairs = over > 0 ? Math.floor(budget / over + 1e-9) : Math.floor(maxCost / c + 1e-9);
+  let costCapped = over <= 0;
+  if (maxCost > 0 && pairs * c > maxCost) { pairs = Math.floor(maxCost / c + 1e-9); costCapped = true; }
+  pairs = Math.max(0, pairs);
+  const feeA = oFill === 'take' ? orderFee(pairs, pa) : 0, feeB = uFill === 'take' ? orderFee(pairs, pb) : 0;
+  const cost = Math.round((pairs * (pa + pb) + feeA + feeB) * 100) / 100;
+  return {
+    c, over, breakeven, pairs, cost, costCapped,
+    dollarsA: Math.round(pairs * pa * 100) / 100,
+    dollarsB: Math.round(pairs * pb * 100) / 100,
+    fees: Math.round((feeA + feeB) * 100) / 100,
+    win: Math.round((2 * pairs - cost) * 100) / 100,
+    lose: Math.round((pairs - cost) * 100) / 100,
+    verdict: c >= breakeven ? 'pass' : c > breakeven - 0.03 ? 'thin' : 'play',
+    // most the under can cost on screen once the over has filled at a, still inside the breakeven
+    maxB: Math.floor(100 * (breakeven - pa - fa - (uFill === 'take' ? feePer(pb) : 0))),
+    ev: pHit === undefined ? null : 1 - c + pHit,
+  };
+}
