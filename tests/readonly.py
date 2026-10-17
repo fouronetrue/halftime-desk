@@ -11,7 +11,7 @@ import portfolio
 src = open(os.path.join(ROOT, 'portfolio.py')).read()
 for bad in ('requests.post', 'requests.put', 'requests.patch', 'requests.delete', 'requests.request'):
     assert bad not in src, f'portfolio.py must not use {bad}'
-for path in glob.glob(os.path.join(ROOT, '**', '*.py'), recursive=True):
+for path in [p for ext in ('py', 'ts', 'tsx', 'js') for p in glob.glob(os.path.join(ROOT, '**', '*.' + ext), recursive=True) if '/node_modules/' not in p and '/.next/' not in p]:
     if os.path.abspath(path) == os.path.abspath(__file__):
         continue   # this file names them on purpose
     text = open(path).read()
