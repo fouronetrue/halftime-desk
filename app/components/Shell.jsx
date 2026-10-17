@@ -14,44 +14,29 @@ const TABS = [
 
 function SignIn() {
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function send(e) {
+  // Email and password, no emailed link or code: works inside the home-screen app and needs no mail server.
+  async function signIn(e) {
     e.preventDefault();
     setBusy(true); setMsg('');
-    const { error } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false } });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
-    if (error) setMsg(error.message.includes('Signups not allowed') ? 'That email has no account. Add it in Supabase first.' : error.message);
-    else setSent(true);
-  }
-  async function verify(e) {
-    e.preventDefault();
-    setBusy(true); setMsg('');
-    const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' });
-    setBusy(false);
-    if (error) setMsg('That code did not work. Codes expire after an hour; send a new one.');
+    if (error) setMsg('Email or password did not match. Check the user in Supabase under Authentication, Users.');
   }
 
   return (
     <main className="signin">
       <h1 className="wordmark">Halftime Desk</h1>
-      {!sent ? (
-        <form onSubmit={send}>
-          <label htmlFor="email">Email</label>
-          <input id="email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-          <button disabled={busy}>{busy ? 'Sending' : 'Email me a code'}</button>
-        </form>
-      ) : (
-        <form onSubmit={verify}>
-          <label htmlFor="code">Code from the email to {email}</label>
-          <input id="code" inputMode="numeric" autoComplete="one-time-code" required value={code} onChange={(e) => setCode(e.target.value)} />
-          <button disabled={busy}>{busy ? 'Checking' : 'Sign in'}</button>
-          <button type="button" className="link" onClick={() => { setSent(false); setCode(''); }}>Use a different email</button>
-        </form>
-      )}
+      <form onSubmit={signIn}>
+        <label htmlFor="email">Email</label>
+        <input id="email" type="email" autoComplete="username" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <label htmlFor="password">Password</label>
+        <input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <button disabled={busy}>{busy ? 'Signing in' : 'Sign in'}</button>
+      </form>
       {msg && <p className="err">{msg}</p>}
     </main>
   );
