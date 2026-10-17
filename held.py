@@ -10,7 +10,7 @@ sized so a miss never costs more than MAX_LOSS. It pushes again only when the mi
 Positions and the price you paid come from Supabase (positions, bets), kept fresh by the worker's portfolio
 sync. Read-only: nothing here places, cancels or changes an order. Games at the half are left to the engine.
 """
-import time
+import re, time
 import engine, feeds, store, notify
 
 MAX_LOSS = 15.0                                        # dollars a miss may cost on the paired shares
@@ -83,6 +83,83 @@ def best_middle(h, mine, quotes, max_loss=MAX_LOSS):
         if best is None or cand['slack_c'] > best['slack_c']:
             best = cand
     return best
+
+
+def target_c(h, numbers, want='under'):
+    """The most to pay, in cents, for the other side so the pair still sits MIN_ROOM_C under the breakeven, fees in."""
+    pa = h['paid_c'] / 100
+    breakeven = BREAKEVEN_BASE + PER_NUMBER[h['sport']] * numbers - MIN_ROOM_C / 100
+    best = 0
+    for c in range(1, 100):
+        pb = c / 100
+        if pa + engine.fee_per(pa) + pb + engine.fee_per(pb) <= breakeven + 1e-9:
+            best = c
+    return best
+
+
+def pair_up(rows):
+    """Group holdings by event: a YES on a lower strike held together with a NO on a higher one is a built middle."""
+    by_ev = {}
+    for h in rows:
+        by_ev.setdefault(h['event_ticker'], []).append(h)
+    return by_ev
+
+
+def summary(desk, max_loss=MAX_LOSS):
+    """What Today shows under Your totals: every open full-game total you hold, with the strike to pair it on,
+    the most to pay there (so a limit order can rest), the live ask, and the sizing at that price. A YES and a NO
+    on the same event read as a built middle. Written to desk_state 'held' by the worker once a minute."""
+    out = {}
+    for ev_ticker, hs in pair_up(holdings()).items():
+        sport = hs[0]['sport']
+        ev = next((e for e in desk.events(sport, 'total') if e.get('event_ticker') == ev_ticker), None)
+        quotes = feeds.total_quotes(ev) if ev else {}
+        rec_id, rec = next(((gid, r) for gid, r in desk.state.get('games', {}).items() if r.get('kalshi_total_event') == ev_ticker), (None, {}))
+        name = (ev or {}).get('sub_title') or (ev or {}).get('title') or rec.get('name') or ev_ticker
+        strikes = {}
+        for h in hs:
+            k = next((k for k, v in quotes.items() if v.get('ticker') == h['ticker']), None)
+            if k is None:
+                m = re.search(r'-(\d+)$', h['ticker'])
+                k = float(m.group(1)) + 0.5 if m else None
+            strikes[h['ticker']] = k
+        yes = [h for h in hs if h['side'] == 'yes' and strikes[h['ticker']] is not None]
+        no = [h for h in hs if h['side'] == 'no' and strikes[h['ticker']] is not None]
+        built = []
+        for a in sorted(yes, key=lambda h: strikes[h['ticker']]):
+            for b in sorted(no, key=lambda h: strikes[h['ticker']]):
+                ka, kb = strikes[a['ticker']], strikes[b['ticker']]
+                if kb > ka:
+                    pairs = min(a['shares'], b['shares'])
+                    c = (a['paid_c'] + b['paid_c']) / 100
+                    built.append(dict(over=ka, under=kb, pairs=pairs, lo=ka + 0.5, hi=kb - 0.5, paid_c=round(100 * c, 1),
+                                      win=round(pairs * (2 - c), 2), lose=round(pairs * (1 - c), 2)))
+        legs = []
+        for h in hs:
+            mine = strikes[h['ticker']]
+            if mine is None:
+                continue
+            leg = dict(ticker=h['ticker'], side=h['side'], strike=mine, shares=h['shares'], paid_c=h['paid_c'], targets=[], best=None)
+            if quotes and rec.get('phase') in (None, 'pre'):
+                cands = sorted((k for k in quotes if (k > mine if h['side'] == 'yes' else k < mine)), key=lambda k: abs(k - mine))[:3]
+                for k in cands:
+                    numbers = round(abs(k - mine))
+                    if not 1 <= numbers <= 10:
+                        continue
+                    q = quotes[k]
+                    ask = q.get('n') if h['side'] == 'yes' else q.get('y')
+                    leg['targets'].append(dict(kind='under' if h['side'] == 'yes' else 'over', strike=k, numbers=numbers,
+                                               target_c=target_c(h, numbers), ask_c=ask))
+                m = best_middle(h, mine, quotes, max_loss)
+                if m:
+                    leg['best'] = {k: m[k] for k in ('kind', 'strike', 'price_c', 'numbers', 'lo', 'hi', 'pairs', 'cost', 'leg_cost', 'win', 'lose', 'slack_c')}
+                sell = sell_now(h, quotes.get(mine, {}))
+                if sell:
+                    leg['sell'] = sell
+            legs.append(leg)
+        out[ev_ticker] = dict(game=name, game_id=rec_id, sport=sport, phase=rec.get('phase'), legs=legs, built=built,
+                              at=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
+    return out
 
 
 def sell_now(h, quote):

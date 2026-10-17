@@ -226,3 +226,23 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .mktline { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 14px; color: var(--dim); font-variant-numeric: tabular-nums; }
 .mktline b { font: 700 17px var(--cond); color: var(--chalk); }
 .mktline .when { margin-left: auto; font-size: 12px; }
+
+/* Your totals */
+.card.held { display: block; border-left-color: var(--amber); }
+.card.held.later { border-left-color: var(--line); }
+.heldhead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.heldhead .game { font: 700 20px var(--cond); }
+.leg { padding: 6px 0; border-top: 1px solid var(--line); }
+.leg .hold { margin: 0 0 4px; font-size: 14px; color: var(--dim); }
+.leg .hold b { color: var(--chalk); font: 700 17px var(--cond); }
+.target { margin: 0; font-size: 14px; color: var(--dim); }
+.target.on { color: var(--amber-ink); background: var(--amber); border-radius: 8px; padding: 6px 10px; }
+.target.on b { font-family: var(--cond); font-size: 17px; }
+.targets { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.targets li { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; font-size: 14px; color: var(--dim); align-items: baseline; }
+.targets li span:first-child { font: 700 17px var(--cond); color: var(--chalk); }
+.targets li b { color: var(--chalk); }
+.targets li.on { color: var(--amber-ink); background: var(--amber); border-radius: 6px; padding: 2px 6px; }
+.targets li.on span, .targets li.on b { color: var(--amber-ink); }
+.builtline { margin: 4px 0; font-size: 14px; color: var(--win); }
+.card.held .when { margin: 6px 0 0; font-size: 12px; color: var(--dim); }

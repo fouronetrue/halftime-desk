@@ -100,6 +100,8 @@ def main():
             try:
                 for title, _ in held.check(desk):
                     print(f'{watch.now_iso()} pushed {title}', flush=True)
+                summary = held.summary(desk)   # what Today shows under Your totals
+                store.write('desk_state', [dict(id='held', state=summary, last_beat=watch.now_iso(), note=f'{len(summary)} events', updated_at=watch.now_iso())], on_conflict='id')
             except Exception as e:   # a bad look at the ledger never touches the watch
                 print(f'held check failed: {e}', flush=True)
         while not _stop and time.time() - started < wait:
