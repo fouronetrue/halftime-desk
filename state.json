@@ -1,16 +1,17 @@
 {
- "day_spend": {},
  "games": {
   "401856719": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17AUBUGA",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -34,6 +35,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 52,
@@ -55,6 +59,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -68,6 +73,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -19.5,
     "source": "espn",
     "total": 49.5
@@ -76,6 +84,7 @@
   },
   "401856720": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -171,10 +180,17 @@
    "name": "Mississippi State Bulldogs at LSU Tigers",
    "phase": "live",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Mississippi State Bulldogs at LSU Tigers",
+   "phase": "live",
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401856721": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17MIZZMISS",
@@ -214,10 +230,26 @@
 =======
       "c": 54,
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "kalshi_total_event": "KXNCAAFTOTAL-26OCT17MIZZMISS",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "mkt": {
+    "at": "2026-10-17T19:12:29+00:00",
+    "legs": [
+     {
+      "c": 52,
+      "k": 57.5,
+      "side": "over"
+     },
+     {
+      "c": 54,
+>>>>>>> Stashed changes
       "k": 58.5,
       "side": "under"
      }
     ],
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
     "line": 58.0
@@ -227,10 +259,14 @@
 =======
     "line": 57.5
 >>>>>>> Stashed changes
+=======
+    "line": 58.0
+>>>>>>> Stashed changes
    },
    "name": "Missouri Tigers at Ole Miss Rebels",
    "phase": "pre",
    "pre": {
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -248,6 +284,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -4.0,
     "source": "espn",
     "total": 57.5
@@ -257,13 +296,15 @@
   "401856722": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17UKOKLA",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -287,6 +328,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -308,6 +352,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -321,6 +366,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -6.5,
     "source": "espn",
     "total": 43.5
@@ -330,13 +378,15 @@
   "401856723": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17ALATENN",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -360,6 +410,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 52,
@@ -381,6 +434,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -394,6 +448,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 7.5,
     "source": "espn",
     "total": 50.5
@@ -402,6 +459,7 @@
   },
   "401856724": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -493,10 +551,17 @@
    "name": "Florida Gators at Texas Longhorns",
    "phase": "live",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Florida Gators at Texas Longhorns",
+   "phase": "live",
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401856725": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -542,15 +607,13 @@
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17CITTXAM",
    "last_eval": "2026-10-17T18:48:14+00:00",
    "last_seen": "2026-10-17T18:55:30+00:00",
-   "name": "The Citadel Bulldogs at Texas A&M Aggies",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "phase": "approaching",
 =======
-   "phase": "half",
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
 >>>>>>> Stashed changes
-=======
+   "name": "The Citadel Bulldogs at Texas A&M Aggies",
    "phase": "live",
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
    "pre": {
     "at": "2026-10-17T18:32:33+00:00",
@@ -593,29 +656,22 @@
    "name": "The Citadel Bulldogs at Texas A&M Aggies",
    "phase": "live",
 >>>>>>> Stashed changes
-   "sport": "cfb"
 =======
-    "spread": -46.5,
-    "total": 56.5
-   },
-   "slots": {
-    "half": "elsewhere",
-    "q3": "elsewhere"
-   },
-   "sport": "cfb",
-   "tried_odds_endpoint": true
 >>>>>>> Stashed changes
+   "sport": "cfb"
   },
   "401856726": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17ARKVAN",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -639,6 +695,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -656,6 +715,7 @@
    "name": "Arkansas Razorbacks at Vanderbilt Commodores",
    "phase": "pre",
    "pre": {
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -678,6 +738,10 @@
     "at": "2026-10-17T19:12:14+00:00",
     "home_spread": -5.5,
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+    "home_spread": -5.5,
+>>>>>>> Stashed changes
     "source": "espn",
     "total": 48.5
    },
@@ -686,13 +750,15 @@
   "401856809": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17NDBYU",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -716,6 +782,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 59,
@@ -737,6 +806,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -750,6 +820,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 10.5,
     "source": "espn",
     "total": 46.5
@@ -759,13 +832,15 @@
   "401856828": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17ASUTTU",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -789,6 +864,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 52,
@@ -810,6 +888,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -823,6 +902,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -16.5,
     "source": "espn",
     "total": 49.5
@@ -831,6 +913,7 @@
   },
   "401856829": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -926,10 +1009,17 @@
    "name": "Cincinnati Bearcats at West Virginia Mountaineers",
    "phase": "live",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Cincinnati Bearcats at West Virginia Mountaineers",
+   "phase": "live",
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401856830": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
    "half": {
@@ -971,69 +1061,21 @@
    "last_eval": "2026-10-17T18:40:54+00:00",
    "last_seen": "2026-10-17T18:55:30+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "Kansas Jayhawks at Kansas State Wildcats",
    "phase": "live",
-   "pre": {
-    "at": "2026-10-17T18:39:50+00:00",
-    "home_spread": -3.0,
-    "source": "espn-odds",
-    "total": 55.5
-   },
-   "sheet": {
-    "at": "2026-10-17T18:39:51+00:00",
-    "fair": 62.5,
-    "h1a": 17,
-    "h1h": 18,
-    "mid": null,
-    "mkt": 68.0,
-    "mu": 28.09,
-    "rest_mid": {
-     "a_line": 59.5,
-     "a_price": 57,
-     "b_line": 65.5,
-     "b_price": 57,
-     "cost": 60.42,
-     "pairs": 53
-    },
-    "sd": 11.49,
-    "singles": [
-     {
-      "contracts": 294,
-      "cost": 89.5,
-      "kind": "under",
-      "line": 62.5,
-      "price_c": 29
-     },
-     {
-      "contracts": 529,
-      "cost": 89.62,
-      "kind": "under",
-      "line": 58.5,
-      "price_c": 16
-     },
-     {
-      "contracts": 424,
-      "cost": 89.55,
-      "kind": "under",
-      "line": 59.5,
-      "price_c": 20
-     }
-    ],
-    "spread": -3.0,
-    "total": 55.5
-   },
-   "sport": "cfb",
-   "tried_odds_endpoint": true
+   "sport": "cfb"
   },
   "401856831": {
    "date": "2026-10-17",
-   "first_seen": "2026-10-17T18:32:35+00:00",
+   "first_seen": "2026-10-17T19:12:29+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17OKSTHOU",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -1065,6 +1107,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 53,
@@ -1086,6 +1131,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -1099,6 +1145,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -4.0,
     "source": "espn",
     "total": 62.5
@@ -1108,13 +1157,15 @@
   "401856832": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17TCUBAY",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -1138,6 +1189,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 52,
@@ -1159,6 +1213,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -1172,6 +1227,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -4.5,
     "source": "espn",
     "total": 50.5
@@ -1181,13 +1239,15 @@
   "401856833": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17UTAHCOLO",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -1211,6 +1271,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 53,
@@ -1232,6 +1295,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -1245,6 +1309,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 14.5,
     "source": "espn",
     "total": 49.5
@@ -1253,6 +1320,7 @@
   },
   "401858261": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -1344,18 +1412,26 @@
    "name": "Charleston Southern Buccaneers at Clemson Tigers",
    "phase": "live",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Charleston Southern Buccaneers at Clemson Tigers",
+   "phase": "live",
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401858262": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17ELONSTAN",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -1378,6 +1454,9 @@
    "last_seen": "2026-10-17T19:12:14+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -1400,6 +1479,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -1413,6 +1493,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -34.5,
     "source": "espn",
     "total": 55.5
@@ -1422,13 +1505,15 @@
   "401858263": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17FSUMIA",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -1451,6 +1536,9 @@
    "last_seen": "2026-10-17T19:12:14+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -1473,6 +1561,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -1486,6 +1575,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -19.5,
     "source": "espn",
     "total": 56.5
@@ -1495,13 +1587,15 @@
   "401858264": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17GTVT",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -1525,6 +1619,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -1542,6 +1639,7 @@
    "name": "Georgia Tech Yellow Jackets at Virginia Tech Hokies",
    "phase": "pre",
    "pre": {
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -1564,6 +1662,10 @@
     "at": "2026-10-17T19:12:14+00:00",
     "home_spread": -8.5,
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+    "home_spread": -8.5,
+>>>>>>> Stashed changes
     "source": "espn",
     "total": 56.5
    },
@@ -1572,13 +1674,15 @@
   "401858265": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17LOUSYR",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -1602,6 +1706,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 52,
@@ -1623,6 +1730,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -1636,6 +1744,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 14.5,
     "source": "espn",
     "total": 55.5
@@ -1645,13 +1756,15 @@
   "401858266": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17UNCDUKE",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -1675,6 +1788,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 53,
@@ -1696,6 +1812,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -1709,6 +1826,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -3.0,
     "source": "espn",
     "total": 46.5
@@ -1717,6 +1837,7 @@
   },
   "401858267": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
    "half": {
@@ -1758,87 +1879,21 @@
    "last_eval": "2026-10-17T18:46:08+00:00",
    "last_seen": "2026-10-17T18:55:30+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "Pittsburgh Panthers at Boston College Eagles",
    "phase": "live",
-   "pre": {
-    "at": "2026-10-17T18:41:56+00:00",
-    "home_spread": 6.5,
-    "source": "espn-odds",
-    "total": 42.5
-   },
-   "sheet": {
-    "at": "2026-10-17T18:41:56+00:00",
-    "fair": 48.5,
-    "h1a": 12,
-    "h1h": 14,
-    "mid": null,
-    "mkt": 49.5,
-    "mu": 23.37,
-    "rest_mid": {
-     "a_line": 45.5,
-     "a_price": 60,
-     "b_line": 48.5,
-     "b_price": 45,
-     "cost": 134.4,
-     "pairs": 128
-    },
-    "sd": 10.48,
-    "singles": [
-     {
-      "contracts": 381,
-      "cost": 80.47,
-      "kind": "under",
-      "line": 45.5,
-      "price_c": 20
-     }
-    ],
-    "spread": 6.5,
-    "total": 42.5
-   },
-   "sport": "cfb",
-   "tried_odds_endpoint": true
+   "sport": "cfb"
   },
   "401858268": {
    "date": "2026-10-17",
-<<<<<<< Updated upstream
-   "first_seen": "2026-10-15T17:22:02+00:00",
-   "half": {
-    "away": 10,
-    "home": 13
-   },
-<<<<<<< Updated upstream
-   "half_at": "2026-10-17T17:27:18+00:00",
-   "kalshi_total_event": "KXNCAAFTOTAL-26OCT17UVASMU",
-   "last_eval": "2026-10-17T17:46:16+00:00",
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:15+00:00",
-=======
-   "half_at": "2026-10-17T17:46:32+00:00",
-   "kalshi_total_event": "KXNCAAFTOTAL-26OCT17UVASMU",
-   "last_eval": "2026-10-17T17:51:46+00:00",
-   "last_seen": "2026-10-17T18:09:24+00:00",
->>>>>>> Stashed changes
-=======
-   "last_seen": "2026-10-17T18:32:18+00:00",
->>>>>>> Stashed changes
-   "mkt": {
-    "at": "2026-10-17T15:57:24+00:00",
-    "legs": [
-     {
-      "c": 57,
-      "k": 49.5,
-      "side": "over"
-     },
-     {
-      "c": 53,
-      "k": 52.5,
-      "side": "under"
-     }
-    ],
-    "line": 51.5
-   },
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "name": "Virginia Cavaliers at SMU Mustangs",
    "phase": "live",
+<<<<<<< Updated upstream
    "pre": {
     "at": "2026-10-17T15:57:24+00:00",
     "home_spread": -10.0,
@@ -1913,18 +1968,22 @@
    "name": "Virginia Cavaliers at SMU Mustangs",
    "phase": "live",
 >>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401858269": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17WAKECAL",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -1948,6 +2007,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 53,
@@ -1969,6 +2031,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -1982,6 +2045,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 10.5,
     "source": "espn",
     "total": 53.5
@@ -1990,6 +2056,7 @@
   },
   "401858488": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -2083,10 +2150,17 @@
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Ohio State Buckeyes at Indiana Hoosiers",
+   "phase": "live",
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401858489": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -2164,20 +2238,21 @@
 =======
    "first_seen": "2026-10-17T18:32:33+00:00",
    "last_seen": "2026-10-17T18:55:30+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "Rutgers Scarlet Knights at Maryland Terrapins",
    "phase": "live",
->>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401858490": {
    "date": "2026-10-17",
-   "first_seen": "2026-10-17T18:32:35+00:00",
+   "first_seen": "2026-10-17T19:12:29+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17PSUMICH",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -2206,6 +2281,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 52,
@@ -2227,6 +2305,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -2240,6 +2319,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -6.0,
     "source": "espn",
     "total": 43.5
@@ -2248,6 +2330,7 @@
   },
   "401858491": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -2339,18 +2422,26 @@
    "name": "Northwestern Wildcats at Michigan State Spartans",
    "phase": "live",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Northwestern Wildcats at Michigan State Spartans",
+   "phase": "live",
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401858492": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17NEBORE",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -2374,6 +2465,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 53,
@@ -2395,6 +2489,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -2408,6 +2503,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -7.0,
     "source": "espn",
     "total": 51.5
@@ -2416,6 +2514,7 @@
   },
   "401858493": {
    "date": "2026-10-16",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -2443,6 +2542,10 @@
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "Washington Huskies at Purdue Boilermakers",
    "phase": "post",
    "sport": "cfb"
@@ -2450,13 +2553,15 @@
   "401858494": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17WISUCLA",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -2480,6 +2585,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 53,
@@ -2501,6 +2609,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -2514,6 +2623,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -1.5,
     "source": "espn",
     "total": 42.5
@@ -2523,13 +2635,15 @@
   "401860903": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17WSUORST",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -2553,6 +2667,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -2574,6 +2691,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -2587,6 +2705,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -18.5,
     "source": "espn",
     "total": 52.5
@@ -2596,13 +2717,15 @@
   "401860904": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17FRESSDSU",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -2626,6 +2749,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -2647,6 +2773,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -2664,6 +2791,10 @@
     "at": "2026-10-17T19:12:14+00:00",
     "home_spread": 7.0,
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+    "home_spread": 7.0,
+>>>>>>> Stashed changes
     "source": "espn",
     "total": 45.5
    },
@@ -2671,6 +2802,7 @@
   },
   "401860923": {
    "date": "2026-10-15",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -2696,12 +2828,17 @@
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "Colorado State Rams at Texas State Bobcats",
    "phase": "post",
    "sport": "cfb"
   },
   "401862800": {
    "date": "2026-10-15",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -2727,12 +2864,17 @@
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "East Carolina Pirates at UAB Blazers",
    "phase": "post",
    "sport": "cfb"
   },
   "401862801": {
    "date": "2026-10-16",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -2760,12 +2902,17 @@
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "Memphis Tigers at Tulane Green Wave",
    "phase": "post",
    "sport": "cfb"
   },
   "401862802": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -2857,10 +3004,17 @@
    "name": "Florida Atlantic Owls at Army Black Knights",
    "phase": "live",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Florida Atlantic Owls at Army Black Knights",
+   "phase": "live",
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401862803": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -2906,15 +3060,13 @@
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17CHARTEM",
    "last_eval": "2026-10-17T18:54:29+00:00",
    "last_seen": "2026-10-17T18:55:30+00:00",
-   "name": "Charlotte 49ers at Temple Owls",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "phase": "approaching",
 =======
-   "phase": "half",
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
 >>>>>>> Stashed changes
-=======
+   "name": "Charlotte 49ers at Temple Owls",
    "phase": "live",
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
    "pre": {
     "at": "2026-10-17T18:32:34+00:00",
@@ -2987,25 +3139,22 @@
    "name": "Charlotte 49ers at Temple Owls",
    "phase": "live",
 >>>>>>> Stashed changes
-   "sport": "cfb"
 =======
-    "half": "elsewhere",
-    "q3": "elsewhere"
-   },
-   "sport": "cfb",
-   "tried_odds_endpoint": true
 >>>>>>> Stashed changes
+   "sport": "cfb"
   },
   "401862804": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17NAVYUTSA",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -3029,6 +3178,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 56,
@@ -3050,6 +3202,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -3063,6 +3216,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -6.5,
     "source": "espn",
     "total": 54.5
@@ -3072,13 +3228,15 @@
   "401862805": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17TLSARICE",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -3101,6 +3259,9 @@
    "last_seen": "2026-10-17T19:12:14+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -3123,6 +3284,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -3136,6 +3298,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 4.5,
     "source": "espn",
     "total": 46.5
@@ -3145,13 +3310,15 @@
   "401862806": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17KENTUSF",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -3174,6 +3341,9 @@
    "last_seen": "2026-10-17T19:12:14+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -3196,6 +3366,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -3209,6 +3380,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -21.0,
     "source": "espn",
     "total": 45.5
@@ -3218,13 +3392,15 @@
   "401864520": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17NEVNDSU",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -3248,6 +3424,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -3269,6 +3448,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -3282,6 +3462,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -14.5,
     "source": "espn",
     "total": 42.5
@@ -3291,13 +3474,15 @@
   "401864521": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17UNMHAW",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -3321,6 +3506,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -3342,6 +3530,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -3355,6 +3544,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 14.5,
     "source": "espn",
     "total": 45.5
@@ -3364,13 +3556,15 @@
   "401864522": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17NIUWYO",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -3394,6 +3588,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 52,
@@ -3415,6 +3612,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -3428,6 +3626,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -7.5,
     "source": "espn",
     "total": 42.5
@@ -3437,13 +3638,15 @@
   "401864523": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17SJSUUTEP",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -3467,6 +3670,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 59,
@@ -3488,6 +3694,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -3501,6 +3708,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 7.0,
     "source": "espn",
     "total": 45.5
@@ -3510,13 +3720,15 @@
   "401864524": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17UNLVAFA",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -3540,6 +3752,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -3561,6 +3776,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -3574,6 +3790,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 1.5,
     "source": "espn",
     "total": 49.5
@@ -3582,6 +3801,7 @@
   },
   "401866441": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -3677,10 +3897,17 @@
    "name": "Ball State Cardinals at Bowling Green Falcons",
    "phase": "live",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Ball State Cardinals at Bowling Green Falcons",
+   "phase": "live",
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401866442": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -3927,12 +4154,29 @@
    "date": "2026-10-17",
 <<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Massachusetts Minutemen at Buffalo Bulls",
+   "phase": "live",
+   "sport": "cfb"
+  },
+  "401866443": {
+   "date": "2026-10-17",
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Western Michigan Broncos at Central Michigan Chippewas",
+   "phase": "live",
+   "sport": "cfb"
+  },
+  "401866444": {
+   "date": "2026-10-17",
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17TOLEMU",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -3956,6 +4200,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 53,
@@ -3964,8 +4211,13 @@
      },
      {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       "c": 54,
       "k": 53.5,
+=======
+      "c": 52,
+      "k": 52.5,
+>>>>>>> Stashed changes
 =======
       "c": 52,
       "k": 52.5,
@@ -3978,6 +4230,7 @@
    "name": "Toledo Rockets at Eastern Michigan Eagles",
    "phase": "pre",
    "pre": {
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -3997,6 +4250,10 @@
     "at": "2026-10-17T19:12:14+00:00",
     "home_spread": 7.5,
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+    "home_spread": 7.5,
+>>>>>>> Stashed changes
     "source": "espn",
     "total": 52.5
    },
@@ -4005,13 +4262,15 @@
   "401866445": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17OHIOSAC",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -4035,6 +4294,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 57,
@@ -4056,6 +4318,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -4069,6 +4332,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 15.5,
     "source": "espn",
     "total": 46.5
@@ -4078,13 +4344,15 @@
   "401866478": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17AKRMOH",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -4108,6 +4376,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -4129,6 +4400,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -4145,6 +4417,10 @@
     "at": "2026-10-17T19:12:14+00:00",
     "home_spread": -9.5,
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+    "home_spread": -9.5,
+>>>>>>> Stashed changes
     "source": "espn",
     "spread_source": "kalshi",
     "total": 47.5
@@ -4153,6 +4429,7 @@
   },
   "401869844": {
    "date": "2026-10-16",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -4180,6 +4457,10 @@
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "App State Mountaineers at Coastal Carolina Chanticleers",
    "phase": "post",
    "sport": "cfb"
@@ -4187,13 +4468,15 @@
   "401869934": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17ARSTUSM",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -4217,6 +4500,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 54,
@@ -4238,6 +4524,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -4251,6 +4538,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": 6.0,
     "source": "espn",
     "total": 61.5
@@ -4259,6 +4549,7 @@
   },
   "401869950": {
    "date": "2026-10-15",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -4284,12 +4575,17 @@
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "Georgia Southern Eagles at Old Dominion Monarchs",
    "phase": "post",
    "sport": "cfb"
   },
   "401869957": {
    "date": "2026-10-17",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -4400,18 +4696,26 @@
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+   "name": "Georgia State Panthers at James Madison Dukes",
+   "phase": "live",
+>>>>>>> Stashed changes
    "sport": "cfb"
   },
   "401869966": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17TROYULL",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -4435,6 +4739,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 52,
@@ -4456,6 +4763,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -4469,6 +4777,9 @@
 =======
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "home_spread": -3.0,
     "source": "espn",
     "total": 48.5
@@ -4479,6 +4790,7 @@
    "date": "2026-10-13",
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -4496,6 +4808,10 @@
 =======
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
+>>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
 >>>>>>> Stashed changes
    "name": "Florida International Panthers at Jacksonville State Gamecocks",
    "phase": "post",
@@ -4505,6 +4821,7 @@
    "date": "2026-10-14",
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -4522,6 +4839,10 @@
 =======
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
+>>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
 >>>>>>> Stashed changes
    "name": "Kennesaw State Owls at Missouri State Bears",
    "phase": "post",
@@ -4531,6 +4852,7 @@
    "date": "2026-10-13",
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -4548,6 +4870,10 @@
 =======
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
+>>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
 >>>>>>> Stashed changes
    "name": "Delaware Blue Hens at Middle Tennessee Blue Raiders",
    "phase": "post",
@@ -4557,6 +4883,7 @@
    "date": "2026-10-14",
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -4575,6 +4902,10 @@
    "first_seen": "2026-10-17T18:55:49+00:00",
    "last_seen": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "name": "Western Kentucky Hilltoppers at Sam Houston Bearkats",
    "phase": "post",
    "sport": "cfb"
@@ -4582,13 +4913,15 @@
   "401871091": {
    "date": "2026-10-17",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:35+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT17LTULM",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:18+00:00",
+   "last_seen": "2026-10-17T19:12:29+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
    "last_seen": "2026-10-17T18:09:25+00:00",
@@ -4612,6 +4945,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:14+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 55,
@@ -4633,6 +4969,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:18+00:00",
 =======
     "at": "2026-10-17T18:09:25+00:00",
@@ -4650,6 +4987,10 @@
     "at": "2026-10-17T19:12:14+00:00",
     "home_spread": 13.5,
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:29+00:00",
+    "home_spread": 13.5,
+>>>>>>> Stashed changes
     "source": "espn",
     "total": 55.5
    },
@@ -4657,6 +4998,7 @@
   },
   "401872995": {
    "date": "2026-10-15",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    "first_seen": "2026-10-15T17:22:02+00:00",
@@ -4682,6 +5024,10 @@
    "first_seen": "2026-10-17T18:55:46+00:00",
    "last_seen": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "name": "Seattle Seahawks at Denver Broncos",
    "phase": "post",
    "sport": "nfl"
@@ -4689,13 +5035,15 @@
   "401872996": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:32+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18HOUJAC",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:23+00:00",
@@ -4719,6 +5067,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 53,
@@ -4740,6 +5091,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:23+00:00",
@@ -4753,6 +5105,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": -2.5,
     "source": "espn",
     "total": 42.5
@@ -4762,13 +5117,15 @@
   "401872997": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18BALCLE",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -4791,6 +5148,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -4813,6 +5173,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -4826,6 +5187,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": 3.0,
     "source": "espn",
     "total": 39.5
@@ -4835,13 +5199,15 @@
   "401872998": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18CARPHI",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -4864,6 +5230,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -4886,6 +5255,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -4899,6 +5269,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": 3.0,
     "source": "espn",
     "total": 39.5
@@ -4908,13 +5281,15 @@
   "401872999": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18CHIATL",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -4937,6 +5312,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -4959,6 +5337,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -4972,6 +5351,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": 1.5,
     "source": "espn",
     "total": 52.5
@@ -4981,13 +5363,15 @@
   "401873000": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18NONYG",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -5010,6 +5394,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -5032,6 +5419,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -5045,6 +5433,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": 1.5,
     "source": "espn",
     "total": 46.5
@@ -5054,13 +5445,15 @@
   "401873001": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18NYJNE",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -5083,6 +5476,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -5105,6 +5501,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -5118,6 +5515,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": -7.5,
     "source": "espn",
     "total": 43.5
@@ -5127,13 +5527,15 @@
   "401873002": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18PITTB",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -5156,6 +5558,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -5178,6 +5583,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -5191,6 +5597,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": 2.5,
     "source": "espn",
     "total": 38.5
@@ -5200,13 +5609,15 @@
   "401873003": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18TENIND",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -5229,6 +5640,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -5251,6 +5665,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -5264,6 +5679,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": -7.0,
     "source": "espn",
     "total": 44.5
@@ -5273,13 +5691,15 @@
   "401873004": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18ARILAR",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -5302,6 +5722,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -5324,6 +5747,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -5337,6 +5761,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": -12.5,
     "source": "espn",
     "total": 51.5
@@ -5346,13 +5773,15 @@
   "401873005": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18BUFLV",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -5375,6 +5804,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -5397,6 +5829,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -5410,6 +5843,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": 5.5,
     "source": "espn",
     "total": 53.5
@@ -5419,13 +5855,15 @@
   "401873006": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18LACKC",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -5448,6 +5886,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -5470,6 +5911,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -5483,6 +5925,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": -7.5,
     "source": "espn",
     "total": 41.5
@@ -5492,13 +5937,15 @@
   "401873007": {
    "date": "2026-10-18",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT18DALGB",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -5521,6 +5968,9 @@
    "last_seen": "2026-10-17T19:12:13+00:00",
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "legs": [
      {
@@ -5543,6 +5993,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -5556,6 +6007,9 @@
 =======
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "home_spread": -1.5,
     "source": "espn",
     "total": 53.5
@@ -5565,13 +6019,15 @@
   "401873008": {
    "date": "2026-10-19",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    "first_seen": "2026-10-17T18:32:33+00:00",
+=======
+   "first_seen": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
    "kalshi_total_event": "KXNFLTOTAL-26OCT19WASSF",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   "last_seen": "2026-10-17T17:46:14+00:00",
+   "last_seen": "2026-10-17T19:12:28+00:00",
    "mkt": {
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
    "last_seen": "2026-10-17T18:09:24+00:00",
@@ -5595,6 +6051,9 @@
    "mkt": {
     "at": "2026-10-17T19:12:13+00:00",
 >>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
+>>>>>>> Stashed changes
     "legs": [
      {
       "c": 53,
@@ -5616,6 +6075,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "at": "2026-10-17T17:46:14+00:00",
 =======
     "at": "2026-10-17T18:09:24+00:00",
@@ -5628,6 +6088,9 @@
 >>>>>>> Stashed changes
 =======
     "at": "2026-10-17T19:12:13+00:00",
+>>>>>>> Stashed changes
+=======
+    "at": "2026-10-17T19:12:28+00:00",
 >>>>>>> Stashed changes
     "home_spread": -7.5,
     "source": "espn",
