@@ -15,6 +15,7 @@ import engine, feeds, notify, store
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH, STATE_PATH, LOG_PATH = os.path.join(HERE, 'config.json'), os.path.join(HERE, 'state.json'), os.path.join(HERE, 'log', 'halftime_log.csv')
 RESULTS_PATH = os.path.join(HERE, 'log', 'results.csv')
+MIDS_KEPT = 40   # middles stored per priced row (plus any more that clear): all 230-odd ran 120 KB a row
 RESULTS_COLUMNS = ['settled_utc', 'sport', 'game', 'date', 'half', 'total', 'home_spread', 'fair', 'mkt', 'final', 'final_total',
                    'model_err', 'mkt_err', 'n_plays', 'plays_cost', 'plays_pnl', 'mid_pnl', 'plays', 'rest_mid', 'rest_mid_pnl']
 DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct=50, order='taker', sports=['nfl', 'cfb'],
@@ -163,7 +164,7 @@ class Desk:
             best_mid=f"Y{best_mid['a']['line']}@{best_mid['a']['price_c']}+N{best_mid['b']['line']}@{best_mid['b']['price_c']}" if best_mid else None,
             best_mid_edge_c=round(100 * best_mid['ev'], 1) if best_mid else None,
             n_plays=sum(1 for x in sug['mids'] + sug['singles'] if x['ok']),
-            singles=sug['singles'], mids=sug['mids'],
+            singles=sug['singles'], mids=sug['mids'][:max(MIDS_KEPT, sum(1 for x in sug['mids'] if x['ok']))],   # best first, every cleared one kept
             bankroll=sizing['bankroll'], max_risk=sizing['max_risk'], max_cost=sizing['max_cost'])], on_conflict='taken_at,game_id')
         snaps = []
         for r in rows:

@@ -16,9 +16,11 @@ function Heartbeat({ beat }) {
 const MAX_MID_LOSS = 15;   // a middle on Today never risks more than this on a miss
 
 // The same picks the PLAY push names (engine.chosen): best cleared single, best cleared middle.
+// Both lists are stored best first (singles by edge, mids by EV), so the first entry is the one that clears if any
+// does. Today only fetches that first entry (top_single, top_mid) to keep each refresh small.
 function bets(sug) {
-  const single = (sug?.singles || []).find((x) => x.ok) || null;
-  const mid = (sug?.mids || []).find((x) => x.ok) || null;
+  const single = sug?.top_single?.ok ? sug.top_single : null;
+  const mid = sug?.top_mid?.ok ? sug.top_mid : null;
   let pairs = 0;
   if (mid) {
     const loss = Number(mid.c) - 1;
@@ -105,7 +107,7 @@ export default function Today() {
     setMkts(pm?.state || {});
     const halfIds = list.filter((g) => isHalfish(g) || (g.phase === 'post' && g.half_at)).map((g) => g.id);
     if (halfIds.length) {
-      const { data: ss } = await supabase.from('suggestions').select('game_id,taken_at,fair_line,market_line,n_plays,singles,mids')
+      const { data: ss } = await supabase.from('suggestions').select('game_id,taken_at,fair_line,market_line,n_plays,top_single:singles->0,top_mid:mids->0')
         .in('game_id', halfIds).order('taken_at', { ascending: false }).limit(halfIds.length * 30);
       const latest = {};
       for (const s of ss || []) if (!latest[s.game_id]) latest[s.game_id] = s;
