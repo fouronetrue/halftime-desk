@@ -106,10 +106,11 @@ def fair_line(model, mode='fg'):
     return math.floor(x) + 0.5
 
 
-def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0, max_risk=75.0, max_cost=225.0, price_band=(15, 85)):
+def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0, max_risk=75.0, max_cost=225.0, price_band=(15, 85), mid_loss=None):
     """quotes: {line: {'y': yes_ask_cents, 'n': no_ask_cents}} (None when missing).
     Legs priced outside price_band are ignored: the model's tails are its least trusted part, and a 3-cent edge
-    on a 10-cent contract is a claim the data cannot back. Returns singles and middles sorted by edge."""
+    on a 10-cent contract is a claim the data cannot back. Returns singles and middles sorted by edge.
+    mid_loss: dollars a middle may lose on a miss (Nick's $15 cap); None sizes middles by max_risk alone."""
     fee = lambda p: fee_per(p, order)
     legs = []
     for r in rows:
@@ -163,7 +164,8 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
             ok = ev >= margin - 1e-9
             pairs = 0
             if ok:
-                pairs = min(int(max_risk / loss + 1e-9), int(max_cost / c + 1e-9)) if loss > 0 else int(max_cost / c + 1e-9)
+                risk = max_risk if mid_loss is None else min(max_risk, mid_loss)
+                pairs = min(int(risk / loss + 1e-9), int(max_cost / c + 1e-9)) if loss > 0 else int(max_cost / c + 1e-9)
             pa, pb = a['price_c'] / 100, b['price_c'] / 100
             cost = round(pairs * (pa + pb) + order_fee(pairs, pa, order) + order_fee(pairs, pb, order), 2) if pairs else 0.0
             mids.append(dict(a=a, b=b, lo=a['line'] + 0.5, hi=b['line'] - 0.5, p_mid_model=p_mid_model, p_mid_mkt=p_mid_mkt, p_mid=p_mid,
@@ -173,7 +175,7 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
     return dict(legs=legs, singles=singles, mids=mids)
 
 
-def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.0, max_cost=225.0, rest_scale=0.5):
+def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.0, max_cost=225.0, rest_scale=0.5, mid_loss=None):
     """Resting limit orders near fair: a quarter-Kelly size at the limit price (where the edge equals the margin),
     scaled by rest_scale because a resting order fills when the market moves through it. Also the best resting
     middle: YES on a lower line plus NO on a higher one, both at their limits."""
@@ -201,7 +203,8 @@ def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.
             if ev <= 0:
                 continue
             loss = c - 1
-            pairs = min(int(max_risk / loss + 1e-9) if loss > 0 else 10**6, int(max_cost / c + 1e-9))
+            risk = max_risk if mid_loss is None else min(max_risk, mid_loss)
+            pairs = min(int(risk / loss + 1e-9) if loss > 0 else 10**6, int(max_cost / c + 1e-9))
             pairs = int(pairs * rest_scale)
             if pairs < 1:
                 continue
@@ -254,7 +257,7 @@ def describe(model, inp, rows, sug, mode='fg', top=3, tickers=None, sizing=None)
             msg += f" Closest: YES Over {best['a']['line']:.1f} at {best['a']['price_c']}c + NO Over {best['b']['line']:.1f} at {best['b']['price_c']}c is ${best['c']:.2f} a pair, hits {100*best['p_mid']:.0f}%, edge {100*best['ev']:+.1f}c (needs +3)."
         lines.append(msg)
     if sizing:
-        rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0))
+        rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0), mid_loss=sizing.get('mid_loss'))
         if rp['middle']:
             m = rp['middle']
             lines.append(f"RESTING MIDDLE: post YES on Over {m['a']['line']:.1f}{mk(m['a']['line'])} at {m['a']['over_rest']}c and NO on Over {m['b']['line']:.1f}{mk(m['b']['line'])} at {m['b']['under_rest']}c, {m['pairs']} shares each (${m['cost']:.0f} if both fill). "
@@ -324,7 +327,7 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3):
                     f"Final {m['lo']:.0f} to {m['hi']:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {money(m['worst'])}."]
         return 'PLAY', f'PLAY: {score}', '\n'.join(out).rstrip()
     out = [ctx, '']
-    rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0))
+    rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0), mid_loss=sizing.get('mid_loss'))
     m = rp['middle']
     if m:
         a, b = m['a'], m['b']

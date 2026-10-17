@@ -19,7 +19,8 @@ MIDS_KEPT = 40   # middles stored per priced row (plus any more that clear): all
 RESULTS_COLUMNS = ['settled_utc', 'sport', 'game', 'date', 'half', 'total', 'home_spread', 'fair', 'mkt', 'final', 'final_total',
                    'model_err', 'mkt_err', 'n_plays', 'plays_cost', 'plays_pnl', 'mid_pnl', 'plays', 'rest_mid', 'rest_mid_pnl']
 DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct=50, order='taker', sports=['nfl', 'cfb'],
-                read_push={'nfl': 'default', 'cfb': 'default'}, poll_seconds=75, max_poll_minutes=22, keep_days=10, min_price_c=15, max_price_c=85, day_cost_pct=20)
+                read_push={'nfl': 'default', 'cfb': 'default'}, poll_seconds=75, max_poll_minutes=22, keep_days=10, min_price_c=15, max_price_c=85, day_cost_pct=20,
+                mid_loss_cap=None)
 
 
 def load_json(path, default):
@@ -300,9 +301,9 @@ class Desk:
         max_risk = min(bank * self.cfg['risk_pct'] / 100, remaining)
         max_cost = min(bank * self.cfg['cost_pct'] / 100, remaining)
         sug = engine.suggest(rows, quotes, self.cfg['order'], self.cfg['margin_c'] / 100, self.cfg['trust_pct'] / 100,
-                             bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']))
+                             bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']), self.cfg.get('mid_loss_cap'))
         inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'], h1a=away_pts, h1h=home_pts)
-        sizing = dict(bankroll=bank, max_risk=max_risk, max_cost=max_cost, margin=self.cfg['margin_c'] / 100)
+        sizing = dict(bankroll=bank, max_risk=max_risk, max_cost=max_cost, margin=self.cfg['margin_c'] / 100, mid_loss=self.cfg.get('mid_loss_cap'))
         kind, head, text = engine.order_sheet(m, inp, rows, sug, sizing)
         plays = [x for x in sug['mids'] if x['ok']] + [x for x in sug['singles'] if x['ok']]
         ts = now_iso()
@@ -366,7 +367,7 @@ class Desk:
         if mid:
             out['mid'] = dict(a_line=mid['a']['line'], a_price=mid['a']['price_c'], b_line=mid['b']['line'], b_price=mid['b']['price_c'], pairs=mid['pairs'], cost=mid['cost'])
         else:
-            rp = engine.rest_plan(m, rows, 'fg', sizing['margin'], sizing['bankroll'], sizing['max_risk'], sizing['max_cost'])
+            rp = engine.rest_plan(m, rows, 'fg', sizing['margin'], sizing['bankroll'], sizing['max_risk'], sizing['max_cost'], mid_loss=sizing.get('mid_loss'))
             rm = rp.get('middle')
             if rm:
                 out['rest_mid'] = dict(a_line=rm['a']['line'], a_price=rm['a']['over_rest'], b_line=rm['b']['line'], b_price=rm['b']['under_rest'], pairs=rm['pairs'],
