@@ -21,7 +21,7 @@ export default function FairMiddle({ rows, fair, sport, maxCost, mids, takenAt, 
     for (const k of below) next[`o ${k}`] = row(k)?.yes_ask ?? '';
     for (const k of above) next[`u ${k}`] = row(k)?.no_ask ?? '';
     setPx(next);
-  }, [takenAt, fair]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [takenAt, fair, strikes.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = () => { setEdited(false); const next = {}; for (const k of below) next[`o ${k}`] = row(k)?.yes_ask ?? ''; for (const k of above) next[`u ${k}`] = row(k)?.no_ask ?? ''; setPx(next); };
   const set = (key, v) => { setEdited(true); setPx((p) => ({ ...p, [key]: v })); };
@@ -49,10 +49,10 @@ export default function FairMiddle({ rows, fair, sport, maxCost, mids, takenAt, 
   const best = pairs[0];
   const bestOk = best && best.verdict !== 'pass' && !best.band && best.pairs > 0;
 
-  const Box = ({ k, side }) => {
+  const box = (k, side) => {
     const key = `${side} ${k}`;
     return (
-      <div className="fm-box">
+      <div className="fm-box" key={key}>
         <span>{side === 'o' ? 'Over' : 'Under'} {k}</span>
         <div className="mc-step">
           <button type="button" onClick={() => bump(key, -1)} aria-label={`${side === 'o' ? 'Over' : 'Under'} ${k} down a cent`}>&minus;</button>
@@ -73,8 +73,8 @@ export default function FairMiddle({ rows, fair, sport, maxCost, mids, takenAt, 
         </span>
       </div>
       <div className="fm-grid">
-        <div className="fm-col"><b>Buy Yes below</b>{below.map((k) => <Box key={k} k={k} side="o" />)}</div>
-        <div className="fm-col"><b>Buy No above</b>{above.map((k) => <Box key={k} k={k} side="u" />)}</div>
+        <div className="fm-col"><b>Buy Yes below</b>{below.map((k) => box(k, 'o'))}</div>
+        <div className="fm-col"><b>Buy No above</b>{above.map((k) => box(k, 'u'))}</div>
       </div>
       <p className="fm-src">{edited ? <>Your prices. <button type="button" className="link" onClick={reset}>Reset to watcher</button></> : 'Watcher asks, up to 15 seconds old. Type over any box with what Kalshi shows.'}</p>
 
@@ -83,7 +83,7 @@ export default function FairMiddle({ rows, fair, sport, maxCost, mids, takenAt, 
           <span className="fm-verdict">{bestOk ? (best.verdict === 'thin' ? 'Thin play' : 'Play') : 'Pass'}</span>
           <span className="fm-line">Yes {best.lo} at {best.a}c + No {best.hi} at {best.b}c</span>
           <span className="fm-shares">{best.pairs} <small>shares each side</small></span>
-          <span className="fm-row"><span>{money(best.dollarsA)} + {money(best.dollarsB)}</span><span className="neg">miss {money(best.lose)}</span><span className="pos">hit {money(best.win)}</span></span>
+          <span className="fm-row"><span>${best.dollarsA.toFixed(2)} + ${best.dollarsB.toFixed(2)}</span><span className="neg">miss {money(best.lose)}</span><span className="pos">hit {money(best.win)}</span></span>
           <span className="fm-row"><span>{Number.isFinite(best.ratio) ? `${best.ratio.toFixed(1)} to 1` : 'Lock'}</span><span>hits {Math.round(100 * best.pHit)}%</span><span className={best.ev >= 0.03 ? 'pos' : 'neg'}>edge {money(best.pairs * best.ev)}</span></span>
         </button>
       )}
