@@ -13,7 +13,12 @@ except ImportError:  # the engine and tests work without it
 
 
 def _url():
-    return (os.environ.get('SUPABASE_URL') or '').rstrip('/')
+    """Project URL with a clean https:// scheme, whatever got pasted ('ttps://x', 'x.supabase.co', trailing slash)."""
+    u = (os.environ.get('SUPABASE_URL') or '').strip().strip('"\'').rstrip('/')
+    if not u:
+        return ''
+    host = u.split('://', 1)[1] if '://' in u else u
+    return 'https://' + host
 
 
 def _key():
