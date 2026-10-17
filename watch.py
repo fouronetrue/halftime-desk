@@ -208,6 +208,31 @@ class Desk:
                     if ks is not None:
                         pre['home_spread'] = ks
                         pre['spread_source'] = 'kalshi'
+        if not late:
+            try:
+                self.pregame_market(g, rec)
+            except Exception as e:
+                print(f"pregame market {g.get('short')} failed: {e}")
+
+    def pregame_market(self, g, rec):
+        """Kalshi's live full-game total before kickoff: the market's 50-50 line and the asks on the strike just
+        below it (Yes, over) and just above it (No, under). Read from the events list the pass already pulled."""
+        ev = feeds.match_event(g, self.events(g['sport'], 'total'))
+        if not ev:
+            return
+        rec['kalshi_total_event'] = ev.get('event_ticker')
+        line = feeds.kalshi_total_line(ev)
+        q = feeds.total_quotes(ev)
+        if not line or not q:
+            return
+        lo = max((k for k in q if k < line), default=None)
+        hi = min((k for k in q if k > line), default=None)
+        legs = []
+        if lo is not None:
+            legs.append(dict(side='over', k=lo, c=q[lo]['y']))
+        if hi is not None:
+            legs.append(dict(side='under', k=hi, c=q[hi]['n']))
+        rec['mkt'] = dict(line=line, legs=legs, at=now_iso())
 
     def evaluate(self, g, rec):
         hs = feeds.half_score(g)

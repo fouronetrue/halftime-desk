@@ -59,6 +59,7 @@ d.phases, d.next_kick = {'half': 1, 'pre': 5}, None;                 assert work
 d.phases = {'approaching': 1};                                          assert worker.pace(d, now) == 5
 d.phases = {'live': 3, 'pre': 2};                                       assert worker.pace(d, now) == 60
 d.phases, d.next_kick = {'pre': 4}, '2026-10-17T16:10:00+00:00';        assert worker.pace(d, now) == 60
+d.phases, d.next_kick = {'pre': 4}, '2026-10-17T18:30:00+00:00';        assert worker.pace(d, now) == 60
 d.phases, d.next_kick = {'pre': 4}, '2026-10-17T19:30:00+00:00';        assert worker.pace(d, now) == 300
 d.phases, d.next_kick = {'post': 8}, None;                              assert worker.pace(d, now) == 300
 print('pace: 5 / 60 / 300 as designed')

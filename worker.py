@@ -2,7 +2,7 @@
 
 Pace:
   5 s    any game in Q2 under 5:00, at the half, or early Q3
-  60 s   any game live, or a kickoff within 20 minutes
+  60 s   any game live, or a kickoff within 3 hours (keeps the pregame Kalshi market fresh)
   5 min  nothing going on
 Portfolio sync every 10 minutes while games are live, every 30 otherwise.
 
@@ -38,7 +38,10 @@ def load_state():
 
 def save_state(state, note):
     now = watch.now_iso()
-    store.write('desk_state', [dict(id=STATE_ID, state=state, last_beat=now, note=note, updated_at=now)], on_conflict='id')
+    # a second, small row the Today screen reads: each upcoming game's live Kalshi total, keyed by game id
+    pregame = {gid: r['mkt'] for gid, r in (state.get('games') or {}).items() if r.get('phase') == 'pre' and r.get('mkt')}
+    store.write('desk_state', [dict(id=STATE_ID, state=state, last_beat=now, note=note, updated_at=now),
+                               dict(id='pregame', state=pregame, last_beat=now, note=f'{len(pregame)} games', updated_at=now)], on_conflict='id')
 
 
 def pace(desk, now=None):
@@ -52,7 +55,7 @@ def pace(desk, now=None):
         now = now or dt.datetime.now(dt.timezone.utc)
         try:
             kick = dt.datetime.fromisoformat(desk.next_kick.replace('Z', '+00:00'))
-            if (kick - now).total_seconds() < 20 * 60:
+            if (kick - now).total_seconds() < 3 * 3600:
                 return LIVE
         except Exception:
             pass

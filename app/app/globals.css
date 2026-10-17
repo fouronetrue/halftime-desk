@@ -221,3 +221,8 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .betline b { color: var(--win); font-weight: 700; letter-spacing: 0.4px; margin-right: 4px; }
 .betline.none, .betline.none b { color: var(--dim); }
 .betnote { margin: 0; font-size: 13px; color: var(--dim); }
+
+/* Live pregame Kalshi market on Today */
+.mktline { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 14px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.mktline b { font: 700 17px var(--cond); color: var(--chalk); }
+.mktline .when { margin-left: auto; font-size: 12px; }

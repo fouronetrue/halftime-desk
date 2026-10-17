@@ -43,7 +43,7 @@ function BetLines({ sug }) {
   );
 }
 
-function GameCard({ g, sug, big }) {
+function GameCard({ g, sug, big, mkt }) {
   const live = g.phase === 'live' || isHalfish(g) || g.phase === 'post';
   const away = live ? (g.phase === 'post' ? g.final_away ?? g.away_score : g.away_score) : null;
   const home = live ? (g.phase === 'post' ? g.final_home ?? g.home_score : g.home_score) : null;
@@ -60,6 +60,13 @@ function GameCard({ g, sug, big }) {
         <span className={`chip ${g.phase}`}>{phaseLabel(g)}</span>
         <span className="lines">{g.pre_total ? `o/u ${Number(g.pre_total)}` : 'no total yet'}{sp ? <><br />{sp}</> : null}</span>
       </div>
+      {g.phase !== 'post' && !isHalfish(g) && g.phase !== 'live' && mkt?.line && (
+        <div className="mktline">
+          <span>Kalshi <b>{mkt.line}</b></span>
+          {(mkt.legs || []).map((l) => <span key={l.side}>{l.side === 'over' ? 'O' : 'U'}{l.k} <b>{l.c ?? '-'}c</b></span>)}
+          <span className="when">{ago(mkt.at)}</span>
+        </div>
+      )}
       {big && sug && (
         <div className="halfline">
           <span>Fair <b>{Number(sug.fair_line)}</b></span>
@@ -77,6 +84,7 @@ export default function Today() {
   const [games, setGames] = useState([]);
   const [sugs, setSugs] = useState({});
   const [beat, setBeat] = useState(null);
+  const [mkts, setMkts] = useState({});
   const [sport, setSport] = useState('all');
   const [showFinal, setShowFinal] = useState(false);
   const [err, setErr] = useState('');
@@ -84,15 +92,17 @@ export default function Today() {
   const load = useCallback(async () => {
     const today = etDate();
     const yesterday = etDate(new Date(Date.now() - 86400000));
-    const [{ data: gs, error }, { data: hb }] = await Promise.all([
+    const [{ data: gs, error }, { data: hb }, { data: pm }] = await Promise.all([
       supabase.from('games').select('*').gte('date_et', yesterday).order('start_utc'),
       supabase.from('desk_state').select('last_beat,note').eq('id', 'worker').maybeSingle(),
+      supabase.from('desk_state').select('state').eq('id', 'pregame').maybeSingle(),
     ]);
     if (error) { setErr(error.message); return; }
     setErr('');
     const list = (gs || []).filter((g) => g.date_et === today || (g.phase && g.phase !== 'post' && g.phase !== 'pre'));
     setGames(list);
     setBeat(hb);
+    setMkts(pm?.state || {});
     const halfIds = list.filter((g) => isHalfish(g) || (g.phase === 'post' && g.half_at)).map((g) => g.id);
     if (halfIds.length) {
       const { data: ss } = await supabase.from('suggestions').select('game_id,taken_at,fair_line,market_line,n_plays,singles,mids')
@@ -130,7 +140,7 @@ export default function Today() {
       {err && <p className="err">Could not load games: {err}</p>}
       {half.length > 0 && <section><h2>At the half</h2>{half.map((g) => <GameCard key={g.id} g={g} sug={sugs[g.id]} big />)}</section>}
       {live.length > 0 && <section><h2>Live</h2>{live.map((g) => <GameCard key={g.id} g={g} />)}</section>}
-      {pre.length > 0 && <section><h2>Coming up</h2>{pre.map((g) => <GameCard key={g.id} g={g} />)}</section>}
+      {pre.length > 0 && <section><h2>Coming up</h2>{pre.map((g) => <GameCard key={g.id} g={g} mkt={mkts[g.id]} />)}</section>}
       {done.length > 0 && (
         <section>
           <button className="fold" onClick={() => setShowFinal(!showFinal)} aria-expanded={showFinal}>{showFinal ? 'Hide' : 'Show'} {done.length} final{done.length === 1 ? '' : 's'}</button>
