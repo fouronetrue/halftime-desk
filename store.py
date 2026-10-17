@@ -73,6 +73,24 @@ def write(table, rows, on_conflict=None, ignore_duplicates=False):
     return False
 
 
+def claim(table, row, on_conflict):
+    """Insert row only if no row with the same on_conflict key exists. Returns False when another process
+    already holds that key (so the caller should not act), True when this call inserted it. When Supabase is
+    off or unreachable it returns True: a duplicate push beats a missed one."""
+    if not enabled():
+        return True
+    try:
+        r = requests.post(f'{_url()}/rest/v1/{table}', params={'on_conflict': on_conflict},
+                          data=json.dumps(clean([row]), default=str),
+                          headers=_headers('return=representation,resolution=ignore-duplicates'), timeout=10)
+        if r.status_code < 300:
+            return bool(r.json())   # [] means the row already existed
+        print(f'supabase {table}: claim failed (HTTP {r.status_code} {r.text[:200]}), acting anyway')
+    except Exception as e:
+        print(f'supabase {table}: claim failed ({e}), acting anyway')
+    return True
+
+
 def read(table, params):
     """GET rows as a list of dicts, [] on any failure. params are PostgREST filters, e.g. {'select': 'id', 'limit': 1}."""
     if not enabled():

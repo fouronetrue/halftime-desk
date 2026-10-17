@@ -24,6 +24,7 @@ def run(mirror):
     store.enabled = lambda: mirror
     store.write = lambda table, rows, on_conflict=None, ignore_duplicates=False: captured.setdefault(table, []).extend(copy.deepcopy(rows)) or True
     store.read = lambda table, params: []
+    store.claim = lambda table, row, on_conflict: True
     pushes.clear()
     desk = watch.Desk(cfg, {}, FIX)
     desk.run_pass()

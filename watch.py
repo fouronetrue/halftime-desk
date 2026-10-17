@@ -74,6 +74,7 @@ class Desk:
     def run_pass(self):
         active = False
         seen = []
+        self.phases, self.next_kick = {}, None   # read by worker.py to pick its polling pace
         for sport in self.cfg['sports']:
             try:
                 games = self.games(sport)
@@ -85,6 +86,9 @@ class Desk:
                 rec = self.state['games'].setdefault(g['id'], dict(sport=sport, name=g['name'], date=g['date_et'], first_seen=now_iso()))
                 rec['last_seen'] = now_iso()
                 rec['phase'] = ph
+                self.phases[ph] = self.phases.get(ph, 0) + 1
+                if ph == 'pre' and g['start_utc'] and (self.next_kick is None or g['start_utc'] < self.next_kick):
+                    self.next_kick = g['start_utc']
                 if ph == 'pre':
                     self.capture_pregame(g, rec)
                 elif ph in ('half', 'early3'):
@@ -119,7 +123,8 @@ class Desk:
                        kalshi_total_event=rec.get('kalshi_total_event'), phase=rec.get('phase'), status=g['status'],
                        half_away=half.get('away'), half_home=half.get('home'), half_at=rec.get('half_at'),
                        final_away=g['away']['score'] if post else None, final_home=g['home']['score'] if post else None,
-                       first_seen=rec.get('first_seen'))
+                       first_seen=rec.get('first_seen'),
+                       away_score=g['away']['score'], home_score=g['home']['score'], period=g['period'], clock=g['clock'], detail=g['detail'])
             h = hash(json.dumps(row, sort_keys=True, default=str))
             prev = self._db_games.get(g['id'])
             if prev and prev[0] == h and now - prev[1] < 600:
@@ -154,6 +159,13 @@ class Desk:
                               p_over=r['p_over'], p_push=r['p_push'], over_take=r['over_take'], over_rest=r['over_rest'],
                               under_take=r['under_take'], under_rest=r['under_rest']))
         store.write('quote_snapshots', snaps, on_conflict='taken_at,game_id,strike')
+
+    def claim_alert(self, ts, g, slot, kind, priority, title, body, ev):
+        """Reserve this game's slot in the alerts table before pushing, so the always-on worker and the GitHub
+        Actions backup never both push the same alert. False means the other one already did."""
+        return store.claim('alerts', dict(sent_at=now_iso(), game_id=g['id'], sport=g['sport'], slot=slot, kind=kind, priority=priority,
+                                          title=title, body=body, event_ticker=ev.get('event_ticker'), channels=None, suggestion_at=ts),
+                           on_conflict='game_id,slot')
 
     def db_alert(self, ts, g, slot, kind, priority, title, body, ev, sent):
         if not store.enabled():
@@ -246,7 +258,7 @@ class Desk:
         if 'sheet' not in rec:
             rec['sheet'] = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing)
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
-        # 75-second polling allows), one the first time it is seen after the Q3 kick while the score is still the
+        # polling allows), one the first time it is seen after the Q3 kick while the score is still the
         # halftime score. A PLAY goes out whenever something clears; a read goes out per read_push, which maps a
         # sport to an ntfy priority ('min' is silent and only shows in the app's list).
         slot = 'q3' if rec.get('phase') == 'early3' else 'half'
@@ -265,6 +277,10 @@ class Desk:
             if remaining < 20:
                 text += f"\nDaily cap reached (${spent:.0f} suggested today): sizes above are scaled down."
             body = text + f"\n\n{ev.get('event_ticker')}"
+            if not self.claim_alert(ts, g, slot, 'play', 'high', title, body, ev):
+                slots[slot] = 'elsewhere'
+                rec['last_eval'] = now_iso()
+                return
             sent = notify.push(title, body, priority='high', tags='moneybag')
             slots[slot] = 'play'
             self.pushed.append(title)
@@ -275,6 +291,10 @@ class Desk:
                 rec['counted_day'] = True
         elif read_pri != 'off':
             body = text + f"\n\n{ev.get('event_ticker')}"
+            if not self.claim_alert(ts, g, slot, 'update', read_pri, title, body, ev):
+                slots[slot] = 'elsewhere'
+                rec['last_eval'] = now_iso()
+                return
             sent = notify.push(title, body, priority=read_pri)
             slots[slot] = 'read'
             self.pushed.append(title)
@@ -367,12 +387,22 @@ class Desk:
             del self.state['games'][k]
 
 
-def scorecard(path=RESULTS_PATH):
-    """Season to date from log/results.csv: are the plays making money, and is the model closer to the final than the market?"""
+def results_rows(path=RESULTS_PATH):
+    """Graded games: the Supabase results table when it is reachable (it holds what both the worker and the
+    GitHub Actions backup graded, one row per game), log/results.csv otherwise."""
+    if store.enabled():
+        rows = store.read('results', {'select': '*', 'order': 'settled_at', 'limit': 10000})
+        if rows:
+            return rows
     try:
-        rows = list(csv.DictReader(open(path, newline='')))
+        return list(csv.DictReader(open(path, newline='')))
     except FileNotFoundError:
-        return 'scorecard: nothing settled yet'
+        return []
+
+
+def scorecard(path=RESULTS_PATH, rows=None):
+    """Season to date: are the plays making money, and is the model closer to the final than the market?"""
+    rows = results_rows(path) if rows is None else rows
     if not rows:
         return 'scorecard: nothing settled yet'
     f = lambda r, k: float(r[k]) if r.get(k) not in (None, '') else None
