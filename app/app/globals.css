@@ -214,3 +214,10 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .fm-alts button { width: 100%; display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 0.8fr; gap: 4px; padding: 8px 10px; border-radius: 8px; background: var(--field-2); font: 600 15px var(--cond); text-align: right; font-variant-numeric: tabular-nums; }
 .fm-alts button span:first-child { text-align: left; }
 .fm-alts button.pass { opacity: 0.5; }
+
+/* BET lines on Today */
+.bets { flex-basis: 100%; display: grid; gap: 4px; margin-top: 4px; }
+.betline { flex-basis: 100%; margin: 0; font: 600 17px/1.3 var(--cond); color: var(--chalk); }
+.betline b { color: var(--win); font-weight: 700; letter-spacing: 0.4px; margin-right: 4px; }
+.betline.none, .betline.none b { color: var(--dim); }
+.betnote { margin: 0; font-size: 13px; color: var(--dim); }

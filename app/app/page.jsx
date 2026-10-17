@@ -13,6 +13,36 @@ function Heartbeat({ beat }) {
   return <p className={`beat ${state}`}><span className="dot" aria-hidden="true" />{text}</p>;
 }
 
+const MAX_MID_LOSS = 15;   // a middle on Today never risks more than this on a miss
+
+// The same picks the PLAY push names (engine.chosen): best cleared single, best cleared middle.
+function bets(sug) {
+  const single = (sug?.singles || []).find((x) => x.ok) || null;
+  const mid = (sug?.mids || []).find((x) => x.ok) || null;
+  let pairs = 0;
+  if (mid) {
+    const loss = Number(mid.c) - 1;
+    pairs = loss > 0 ? Math.min(mid.pairs, Math.floor(MAX_MID_LOSS / loss + 1e-9)) : mid.pairs;
+  }
+  return { single, mid, pairs };
+}
+
+function BetLines({ sug }) {
+  const { single, mid, pairs } = bets(sug);
+  if (!single && !mid) return <p className="betline none"><b>BET:</b> None. Nothing clears the 3c edge.</p>;
+  return (
+    <div className="bets">
+      {single && (
+        <p className="betline"><b>BET:</b> Single - {single.kind === 'over' ? 'Over' : 'Under'} {Number(single.line)} ({single.contracts} shares, {single.price_c}c)</p>
+      )}
+      {mid && pairs > 0 && (
+        <p className="betline"><b>BET:</b> Middle - O{Number(mid.a.line)} ({pairs} shares, {mid.a.price_c}c), U{Number(mid.b.line)} ({pairs} shares, {mid.b.price_c}c)</p>
+      )}
+      {single && mid && pairs > 0 && <p className="betnote">One or the other, not both.</p>}
+    </div>
+  );
+}
+
 function GameCard({ g, sug, big }) {
   const live = g.phase === 'live' || isHalfish(g) || g.phase === 'post';
   const away = live ? (g.phase === 'post' ? g.final_away ?? g.away_score : g.away_score) : null;
@@ -36,6 +66,7 @@ function GameCard({ g, sug, big }) {
           <span>Kalshi <b>{sug.market_line ?? 'n/a'}</b></span>
           <span className={sug.n_plays ? 'plays on' : 'plays'}>{sug.n_plays ? `${sug.n_plays} clear the edge` : 'Nothing clears'}</span>
           <span className="when">since {etTime(g.half_at)}</span>
+          {isHalfish(g) && <BetLines sug={sug} />}
         </div>
       )}
     </Link>
@@ -64,7 +95,7 @@ export default function Today() {
     setBeat(hb);
     const halfIds = list.filter((g) => isHalfish(g) || (g.phase === 'post' && g.half_at)).map((g) => g.id);
     if (halfIds.length) {
-      const { data: ss } = await supabase.from('suggestions').select('game_id,taken_at,fair_line,market_line,n_plays')
+      const { data: ss } = await supabase.from('suggestions').select('game_id,taken_at,fair_line,market_line,n_plays,singles,mids')
         .in('game_id', halfIds).order('taken_at', { ascending: false }).limit(halfIds.length * 30);
       const latest = {};
       for (const s of ss || []) if (!latest[s.game_id]) latest[s.game_id] = s;
