@@ -52,13 +52,17 @@ for table in ('games', 'suggestions', 'quote_snapshots', 'alerts', 'results'):
     for r in rows:
         json.dumps(store.clean(r))   # must be JSON-serializable
 sug = c_on['suggestions'][0]
-assert all(q['taken_at'] == sug['taken_at'] and q['game_id'] == sug['game_id'] for q in c_on['quote_snapshots'])
+half_q = [q for q in c_on['quote_snapshots'] if q['phase'] != 'pre']
+pre_q = [q for q in c_on['quote_snapshots'] if q['phase'] == 'pre']
+assert half_q and all(q['taken_at'] == sug['taken_at'] and q['game_id'] == sug['game_id'] for q in half_q)
+# pregame line history: upcoming games only, no model numbers, and never for the game priced at the half
+assert pre_q and all(q['p_over'] is None and q['game_id'] != sug['game_id'] for q in pre_q), 'pregame history rows look wrong'
 assert c_on['alerts'][0]['suggestion_at'] == sug['taken_at'] and c_on['alerts'][0]['body'] == p_on[0][1]
 assert c_on['results'][0]['game_id'] == sug['game_id'] and c_on['results'][0]['sheet']
 assert state['games'][sug['game_id']]['half_at'] == sug['taken_at'] and state['games'][sug['game_id']]['kalshi_total_event'] == sug['event_ticker']
 csv_rows = list(csv.DictReader(open(watch.RESULTS_PATH)))
 assert len(csv_rows) == 2 and csv_rows[0]['game'] == c_on['results'][0]['game'], 'results.csv and the results row disagree'
-print(f"mirror: {len(c_on['games'])} games, {len(c_on['suggestions'])} suggestions, {len(c_on['quote_snapshots'])} quotes, "
+print(f"mirror: {len(c_on['games'])} games, {len(c_on['suggestions'])} suggestions, {len(half_q)} quotes, {len(pre_q)} pregame quotes, "
       f"{len(c_on['alerts'])} alerts, {len(c_on['results'])} results; push text identical with the mirror on and off")
 if '--dump' in sys.argv:
     out = sys.argv[sys.argv.index('--dump') + 1]

@@ -48,6 +48,7 @@ class Desk:
         self.fixtures = fixtures
         self._events = {}
         self.pushed = []
+        self._pre_last = {}   # game id -> (quote key, time written) for the pregame line history
         self._db_evals = {}   # game id -> (quote key, time written): skip identical priced rows inside 30 s
         self._db_games = {}   # game id -> (row hash, time sent), so Supabase only hears about games that changed
 
@@ -76,6 +77,7 @@ class Desk:
         active = False
         seen = []
         self.phases, self.next_kick = {}, None   # read by worker.py to pick its polling pace
+        self._pre_snaps = []
         for sport in self.cfg['sports']:
             try:
                 games = self.games(sport)
@@ -106,6 +108,8 @@ class Desk:
                 seen.append((g, rec))
         self.prune()
         self.db_games(seen)
+        if self._pre_snaps and store.enabled():   # after db_games, so every game row exists first
+            store.write('quote_snapshots', self._pre_snaps, on_conflict='taken_at,game_id,strike')
         return active
 
     # ---- Supabase mirror: the same facts the CSVs and state.json hold, one request per table per pass ----
@@ -233,6 +237,20 @@ class Desk:
         if hi is not None:
             legs.append(dict(side='under', k=hi, c=q[hi]['n']))
         rec['mkt'] = dict(line=line, legs=legs, at=now_iso())
+        # Pregame line history: the strikes within 6 points of the market line, saved to quote_snapshots with
+        # phase 'pre' when they change (at most every 2 minutes) or every 10 minutes regardless.
+        near = sorted(k for k in q if abs(k - line) <= 6)
+        key = (line,) + tuple((k, q[k]['yb'], q[k]['y'], q[k]['nb'], q[k]['n']) for k in near)
+        last = self._pre_last.get(g['id'])
+        t = time.time()
+        if last and ((last[0] == key and t - last[1] < 600) or t - last[1] < 120):
+            return
+        self._pre_last[g['id']] = (key, t)
+        ts = now_iso()
+        for k in near:
+            self._pre_snaps.append(dict(taken_at=ts, game_id=g['id'], event_ticker=ev.get('event_ticker'), market_ticker=q[k].get('ticker'),
+                                        strike=k, phase='pre', yes_bid=q[k]['yb'], yes_ask=q[k]['y'], no_bid=q[k]['nb'], no_ask=q[k]['n'],
+                                        p_over=None, p_push=None, over_take=None, over_rest=None, under_take=None, under_rest=None))
 
     def evaluate(self, g, rec):
         hs = feeds.half_score(g)
