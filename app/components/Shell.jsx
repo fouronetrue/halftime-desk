@@ -93,9 +93,14 @@ export default function Shell({ children }) {
       root.classList.toggle('kb', kb);
       if (!kb && window.scrollY) window.scrollTo(0, 0);   // iOS nudges the window after a keyboard; put it back
       if (wantDebug) {
-        setDebug(`standalone ${standalone} screen ${window.screen.width}x${window.screen.height} inner ${window.innerWidth}x${window.innerHeight} ` +
-                 `vv ${Math.round(vv?.width || 0)}x${Math.round(h)} top ${Math.round(t)} dvh ${root.clientHeight} inset ${insetTop}/${insetBottom} ` +
-                 `delta ${delta} shell ${Math.round(full)} scrollY ${window.scrollY}`);
+        // what the browser says, then what it drew: the shell and bar rectangles, and 100dvh/svh/lvh measured
+        const sh = document.querySelector('.shell'), bar = document.querySelector('.tabbar');
+        const r = sh ? sh.getBoundingClientRect() : null, br = bar ? bar.getBoundingClientRect() : null;
+        const units = ['dvh', 'svh', 'lvh'].map((u) => { const d = document.createElement('div'); d.style.cssText = `position:fixed;top:0;left:0;width:0;height:100${u};visibility:hidden`; document.body.appendChild(d); const v = d.offsetHeight; d.remove(); return `${u} ${v}`; }).join(' ');
+        setDebug(`standalone ${standalone} screen ${window.screen.width}x${window.screen.height} avail ${window.screen.availHeight} outer ${window.outerHeight} inner ${window.innerWidth}x${window.innerHeight} ` +
+                 `vv ${Math.round(vv?.width || 0)}x${Math.round(h)} top ${Math.round(t)} page ${Math.round(vv?.pageTop || 0)} client ${root.clientHeight} ${units} inset ${insetTop}/${insetBottom} ` +
+                 `delta ${delta} want ${Math.round(full)} var ${getComputedStyle(root).getPropertyValue('--vvh').trim()} ` +
+                 `shell ${r ? `${Math.round(r.top)}+${Math.round(r.height)}` : '?'} css ${sh ? getComputedStyle(sh).height : '?'} bar ${br ? `${Math.round(br.top)}-${Math.round(br.bottom)}` : '?'} scrollY ${window.scrollY}`);
       }
     };
     const toggle = () => { wantDebug = !wantDebug; if (!wantDebug) setDebug(''); apply(); };
@@ -127,7 +132,7 @@ export default function Shell({ children }) {
 
   return (
     <div className="shell">
-      {debug && <pre className="vpdebug">{debug}</pre>}
+      {debug && <><pre className="vpdebug">{debug}</pre><div className="vpline" aria-hidden="true" /></>}
       <div className="screen" ref={screen}>{children}</div>
       <nav className="tabbar" aria-label="Screens">
         {TABS.map((t) => {

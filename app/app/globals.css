@@ -29,6 +29,7 @@ b, .pts, .score, .board b, .ladder, .chip, .mstats dd { font-variant-numeric: ta
 
 .shell { position: fixed; left: 0; right: 0; top: var(--vvt, 0px); height: var(--vvh, 100dvh); display: flex; flex-direction: column; }
 .kb .tabbar { display: none; }
+.vpline { position: fixed; left: 0; right: 0; bottom: 0; height: 4px; background: #3DB39E; z-index: 30; }   /* where fixed bottom:0 lands */
 .vpdebug { position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; z-index: 20; margin: 0; padding: 4px 8px; font: 11px/1.3 ui-monospace, monospace; white-space: pre-wrap; background: var(--amber); color: var(--amber-ink); }
 .screen { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .screen > main { padding: max(16px, env(safe-area-inset-top)) 16px 28px; max-width: 560px; margin: 0 auto; }
