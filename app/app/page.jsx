@@ -165,7 +165,7 @@ export default function Today() {
     setHeld(hd?.state || {});
     const halfIds = list.filter((g) => isHalfish(g) || (g.phase === 'post' && g.half_at)).map((g) => g.id);
     if (halfIds.length) {
-      const { data: ss } = await supabase.from('suggestions').select('game_id,taken_at,fair_line,market_line,n_plays,top_single:singles->0,top_mid:mids->0')
+      const { data: ss } = await supabase.from('suggestions').select('game_id,taken_at,fair_line,market_line,n_plays,half_away,half_home,top_single:singles->0,top_mid:mids->0')
         .in('game_id', halfIds).order('taken_at', { ascending: false }).limit(halfIds.length * 30);
       const latest = {};
       for (const s of ss || []) if (!latest[s.game_id]) latest[s.game_id] = s;
