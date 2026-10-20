@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import MiddleCalc from '@/components/MiddleCalc';
+import { supabase } from '@/lib/supabase';
 
 const LINES_KEY = 'hd-calc-lines';
 
@@ -16,6 +17,14 @@ function CalcView() {
   const [o, setO] = useState(q.get('o') || '48.5');
   const [u, setU] = useState(q.get('u') || '51.5');
   const [loaded, setLoaded] = useState(false);
+  // A free roll (a miss loses nothing) is sized by the project's cost cap, 7.5% of bankroll a game, not by the
+  // loss budget. The bankroll comes from the last Kalshi sync; $250 until it answers.
+  const [maxCost, setMaxCost] = useState(250);
+  useEffect(() => {
+    supabase?.from('portfolio_snapshots').select('balance,portfolio_value').order('taken_at', { ascending: false }).limit(1)
+      .then(({ data }) => { const s = data?.[0]; if (s) setMaxCost(Math.round(0.075 * (Number(s.balance || 0) + Number(s.portfolio_value || 0)))); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!fromDesk) {
@@ -43,7 +52,7 @@ function CalcView() {
         <label htmlFor="mc-o">Over line<input id="mc-o" inputMode="decimal" value={o} onChange={(e) => setO(e.target.value)} /></label>
         <label htmlFor="mc-u">Under line<input id="mc-u" inputMode="decimal" value={u} onChange={(e) => setU(e.target.value)} /></label>
       </div>
-      <MiddleCalc sport={sport} overLine={o} underLine={u} askA={q.get('a') || 53} askB={q.get('b') || 51} budget0={Number(q.get('l')) || 10} maxCost={0} storeKey="hd-calc" restore={!fromDesk} />
+      <MiddleCalc sport={sport} overLine={o} underLine={u} askA={q.get('a') || 53} askB={q.get('b') || 51} budget0={Number(q.get('l')) || 10} maxCost={maxCost} storeKey="hd-calc" restore={!fromDesk} />
     </main>
   );
 }

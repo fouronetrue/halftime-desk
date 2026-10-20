@@ -305,8 +305,16 @@ def american(c):
 
 
 def money(x):
-    """-5 -> 'loses $5', 12 -> 'wins $12'"""
+    """-5 -> 'loses $5', 12 -> 'wins $12', 0.4 -> 'even'. A middle whose miss wins or breaks even is a free roll,
+    and the push says so where this is used for the miss."""
+    if abs(x) < 1:
+        return 'even'
     return f"loses ${-x:.0f}" if x < 0 else f"wins ${x:.0f}"
+
+
+def miss_text(x):
+    """The miss line of a middle: 'loses $5', or 'even (free roll)' / 'wins $3 (free roll)' when no final loses."""
+    return money(x) + ('' if x < 0 else ' (free roll)')
 
 
 def chosen(sug, top=3):
@@ -335,7 +343,7 @@ def rest_block(model, rows, sizing, mode='fg', head='POSSIBLE MIDDLE (post as li
         out += [label,
                 f"Buy OVER {a['line']:.1f} at {a['over_rest']}c ({m['pairs']} shares for ${m['pairs'] * a['over_rest'] / 100:.0f})",
                 f"Buy UNDER {b['line']:.1f} at {b['under_rest']}c ({m['pairs']} shares for ${m['pairs'] * b['under_rest'] / 100:.0f})",
-                f"Both filled: final {a['line'] + 0.5:.0f} to {b['line'] - 0.5:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {money(m['worst'])}. One side alone is a fair single."]
+                f"Both filled: final {a['line'] + 0.5:.0f} to {b['line'] - 0.5:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {miss_text(m['worst'])}. One side alone is a fair single."]
         if i == 0 and len(rp['middles']) > 1:
             out.append('')
     return out, rp
@@ -372,7 +380,7 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
             out += ['MIDDLE (clears the edge at the asks):',
                     f"Buy OVER {a['line']:.1f} at {a['price_c']}c ({m['pairs']} shares for ${m['pairs'] * a['price_c'] / 100:.0f})",
                     f"Buy UNDER {b['line']:.1f} at {b['price_c']}c ({m['pairs']} shares for ${m['pairs'] * b['price_c'] / 100:.0f})",
-                    f"Final {m['lo']:.0f} to {m['hi']:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {money(m['worst'])}.", '']
+                    f"Final {m['lo']:.0f} to {m['hi']:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {miss_text(m['worst'])}.", '']
         if singles:
             out.append('SINGLE' + ('S' if len(singles) > 1 else '') + (' (instead of the middle, not on top of it):' if mid else ':'))
             for s in singles:
@@ -410,7 +418,7 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
             out += ['MIDDLE' + (' (instead of a single, not on top of one):' if singles else ':'),
                     f"Buy OVER {a['line']:.1f} at {a['price_c']}c ({m['pairs']} shares for ${m['pairs'] * a['price_c'] / 100:.0f})",
                     f"Buy UNDER {b['line']:.1f} at {b['price_c']}c ({m['pairs']} shares for ${m['pairs'] * b['price_c'] / 100:.0f})",
-                    f"Final {m['lo']:.0f} to {m['hi']:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {money(m['worst'])}."]
+                    f"Final {m['lo']:.0f} to {m['hi']:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {miss_text(m['worst'])}."]
         return 'PLAY', f'PLAY: {score}', '\n'.join(out).rstrip()
     out = [ctx, '']
     rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0), mid_loss=sizing.get('mid_loss'), near_pts=sizing.get('near_pts', 3.5))
@@ -420,7 +428,7 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
         out += ['POSSIBLE MIDDLE (post as limit orders):',
                 f"Buy OVER {a['line']:.1f} at {a['over_rest']}c ({m['pairs']} shares for ${m['pairs'] * a['over_rest'] / 100:.0f})",
                 f"Buy UNDER {b['line']:.1f} at {b['under_rest']}c ({m['pairs']} shares for ${m['pairs'] * b['under_rest'] / 100:.0f})",
-                f"Both filled: final {a['line'] + 0.5:.0f} to {b['line'] - 0.5:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {money(m['worst'])}. One side alone is a fair single."]
+                f"Both filled: final {a['line'] + 0.5:.0f} to {b['line'] - 0.5:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {miss_text(m['worst'])}. One side alone is a fair single."]
     else:
         near = sorted(rows, key=lambda r: abs(r['line'] - fl))[:2]
         out.append('No middle to post. Fair prices: ' + '; '.join(f"OVER {r['line']:.1f} {r['over_rest']}c / UNDER {r['line']:.1f} {r['under_rest']}c" for r in near) + '.')

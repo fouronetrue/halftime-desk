@@ -94,11 +94,15 @@ T['desk_state'] = [
     dict(id='worker', state={}, last_beat=ago(0), note='5 games: half 1, early3 1, live 1, pre 1, post 1; next pass 5s', updated_at=ago(0)),
     dict(id='pregame', state={'g3': dict(line=46.5, legs=[dict(side='over', k=45.5, c=53), dict(side='under', k=47.5, c=52)], at=ago(1))}, last_beat=ago(0), note='1 games', updated_at=ago(0)),
     dict(id='held', state={'KXNFLTOTAL-26OCT20WSHSF': dict(game='WSH @ SF', game_id='g3', sport='nfl', phase='pre', at=ago(1), built=[],
-        legs=[dict(ticker='KXNFLTOTAL-26OCT20WSHSF-47', side='yes', strike=46.5, shares=100, paid_c=51.0, sell=dict(bid_c=55, pnl=2.74),
-                   targets=[dict(kind='under', strike=49.5, numbers=3, target_c=50, ask_c=52), dict(kind='under', strike=50.5, numbers=4, target_c=52, ask_c=48)],
-                   best=dict(kind='under', strike=50.5, price_c=48, numbers=4, lo=47, hi=50, pairs=100, cost=99.9, leg_cost=48.0, win=100.1, lose=-0.94, slack_c=5.6))]),
+        legs=[dict(ticker='KXNFLTOTAL-26OCT20WSHSF-47', side='yes', strike=46.5, shares=100, paid_c=51.0, free_c=45, free_rest_c=47, sell=dict(bid_c=55, pnl=2.74),
+                   targets=[dict(kind='under', strike=49.5, numbers=3, free_c=45, free_rest_c=47, target_c=56, ask_c=52), dict(kind='under', strike=50.5, numbers=4, free_c=45, free_rest_c=47, target_c=60, ask_c=45)],
+                   best=dict(tier='free', kind='under', strike=50.5, price_c=45, numbers=4, lo=47, hi=50, pairs=104, cost=48.4, leg_cost=46.8, win=104.4, lose=0.2, slack_c=12.0, held_alone=0.2, other_alone=3.1, both=104.4))]),
         'KXNFLTOTAL-26OCT20BUFLAR': dict(game='BUF @ LAR', game_id='g1', sport='nfl', phase='half', at=ago(1), built=[],
-        legs=[dict(ticker='KXNFLTOTAL-26OCT20BUFLAR-53', side='no', strike=52.5, shares=60, paid_c=58.0, sell=None, targets=[], best=None)])}, last_beat=ago(0), note='2 events', updated_at=ago(0)),
+        legs=[dict(ticker='KXNFLTOTAL-26OCT20BUFLAR-53', side='no', strike=52.5, shares=60, paid_c=58.0, free_c=38, free_rest_c=40, sell=None, targets=[], best=None)]),
+        'KXNFLTOTAL-26OCT26LACKC': dict(game='LAC @ KC', game_id='g8', sport='nfl', phase='pre', at=ago(2), built=[],
+        legs=[dict(ticker='KXNFLTOTAL-26OCT26LACKC-51', side='no', strike=50.5, shares=100, paid_c=51.0, free_c=45, free_rest_c=47, sell=None,
+                   targets=[dict(kind='over', strike=48.5, numbers=2, free_c=45, free_rest_c=47, target_c=52, ask_c=58), dict(kind='over', strike=46.5, numbers=4, free_c=45, free_rest_c=47, target_c=60, ask_c=53), dict(kind='over', strike=44.5, numbers=6, free_c=45, free_rest_c=47, target_c=67, ask_c=70)],
+                   best=None)])}, last_beat=ago(0), note='3 events', updated_at=ago(0)),
 ]
 T['positions'] = [
     dict(ticker='KXNFLTOTAL-26OCT20WSHSF-47', event_ticker='KXNFLTOTAL-26OCT20WSHSF', position=100, total_traded=51.0, exposure=51.0, realized_pnl=0, fees_paid=1.7, settlement_status='unsettled', last_updated=ago(40), synced_at=ago(1)),
@@ -236,7 +240,7 @@ def session():
                 user=dict(id='u1', aud='authenticated', role='authenticated', email='nick@example.com', app_metadata={}, user_metadata={}, created_at=ago(0)))
 
 
-ROUTES = {'today': '/', 'bets': '/bets/', 'alerts': '/alerts/', 'calc': '/calc/', 'record': '/record/', 'desk': '/desk/?g=g1', 'desk-stale': '/desk/?g=g2', 'ledger': '/ledger/'}
+ROUTES = {'today': '/', 'bets': '/bets/', 'alerts': '/alerts/', 'calc': '/calc/', 'calc-free': '/calc/?s=nfl&o=46.5&u=50.5&a=45&b=51', 'record': '/record/', 'desk': '/desk/?g=g1', 'desk-stale': '/desk/?g=g2', 'ledger': '/ledger/'}
 
 
 def main(only=None):

@@ -57,10 +57,10 @@ export default function MiddleCompare({ rows, sport, budget, maxCost, mids, pick
             const on = pick.over === x.lo && pick.under === x.hi;
             return (
               <li key={`${x.lo}-${x.hi}`}>
-                <button type="button" className={`${on ? 'on' : ''} ${x.band ? 'pass' : x.verdict}`} aria-pressed={on} onClick={() => onPick(x.lo, x.hi)}>
+                <button type="button" className={`${on ? 'on' : ''} ${x.band ? 'pass' : x.free ? 'free' : x.verdict}`} aria-pressed={on} onClick={() => onPick(x.lo, x.hi)}>
                   <span className="mcl-pair">o{x.lo} / u{x.hi}<small>{x.a}c + {x.b}c, {x.numbers} num{x.band ? ', outside 15 to 85c' : ''}</small></span>
                   <span className="mcl-n"><small>{x.costCapped ? 'shares, cost cap' : 'shares'}</small>{x.pairs}</span>
-                  <span className="mcl-n neg"><small>miss</small>{money(x.lose)}</span>
+                  <span className={`mcl-n ${x.lose < 0 ? 'neg' : 'pos'}`}><small>miss</small>{x.lose > 0 ? `+${money(x.lose)}` : money(x.lose)}</span>
                   <span className="mcl-n pos"><small>hit</small>{money(x.win)}</span>
                   <span className="mcl-n"><small>hits</small>{Math.round(100 * x.pHit)}%</span>
                   <span className={`mcl-n ${x.evDollars >= 0 ? 'pos' : 'neg'}`}><small>edge</small>{money(x.evDollars)}</span>

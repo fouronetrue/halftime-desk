@@ -145,10 +145,24 @@ export function sizeMiddle({ a, b, oFill = 'take', uFill = 'take', numbers, spor
     win: Math.round((2 * pairs - cost) * 100) / 100,
     lose: Math.round((pairs - cost) * 100) / 100,
     verdict: c >= breakeven ? 'pass' : c > breakeven - 0.03 ? 'thin' : 'play',
+    // a free roll: the pair costs no more than it pays back on a miss, so no final loses
+    free: over <= 0 && pairs > 0,
     // most the under can cost on screen once the over has filled at a, still inside the breakeven
     maxB: Math.floor(100 * (breakeven - pa - fa - (uFill === 'take' ? feePer(pb) : 0))),
+    // most the under can cost for the pair to be a free roll (a miss pays for itself), fees in
+    freeB: freeUnder(pa, fa, uFill),
     ev: pHit === undefined ? null : 1 - c + pHit,
   };
+}
+
+// The highest under price, in cents, at which over at pa (fee fa paid) plus the under costs no more than 100c
+// all in, so a miss either way loses nothing. 0 when no price under 100c does it.
+export function freeUnder(pa, fa, uFill = 'take') {
+  for (let c = 99; c >= 1; c--) {
+    const pb = c / 100;
+    if (pa + fa + pb + (uFill === 'take' ? feePer(pb) : 0) <= 1 + 1e-9) return c;
+  }
+  return 0;
 }
 
 // Height of the app shell. iOS lays a home-screen web app out short by the status bar: innerHeight, 100dvh and the

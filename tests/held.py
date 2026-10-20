@@ -2,7 +2,9 @@
 1. a held over whose other side is too dear: no push,
 2. the under drops to where the pair clears the breakeven: one push, sized to the loss cap, text names both legs,
 3. the same prices again: no repeat; 3c better: pushes again,
-4. a game at the half is left to the engine; a held under pairs with a lower over."""
+4. a game at the half is left to the engine; a held under pairs with a lower over,
+5. the free tier: hold KC Under 50.5 at 51c. Over 46.5 at 53c is open (a miss costs); at 45c the under pays for the
+   over outright (no final loses) and the push says FREE MIDDLE with the protect size; 47c is free only resting."""
 import sys, os, json
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -83,4 +85,36 @@ d6 = desk_with(0.52, yes_ask_425=0.40)     # 60 + 1.7 + 40 + 1.7 = 103.4c agains
 sent = held.check(d6, push)
 assert len(sent) == 1 and 'You hold Under 48.5' in sent[0][1] and 'Buy Yes on OVER 42.5 at 40c, 100 shares' in sent[0][1] and 'Final 43 to 48' in sent[0][1], sent[0][1]
 print('held: half skipped, held under pairs with a lower over')
+
+# 6. free tier, Nick's own example: hold Under 50.5 (NO on 50.5, 100 at 51c), watch Over 46.5
+tables['positions'] = [dict(ticker=f'{EV}-51', event_ticker=EV, position=-100, total_traded=51.0, settlement_status='unsettled')]
+tables['bets'] = [dict(ticker=f'{EV}-51', outcome_side='no', count=100, cost=51.0, fee=1.75)]
+h = held.holdings()[0]
+assert h['fee'] == 1.75 and h['paid_c'] == 51.0
+assert held.free_c(h) == 45 and held.free_c(h, 'rest') == 47, (held.free_c(h), held.free_c(h, 'rest'))
+n = held.protect_size(h, 45)
+o = held.outcomes(h, 45, n)
+assert 0 <= o['held_alone'] < 1 and o['other_alone'] >= 0 and o['both'] > 90, (n, o)
+quotes = {46.5: dict(y=53, n=50, yb=51, nb=48, ticker='k')}
+m = held.best_middle(h, 50.5, quotes)
+assert m['tier'] == 'open' and m['pairs'] == 100, m
+body = held.text(h, 50.5, m, None, 'LAC @ KC')[1]
+assert 'At 45c or less taken (47c resting)' in body, body
+quotes[46.5]['y'] = 45
+m = held.best_middle(h, 50.5, quotes)
+assert m['tier'] == 'free' and m['pairs'] == n and m['held_alone'] == o['held_alone'] and m['other_alone'] == o['other_alone'], m
+title, body = held.text(h, 50.5, m, None, 'LAC @ KC')
+assert title.startswith('FREE MIDDLE') and f'OVER 46.5 at 45c, {n} shares' in body and 'no final loses' in body and 'Under wins alone = even' in body, body
+# the push: open at 53c, then the upgrade to free at 45c goes out even though the room improved by less than 2c... it improved by 8c here, so check the tier upgrade path on its own
+pushes.clear()
+tables['positions'] = [dict(ticker=f'{EV}-49', event_ticker=EV, position=-100, total_traded=51.0, settlement_status='unsettled')]
+tables['bets'] = [dict(ticker=f'{EV}-49', outcome_side='no', count=100, cost=51.0, fee=1.75)]
+d7 = desk_with(0.52, yes_ask_425=0.56)      # hold Under 48.5 at 51c; Over 42.5 at 56c: 6 numbers, breakeven 118c, open
+assert len(held.check(d7, push)) == 1 and pushes[-1][0].startswith('MIDDLE OPEN')
+d8 = desk_with(0.52, yes_ask_425=0.55); d8.state = d7.state
+assert held.check(d8, push) == [], 'a 1c improvement inside the open tier repeated the push'
+d9 = desk_with(0.52, yes_ask_425=0.45); d9.state = d7.state
+sent = held.check(d9, push)
+assert len(sent) == 1 and sent[0][0].startswith('FREE MIDDLE') and d9.state['held'][f'{EV}-49']['tier'] == 'free', sent
+print('held: free tier sized so the held leg pays for the other, pushed on the upgrade')
 print('held: ok')

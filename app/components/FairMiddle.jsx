@@ -79,11 +79,11 @@ export default function FairMiddle({ rows, fair, sport, maxCost, mids, takenAt, 
       <p className="fm-src">{edited ? <>Your prices. <button type="button" className="link" onClick={reset}>Reset to watcher</button></> : 'Watcher asks, up to 5 seconds old. Type over any box with what Kalshi shows.'}</p>
 
       {best && (
-        <button type="button" className={`fm-best ${bestOk ? best.verdict : 'pass'}`} onClick={() => onPick(best.lo, best.hi)}>
-          <span className="fm-verdict">{bestOk ? (best.verdict === 'thin' ? 'Thin play' : 'Play') : 'Pass'}</span>
+        <button type="button" className={`fm-best ${bestOk ? (best.free ? 'free' : best.verdict) : 'pass'}`} onClick={() => onPick(best.lo, best.hi)}>
+          <span className="fm-verdict">{bestOk ? (best.free ? 'Free roll' : best.verdict === 'thin' ? 'Thin play' : 'Play') : 'Pass'}</span>
           <span className="fm-line">Yes {best.lo} at {best.a}c + No {best.hi} at {best.b}c</span>
           <span className="fm-shares">{best.pairs} <small>shares each side</small></span>
-          <span className="fm-row"><span>${best.dollarsA.toFixed(2)} + ${best.dollarsB.toFixed(2)}</span><span className="neg">miss {money(best.lose)}</span><span className="pos">hit {money(best.win)}</span></span>
+          <span className="fm-row"><span>${best.dollarsA.toFixed(2)} + ${best.dollarsB.toFixed(2)}</span><span className={best.lose < 0 ? 'neg' : 'pos'}>miss {best.lose < 0 ? money(best.lose) : best.lose > 0 ? `wins ${money(best.lose)}` : 'even'}</span><span className="pos">hit {money(best.win)}</span></span>
           <span className="fm-row"><span>{Number.isFinite(best.ratio) ? `${best.ratio.toFixed(1)} to 1` : 'Lock'}</span><span>hits {Math.round(100 * best.pHit)}%</span><span className={best.ev >= 0.03 ? 'pos' : 'neg'}>edge {money(best.pairs * best.ev)}</span></span>
         </button>
       )}
@@ -94,7 +94,7 @@ export default function FairMiddle({ rows, fair, sport, maxCost, mids, takenAt, 
             return (
               <li key={`${x.lo}-${x.hi}`}>
                 <button type="button" className={ok ? '' : 'pass'} onClick={() => onPick(x.lo, x.hi)}>
-                  <span>o{x.lo} / u{x.hi}</span><span>{ok ? `${x.pairs} sh` : x.band ? 'band' : 'pass'}</span><span className="neg">{money(x.lose)}</span><span className="pos">{money(x.win)}</span><span>{Number.isFinite(x.ratio) ? `${x.ratio.toFixed(1)}:1` : 'lock'}</span>
+                  <span>o{x.lo} / u{x.hi}</span><span>{ok ? `${x.pairs} sh` : x.band ? 'band' : 'pass'}</span><span className={x.lose < 0 ? 'neg' : 'pos'}>{money(x.lose)}</span><span className="pos">{money(x.win)}</span><span>{Number.isFinite(x.ratio) ? `${x.ratio.toFixed(1)}:1` : 'free'}</span>
                 </button>
               </li>
             );

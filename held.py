@@ -3,9 +3,15 @@
 You bought a side of a full-game total (a Sharp pick, a tip, your own call) and the line moved. The other side
 on a strike a few points away may now be cheap enough that owning both wins big on a final inside the window
 and loses only a little anywhere else. This module looks at every open total position each minute pregame,
-prices the other side from the same Kalshi events list the watcher already pulls, and pushes once when a
-middle clears the project breakeven (pair cost under 0.97 + 3.5c per winning number NFL, 2.4c CFB, 2.9c NBA, fees in),
-sized so a miss never costs more than MAX_LOSS. It pushes again only when the middle gets 2c a pair better.
+prices the other side from the same Kalshi events list the watcher already pulls, and pushes when a middle opens.
+
+Two tiers, and the push says which:
+  FREE   the other side is cheap enough that the leg you hold pays for it: sized so your side winning alone nets
+         $0 (the held win covers the new leg, fees in) and the other side winning alone nets $0 or better, so no
+         final loses and a final inside the window wins both. The right bet whenever it exists.
+  OPEN   the pair clears the project breakeven (cost under 0.97 + 3.5c per winning number NFL, 2.4c CFB,
+         2.9c NBA, fees in) but a miss still costs: equal shares, sized so a miss never costs more than MAX_LOSS.
+A tier is pushed once, again only when the pair gets 2c better or the tier improves to free.
 
 Positions and the price you paid come from Supabase (positions, bets), kept fresh by the worker's portfolio
 sync. Read-only: nothing here places, cancels or changes an order. Games at the half are left to the engine.
@@ -44,17 +50,65 @@ def holdings():
             paid = 100 * float(p['total_traded']) / abs(n)
         else:
             continue
+        fee = sum(float(f.get('fee') or 0) for f in fills)
         out.append(dict(ticker=p['ticker'], event_ticker=p['event_ticker'], sport=SPORT_OF[series], side=side,
-                        shares=int(abs(n)), paid_c=round(paid, 1)))
+                        shares=int(abs(n)), paid_c=round(paid, 1), fee=round(fee, 2)))
     return out
 
 
+def held_win(h):
+    """What the leg you hold nets if it wins, after the fee you already paid for it."""
+    return h['shares'] * (1 - h['paid_c'] / 100) - float(h.get('fee') or 0)
+
+
+def protect_size(h, price_c, fill='take'):
+    """Shares of the other side at price_c that the held leg pays for: its win covers the new leg all in (the
+    taker fee included when you take the ask; a resting order pays none), so your side winning alone nets $0
+    or a touch more."""
+    pb = price_c / 100
+    win = held_win(h)
+    fee = engine.fee_per(pb) if fill == 'take' else 0.0
+    n = int(win / (pb + fee) + 1e-9)
+    while n > 0 and n * pb + (engine.order_fee(n, pb) if fill == 'take' else 0.0) > win + 1e-9:   # order_fee rounds up per order
+        n -= 1
+    return n
+
+
+def outcomes(h, price_c, n, fill='take'):
+    """The three finals once n shares of the other side are bought at price_c, every fee in:
+    your side wins alone, both win (inside the window), the other side wins alone."""
+    pa, pb = h['paid_c'] / 100, price_c / 100
+    fee_b = engine.order_fee(n, pb) if fill == 'take' else 0.0
+    win = held_win(h)
+    return dict(held_alone=round(win - n * pb - fee_b, 2),
+                both=round(win + n * (1 - pb) - fee_b, 2),
+                other_alone=round(n * (1 - pb) - fee_b - h['shares'] * pa - float(h.get('fee') or 0), 2))
+
+
+def free_c(h, fill='take'):
+    """The most to pay, in cents, for the other side so that at the protect size no final loses. Taking the
+    ask costs the fee; a resting order does not, so it can pay a cent or two more."""
+    for c in range(BAND[1], BAND[0] - 1, -1):
+        n = protect_size(h, c, fill)
+        if n >= 1 and outcomes(h, c, n, fill)['other_alone'] >= 0:
+            return c
+    return 0
+
+
+def even(x):
+    """Money for a push: 'even' inside a dollar, otherwise engine.money()."""
+    return 'even' if abs(x) < 1 else engine.money(x)
+
+
 def best_middle(h, mine, quotes, max_loss=MAX_LOSS):
-    """The other side that pairs best with what you hold: most room under the breakeven. None when nothing clears.
-    h: a holdings() row. mine: the strike you own. quotes: feeds.total_quotes() for the event."""
+    """The other side that pairs best with what you hold. A free pair (the held leg pays for the new one, no final
+    loses) beats any open one; among free pairs the biggest win on a hit, among open ones the most room under
+    the breakeven. None when nothing clears. h: a holdings() row. mine: the strike you own. quotes:
+    feeds.total_quotes() for the event."""
     pa = h['paid_c'] / 100
     per = PER_NUMBER[h['sport']]
     best = None
+    rank = lambda m: (m['tier'] == 'free', m['both'] if m['tier'] == 'free' else m['slack_c'])
     for k, v in quotes.items():
         if h['side'] == 'yes':                         # you own the over at `mine`: buy No on a higher strike
             if not k > mine or v.get('n') is None:
@@ -70,17 +124,26 @@ def best_middle(h, mine, quotes, max_loss=MAX_LOSS):
         c = pa + engine.fee_per(pa) + pb + engine.fee_per(pb)
         breakeven = BREAKEVEN_BASE + per * numbers
         slack = breakeven - c
-        if 100 * slack < MIN_ROOM_C:
-            continue
-        loss = c - 1
-        pairs = h['shares'] if loss <= 0 else min(h['shares'], int(max_loss / loss + 1e-9))
-        if pairs < 1:
-            continue
-        cost = round(pairs * (pa + pb) + engine.order_fee(pairs, pa) + engine.order_fee(pairs, pb), 2)
-        cand = dict(kind=leg[0], strike=leg[1], price_c=price, numbers=numbers, lo=lo, hi=hi, c=c, breakeven=breakeven,
-                    slack_c=round(100 * slack, 1), pairs=pairs, cost=cost, leg_cost=round(pairs * pb, 2),
-                    win=round(2 * pairs - cost, 2), lose=round(pairs - cost, 2))
-        if best is None or cand['slack_c'] > best['slack_c']:
+        n_free = protect_size(h, price)
+        free = n_free >= 1 and outcomes(h, price, n_free)['other_alone'] >= 0
+        if free:
+            o = outcomes(h, price, n_free)
+            cand = dict(tier='free', kind=leg[0], strike=leg[1], price_c=price, numbers=numbers, lo=lo, hi=hi, c=c, breakeven=breakeven,
+                        slack_c=round(100 * slack, 1), pairs=n_free, leg_cost=round(n_free * pb, 2),
+                        cost=round(n_free * pb + engine.order_fee(n_free, pb), 2),
+                        win=o['both'], lose=min(o['held_alone'], o['other_alone']), held_alone=o['held_alone'], other_alone=o['other_alone'], both=o['both'])
+        else:
+            if 100 * slack < MIN_ROOM_C:
+                continue
+            loss = c - 1
+            pairs = h['shares'] if loss <= 0 else min(h['shares'], int(max_loss / loss + 1e-9))
+            if pairs < 1:
+                continue
+            cost = round(pairs * (pa + pb) + engine.order_fee(pairs, pa) + engine.order_fee(pairs, pb), 2)
+            cand = dict(tier='open', kind=leg[0], strike=leg[1], price_c=price, numbers=numbers, lo=lo, hi=hi, c=c, breakeven=breakeven,
+                        slack_c=round(100 * slack, 1), pairs=pairs, cost=cost, leg_cost=round(pairs * pb, 2),
+                        win=round(2 * pairs - cost, 2), lose=round(pairs - cost, 2))
+        if best is None or rank(cand) > rank(best):
             best = cand
     return best
 
@@ -139,7 +202,8 @@ def summary(desk, max_loss=MAX_LOSS):
             mine = strikes[h['ticker']]
             if mine is None:
                 continue
-            leg = dict(ticker=h['ticker'], side=h['side'], strike=mine, shares=h['shares'], paid_c=h['paid_c'], targets=[], best=None)
+            fc, fr = free_c(h), free_c(h, 'rest')
+            leg = dict(ticker=h['ticker'], side=h['side'], strike=mine, shares=h['shares'], paid_c=h['paid_c'], free_c=fc, free_rest_c=fr, targets=[], best=None)
             if quotes and rec.get('phase') in (None, 'pre'):
                 cands = sorted((k for k in quotes if (k > mine if h['side'] == 'yes' else k < mine)), key=lambda k: abs(k - mine))[:3]
                 for k in cands:
@@ -149,10 +213,10 @@ def summary(desk, max_loss=MAX_LOSS):
                     q = quotes[k]
                     ask = q.get('n') if h['side'] == 'yes' else q.get('y')
                     leg['targets'].append(dict(kind='under' if h['side'] == 'yes' else 'over', strike=k, numbers=numbers,
-                                               target_c=target_c(h, numbers), ask_c=ask))
+                                               free_c=fc, free_rest_c=fr, target_c=target_c(h, numbers), ask_c=ask))
                 m = best_middle(h, mine, quotes, max_loss)
                 if m:
-                    leg['best'] = {k: m[k] for k in ('kind', 'strike', 'price_c', 'numbers', 'lo', 'hi', 'pairs', 'cost', 'leg_cost', 'win', 'lose', 'slack_c')}
+                    leg['best'] = {k: m.get(k) for k in ('tier', 'kind', 'strike', 'price_c', 'numbers', 'lo', 'hi', 'pairs', 'cost', 'leg_cost', 'win', 'lose', 'slack_c', 'held_alone', 'other_alone', 'both')}
                 sell = sell_now(h, quotes.get(mine, {}))
                 if sell:
                     leg['sell'] = sell
@@ -174,16 +238,26 @@ def sell_now(h, quote):
 def text(h, mine, m, sell, game_name):
     side = 'Over' if h['side'] == 'yes' else 'Under'
     other = 'No' if m['kind'] == 'under' else 'Yes'
-    out = [f"You hold {side} {mine:.1f}, {h['shares']} shares at {h['paid_c']:.0f}c.", '',
-           f"MIDDLE: Buy {other} on {m['kind'].upper()} {m['strike']:.1f} at {m['price_c']}c, {m['pairs']} shares (${m['leg_cost']:.0f}).",
-           f"Final {m['lo']:.0f} to {m['hi']:.0f} = both pay, +${m['win']:.0f}. Any other final = {engine.money(m['lose'])}.",
-           f"Pair cost {100 * m['c']:.1f}c against a breakeven of {100 * m['breakeven']:.1f}c, {m['slack_c']:.1f}c of room."]
-    if m['pairs'] < h['shares']:
-        out.append(f"The other {h['shares'] - m['pairs']} shares stay a single, to keep a miss under ${MAX_LOSS:.0f}.")
+    out = [f"You hold {side} {mine:.1f}, {h['shares']} shares at {h['paid_c']:.0f}c.", '']
+    if m.get('tier') == 'free':
+        other_side = 'Over' if h['side'] == 'no' else 'Under'
+        out += [f"FREE MIDDLE: Buy {other} on {m['kind'].upper()} {m['strike']:.1f} at {m['price_c']}c, {m['pairs']} shares (${m['leg_cost']:.0f}).",
+                f"Final {m['lo']:.0f} to {m['hi']:.0f} = both pay, +${m['both']:.0f}.",
+                f"{side} wins alone = {even(m['held_alone'])}. {other_side} wins alone = {even(m['other_alone'])}.",
+                f"Your {side.lower()} pays for the {other_side.lower()}: no final loses. Pair cost {100 * m['c']:.1f}c with fees."]
+    else:
+        out += [f"MIDDLE: Buy {other} on {m['kind'].upper()} {m['strike']:.1f} at {m['price_c']}c, {m['pairs']} shares (${m['leg_cost']:.0f}).",
+                f"Final {m['lo']:.0f} to {m['hi']:.0f} = both pay, +${m['win']:.0f}. Any other final = {engine.money(m['lose'])}.",
+                f"Pair cost {100 * m['c']:.1f}c against a breakeven of {100 * m['breakeven']:.1f}c, {m['slack_c']:.1f}c of room."]
+        if m['pairs'] < h['shares']:
+            out.append(f"The other {h['shares'] - m['pairs']} shares stay a single, to keep a miss under ${MAX_LOSS:.0f}.")
+        fc, fr = free_c(h), free_c(h, 'rest')
+        if fc or fr:
+            out.append(f"At {fc}c or less taken ({fr}c resting) the {side.lower()} would pay for it outright: no final loses.")
     if sell:
         out.append(f"Or SELL now at {sell['bid_c']}c: {engine.money(sell['pnl'])}.")
     out.append('Nothing is placed for you; you tap buy.')
-    return f'MIDDLE OPEN: {game_name}', '\n'.join(out)
+    return f"{'FREE MIDDLE' if m.get('tier') == 'free' else 'MIDDLE OPEN'}: {game_name}", '\n'.join(out)
 
 
 def check(desk, push=None, max_loss=MAX_LOSS):
@@ -209,11 +283,12 @@ def check(desk, push=None, max_loss=MAX_LOSS):
         last = held.get(h['ticker']) or {}
         if not m:
             continue
-        if last and m['slack_c'] < float(last.get('slack_c', 0)) + IMPROVE_C:
+        upgraded = m.get('tier') == 'free' and last.get('tier') != 'free'
+        if last and not upgraded and m['slack_c'] < float(last.get('slack_c', 0)) + IMPROVE_C:
             continue
         title, body = text(h, mine, m, sell_now(h, quotes[mine]), ev.get('sub_title') or ev.get('title') or h['event_ticker'])
         push(title, body, priority='high', tags='football')
-        held[h['ticker']] = dict(kind=m['kind'], strike=m['strike'], price_c=m['price_c'], slack_c=m['slack_c'], pairs=m['pairs'],
+        held[h['ticker']] = dict(tier=m.get('tier'), kind=m['kind'], strike=m['strike'], price_c=m['price_c'], slack_c=m['slack_c'], pairs=m['pairs'],
                                  at=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
         sent.append((title, body))
     return sent

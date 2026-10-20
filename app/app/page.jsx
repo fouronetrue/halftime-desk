@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { etDate, etDay, etTime, ago, phaseLabel, isHalfish, scoreMoved, spreadText } from '@/lib/desk';
-import { middleOpen } from '@/components/HeldTotals';
+import { middleOpen, freeOpen } from '@/components/HeldTotals';
 
 const SPORTS = [['all', 'All'], ['nfl', 'NFL'], ['cfb', 'College'], ['nba', 'NBA']];
 
@@ -159,7 +159,7 @@ export default function Today() {
       </header>
       {err && <p className="err">Could not load games: {err}</p>}
       {middleOpen(held).map((ev) => (
-        <p key={ev.game} className="openline"><b>Middle open</b> on your {ev.game} total. <Link href="/bets/" className="link">See Bets</Link></p>
+        <p key={ev.game} className="openline"><b>{freeOpen(ev) ? 'Free middle' : 'Middle open'}</b> on your {ev.game} total. <Link href="/bets/" className="link">See Bets</Link></p>
       ))}
       {half.length > 0 && <section><h2>At the half</h2>{half.map((g) => <GameCard key={g.id} g={g} sug={sugs[g.id]} big />)}</section>}
       {live.length > 0 && <section><h2>Live</h2>{live.map((g) => <GameCard key={g.id} g={g} />)}</section>}

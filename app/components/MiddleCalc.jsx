@@ -84,21 +84,25 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
       </div>
       {!r ? <p className="hint">{linesOk ? 'Enter both prices.' : 'The under line has to sit above the over line. Your prices and budget are kept.'}</p> : (
         <>
-          <p className={`mc-verdict ${r.verdict}`}>
-            <b>{r.verdict === 'play' ? 'Play' : r.verdict === 'thin' ? 'Thin play' : 'Pass'}</b>
+          <p className={`mc-verdict ${r.free ? 'free' : r.verdict}`}>
+            <b>{r.free ? 'Free roll' : r.verdict === 'play' ? 'Play' : r.verdict === 'thin' ? 'Thin play' : 'Pass'}</b>
             <span>All-in {(100 * r.c).toFixed(1)}c, breakeven {(100 * r.breakeven).toFixed(1)}c{moved ? ', at your prices' : ''}</span>
           </p>
           <p className="mc-big">{r.pairs}<small> shares each side</small></p>
+          <p className={`mc-miss ${r.lose < 0 ? 'neg' : 'pos'}`}>
+            <b>{r.lose < 0 ? `Miss ${money(r.lose)}` : r.lose > 0 ? `Miss wins ${money(r.lose)}` : 'Miss even'}</b> whichever side hits alone
+            {r.free ? '. No final loses.' : r.over > 0 ? `. Free at ${r.freeB}c on the under${r.freeB < Number(b) ? '' : ' (or less)'}.` : '.'}
+          </p>
           <dl className="mstats">
             <div><dt>Over leg</dt><dd>{money(r.dollarsA)}</dd></div>
             <div><dt>Under leg</dt><dd>{money(r.dollarsB)}</dd></div>
             <div><dt>Total in</dt><dd>{money(r.cost)}</dd></div>
-            <div><dt>Miss</dt><dd className={r.lose < 0 ? 'neg' : 'pos'}>{money(r.lose)}</dd></div>
             <div><dt>Hit</dt><dd className="pos">{money(r.win)}</dd></div>
+            <div><dt>Hit to miss</dt><dd>{r.lose < 0 ? `${(r.win / -r.lose).toFixed(1)} to 1` : 'lock'}</dd></div>
             <div><dt>{r.ev === null ? 'Need hit' : 'Edge a pair'}</dt><dd className={r.ev === null ? '' : r.ev >= 0.03 ? 'pos' : 'neg'}>{r.ev === null ? `${Math.max(0, 100 * r.over).toFixed(1)}%` : `${(100 * r.ev).toFixed(1)}c`}</dd></div>
           </dl>
           <p className="mc-note">
-            Over is {(100 * r.over).toFixed(1)}c a pair{r.fees ? `, fees ${money(r.fees)}` : ''}. If the over fills at {a}, the under can go to <b>{r.maxB}c</b> and stay inside breakeven. Never buy more under shares than over shares filled.
+            {r.over > 0 ? `A miss costs ${(100 * r.over).toFixed(1)}c a pair` : `A miss pays ${(-100 * r.over).toFixed(1)}c a pair`}{r.fees ? `, fees ${money(r.fees)} in` : ''}. If the over fills at {a}, the under can go to <b>{r.maxB}c</b> and stay inside breakeven. Never buy more under shares than over shares filled.
             {r.costCapped ? ` Held to the 7.5% cost cap (${money(maxCost)}).` : ''}
             {band ? ' A leg is outside the 15 to 85c band.' : ''}
           </p>
