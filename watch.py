@@ -238,18 +238,19 @@ class Desk:
                               under_take=r['under_take'], under_rest=r['under_rest']))
         store.write('quote_snapshots', snaps, on_conflict='taken_at,game_id,strike')
 
-    def claim_alert(self, ts, g, slot, kind, priority, title, body, ev):
+    def claim_alert(self, ts, g, slot, kind, priority, title, body, ev, sheet=None):
         """Reserve this game's slot in the alerts table before pushing, so the always-on worker and the GitHub
-        Actions backup never both push the same alert. False means the other one already did."""
+        Actions backup never both push the same alert. False means the other one already did. The row carries
+        the push's sheet (the plays at their prices and sizes), which is what the final grades."""
         return store.claim('alerts', dict(sent_at=now_iso(), game_id=g['id'], sport=g['sport'], slot=slot, kind=kind, priority=priority,
-                                          title=title, body=body, event_ticker=ev.get('event_ticker'), channels=None, suggestion_at=ts),
+                                          title=title, body=body, event_ticker=ev.get('event_ticker'), channels=None, suggestion_at=ts, sheet=sheet),
                            on_conflict='game_id,slot')
 
-    def db_alert(self, ts, g, slot, kind, priority, title, body, ev, sent):
+    def db_alert(self, ts, g, slot, kind, priority, title, body, ev, sent, sheet=None):
         if not store.enabled():
             return
         store.write('alerts', [dict(sent_at=now_iso(), game_id=g['id'], sport=g['sport'], slot=slot, kind=kind, priority=priority,
-                                    title=title, body=body, event_ticker=ev.get('event_ticker'), channels=', '.join(sent), suggestion_at=ts)],
+                                    title=title, body=body, event_ticker=ev.get('event_ticker'), channels=', '.join(sent), suggestion_at=ts, sheet=sheet)],
                     on_conflict='game_id,slot')
 
     def capture_pregame(self, g, rec):
@@ -423,8 +424,7 @@ class Desk:
         rec.setdefault('half_at', ts)
         self.log_row(g, rec, m, total, spread, quotes, sug, ev, ts)
         self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing)
-        if 'sheet' not in rec:
-            rec['sheet'] = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec)
+        sheet = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec)
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
         # polling allows), one the first time it is seen after the Q3 kick while the score is still the
         # halftime score (the moved-score check above already returned otherwise). A PLAY goes out whenever
@@ -439,39 +439,49 @@ class Desk:
         title = f"{head} ({when}, {g['sport'].upper()})"
         rp = self.cfg['read_push']
         read_pri = (rp.get(g['sport']) if isinstance(rp, dict) else ('default' if g['sport'] in rp else 'off')) or 'off'
+        sheet.update(slot=slot, kind='play' if plays else 'update', title=title)
         if plays:
             if remaining < 20:
                 text += f"\nDaily cap reached (${spent:.0f} suggested today): sizes above are scaled down."
             body = text + f"\n\n{ev.get('event_ticker')}"
-            if not self.claim_alert(ts, g, slot, 'play', 'high', title, body, ev):
+            if not self.claim_alert(ts, g, slot, 'play', 'high', title, body, ev, sheet):
                 slots[slot] = 'elsewhere'
                 rec['last_eval'] = now_iso()
                 return
             sent = notify.push(title, body, priority='high', tags='moneybag')
             slots[slot] = 'play'
             self.pushed.append(title)
-            self.db_alert(ts, g, slot, 'play', 'high', title, body, ev, sent)
+            self.db_alert(ts, g, slot, 'play', 'high', title, body, ev, sent, sheet)
+            # The game's record is the first PLAY push (the half, or Q3 when the half was a read). The alerts
+            # table holds the same for both watchers; these are the fallback when it cannot be reached.
+            rec.setdefault('play_sheet', sheet)
+            rec.setdefault('sheet', sheet)
             top = ([x for x in sug['mids'] if x['ok']][:1] or [x for x in sug['singles'] if x['ok']][:1])
             if top and not rec.get('counted_day'):
                 day[g['date_et']] = round(spent + top[0]['cost'], 2)
                 rec['counted_day'] = True
         elif read_pri != 'off':
             body = text + f"\n\n{ev.get('event_ticker')}"
-            if not self.claim_alert(ts, g, slot, 'update', read_pri, title, body, ev):
+            if not self.claim_alert(ts, g, slot, 'update', read_pri, title, body, ev, sheet):
                 slots[slot] = 'elsewhere'
                 rec['last_eval'] = now_iso()
                 return
             sent = notify.push(title, body, priority=read_pri)
             slots[slot] = 'read'
             self.pushed.append(title)
-            self.db_alert(ts, g, slot, 'update', read_pri, title, body, ev, sent)
+            self.db_alert(ts, g, slot, 'update', read_pri, title, body, ev, sent, sheet)
+            rec.setdefault('sheet', sheet)
         rec['last_eval'] = now_iso()
 
     def sheet(self, g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec=None):
         """What the first push said, kept so the final can grade it: cleared plays at their prices and sizes, the
         resting middle when nothing cleared (graded as a what-if), and the model and market fair lines."""
         singles, mid = engine.chosen(sug)
-        out = dict(at=now_iso(), total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2),
+        focus = g['sport'] in (self.cfg.get('middle_focus') or [])
+        # what the push led with, which is what the record grades as the play: the middle in a middle-focus
+        # sport whenever one cleared, otherwise the best single; a read has only the resting what-if
+        lead = 'mid' if (mid and (focus or not singles)) else 'single' if singles else 'rest'
+        out = dict(at=now_iso(), lead=lead, total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2),
                    mu_model=round(m.mu_model, 2), center=None if m.center is None else round(m.center, 2), center_w=m.center_w,
                    pace=(rec or {}).get('pace'),
                    fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev),
@@ -485,7 +495,6 @@ class Desk:
             # Football grades the best resting middle, as before. A middle-focus sport posts a tight one first and a
             # wide one second, so the what-if grades the tight one (rest_mid) and keeps the wide one (rest_mid_wide).
             mids = rp.get('middles') or []
-            focus = g['sport'] in (self.cfg.get('middle_focus') or [])
             rm = (mids[0] if mids else None) if focus else rp.get('middle')
             def rest_row(r):
                 return dict(a_line=r['a']['line'], a_price=r['a']['over_rest'], b_line=r['b']['line'], b_price=r['b']['under_rest'], pairs=r['pairs'],
@@ -496,36 +505,60 @@ class Desk:
                 out['rest_mid_wide'] = rest_row(mids[1])
         return out
 
+    def record_sheet(self, g, rec):
+        """The sheet the final grades: the first PLAY push for the game (the half, or Q3 when the half was a
+        read), else the first push of any kind. Read from the alerts table, which both watchers share and which
+        holds exactly what went out; an alert pushed before sheets were kept is rebuilt from its suggestions row.
+        Falls back to this watcher's own pushes when the table cannot be reached. None when nothing was pushed."""
+        if store.enabled():
+            alerts = store.read('alerts', {'select': 'kind,slot,sent_at,suggestion_at,sheet', 'game_id': f"eq.{g['id']}", 'order': 'sent_at'})
+            if alerts:
+                pick = next((a for a in alerts if a.get('kind') == 'play'), alerts[0])
+                sh = pick.get('sheet')
+                if not sh:
+                    sh = self.sheet_from_suggestion(g['id'], pick.get('suggestion_at'))
+                if sh:
+                    sh.setdefault('kind', pick.get('kind'))
+                    sh.setdefault('slot', pick.get('slot'))
+                    return sh
+        return rec.get('play_sheet') or rec.get('sheet')
+
+    def sheet_from_suggestion(self, game_id, taken_at):
+        """A sheet for a push that was sent before sheets were kept: the plays the push named, from the
+        suggestions row it came from (the first three cleared singles, one per line, and the best cleared middle)."""
+        if not taken_at:
+            return None
+        rows = store.read('suggestions', {'select': 'total,home_spread,half_away,half_home,mu,sd,fair_line,market_line,singles,mids',
+                                          'game_id': f'eq.{game_id}', 'taken_at': f'eq.{taken_at}', 'limit': 1})
+        if not rows:
+            return None
+        r = rows[0]
+        singles, mid = engine.chosen(dict(singles=r.get('singles') or [], mids=r.get('mids') or []))
+        out = dict(at=taken_at, lead='single' if singles else 'mid' if mid else 'rest', rebuilt=True,
+                   total=r.get('total'), spread=r.get('home_spread'), h1a=r.get('half_away'), h1h=r.get('half_home'),
+                   mu=r.get('mu'), sd=r.get('sd'), fair=r.get('fair_line'), mkt=r.get('market_line'),
+                   singles=[dict(kind=x['kind'], line=x['line'], price_c=x['price_c'], contracts=x['contracts'], cost=x['cost']) for x in singles],
+                   mid=None, rest_mid=None)
+        if mid:
+            out['mid'] = dict(a_line=mid['a']['line'], a_price=mid['a']['price_c'], b_line=mid['b']['line'], b_price=mid['b']['price_c'], pairs=mid['pairs'], cost=mid['cost'])
+        return out
+
     def settle(self, g, rec):
-        """Grade the sheet against the final score and append a row to log/results.csv."""
-        sh = rec.get('sheet')
-        if not sh or rec.get('settled') or g['state'] != 'post':
+        """Grade what was pushed against the final score: a row in log/results.csv and the results table."""
+        if rec.get('settled') or g['state'] != 'post' or not (rec.get('half_at') or rec.get('slots') or rec.get('sheet')):
+            return
+        sh = self.record_sheet(g, rec)
+        if not sh:
+            rec['settled'] = dict(at=now_iso(), nothing_pushed=True)
             return
         T = g['away']['score'] + g['home']['score']
-        # The push lists the best single first and the rest as backups, so only the first single counts as the play.
-        # The middle is an alternative structure and is graded on its own.
-        pnl, cost, detail = 0.0, 0.0, []
-        for i, s in enumerate(sh['singles']):
-            win = T > s['line'] if s['kind'] == 'over' else T < s['line']
-            p = (s['contracts'] - s['cost']) if win else -s['cost']
-            if i == 0:
-                pnl += p; cost += s['cost']
-            detail.append(f"{'' if i == 0 else 'alt '}{s['kind']} {s['line']:g}@{s['price_c']} {'W' if win else 'L'} {p:+.0f}")
-        m, mid_pnl = sh.get('mid'), ''
-        if m:
-            hit = m['a_line'] < T < m['b_line']
-            mid_pnl = round((2 * m['pairs'] - m['cost']) if hit else (m['pairs'] - m['cost']), 2)
-            detail.append(f"mid {m['a_line']:g}/{m['b_line']:g} {'HIT' if hit else 'miss'} {mid_pnl:+.0f}")
-        rm, rest_pnl = sh.get('rest_mid'), ''
-        if rm:
-            hit = rm['a_line'] < T < rm['b_line']
-            rest_pnl = round((2 * rm['pairs'] - rm['cost']) if hit else (rm['pairs'] - rm['cost']), 2)
+        gr = grade_sheet(sh, T)
         fair, mkt = sh.get('fair'), sh.get('mkt')
         row = [now_iso(), g['sport'], g['short'], g['date_et'], f"{sh['h1a']}-{sh['h1h']}", sh['total'], sh['spread'], fair, mkt,
                f"{g['away']['abbr']} {g['away']['score']}, {g['home']['abbr']} {g['home']['score']}", T,
                round(abs(T - fair), 1) if fair is not None else '', round(abs(T - mkt), 1) if mkt is not None else '',
-               len(sh['singles']) + (1 if m else 0), round(cost, 2), round(pnl, 2), mid_pnl, '; '.join(detail),
-               f"over {rm['a_line']:g}@{rm['a_price']} / under {rm['b_line']:g}@{rm['b_price']} x{rm['pairs']}" if rm else '', rest_pnl]
+               gr['n_plays'], gr['cost'], gr['pnl'], gr['mid_pnl'] if gr['mid_pnl'] is not None else '', gr['detail'],
+               gr['rest_text'], gr['rest_pnl'] if gr['rest_pnl'] is not None else '']
         os.makedirs(os.path.dirname(RESULTS_PATH), exist_ok=True)
         newfile = not os.path.exists(RESULTS_PATH)
         with open(RESULTS_PATH, 'a', newline='') as f:
@@ -533,13 +566,13 @@ class Desk:
             if newfile:
                 wr.writerow(RESULTS_COLUMNS)
             wr.writerow(row)
-        rec['settled'] = dict(at=now_iso(), final_total=T, plays_pnl=round(pnl, 2), mid_pnl=mid_pnl)
+        rec['settled'] = dict(at=now_iso(), final_total=T, plays_pnl=gr['pnl'], mid_pnl=gr['mid_pnl'])
         if store.enabled():
             # same row, same column names (settled_utc becomes settled_at), blanks become nulls, plus the graded sheet
             db = {('settled_at' if k == 'settled_utc' else 'date_et' if k == 'date' else k): (None if v == '' else v) for k, v in zip(RESULTS_COLUMNS, row)}
             db['game_id'], db['sheet'] = g['id'], sh
             store.write('results', [db], on_conflict='game_id')
-        print(f"settled {g['short']}: final {T}, fair {fair}, market {mkt}, single {pnl:+.0f}, middle {mid_pnl or 0:+.0f}")
+        print(f"settled {g['short']}: final {T}, fair {fair}, market {mkt}, play {gr['pnl']:+.0f}, middle {gr['mid_pnl'] or 0:+.0f}")
 
     def log_row(self, g, rec, m, total, spread, quotes, sug, ev, ts=None):
         os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
@@ -562,6 +595,39 @@ class Desk:
         cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=self.cfg['keep_days'])).isoformat()
         for k in [k for k, v in self.state['games'].items() if (v.get('last_seen') or '') < cutoff]:
             del self.state['games'][k]
+
+
+def grade_sheet(sh, T):
+    """Grade a push's sheet against the final total T. The play is what the push led with: the first single
+    (the rest are backups, one or the other, never a stack), or the middle when the push led with one. The
+    middle is also graded on its own, and a read's resting middle as a what-if. Same rule as app/lib/desk.js
+    gradeSheet(), so every screen and the results table agree."""
+    singles = sh.get('singles') or []
+    lead = sh.get('lead') or ('single' if singles else 'mid' if sh.get('mid') else 'rest')
+    detail, options = [], []
+    for i, x in enumerate(singles):
+        win = T > x['line'] if x['kind'] == 'over' else T < x['line']
+        p = round((x['contracts'] - x['cost']) if win else -x['cost'], 2)
+        options.append(dict(kind=x['kind'], line=x['line'], price_c=x['price_c'], contracts=x['contracts'], cost=x['cost'], win=win, pnl=p, play=i == 0 and lead == 'single'))
+        detail.append(f"{'' if i == 0 else 'alt '}{x['kind']} {x['line']:g}@{x['price_c']} {'W' if win else 'L'} {p:+.0f}")
+    m, mid_pnl, mid_hit = sh.get('mid'), None, None
+    if m:
+        mid_hit = m['a_line'] < T < m['b_line']
+        mid_pnl = round((2 * m['pairs'] - m['cost']) if mid_hit else (m['pairs'] - m['cost']), 2)
+        detail.append(f"mid {m['a_line']:g}/{m['b_line']:g} {'HIT' if mid_hit else 'miss'} {mid_pnl:+.0f}")
+    rm, rest_pnl, rest_hit = sh.get('rest_mid'), None, None
+    if rm:
+        rest_hit = rm['a_line'] < T < rm['b_line']
+        rest_pnl = round((2 * rm['pairs'] - rm['cost']) if rest_hit else (rm['pairs'] - rm['cost']), 2)
+    if lead == 'mid' and m:
+        pnl, cost, win = mid_pnl, round(m['cost'], 2), mid_hit
+    elif lead == 'single' and options:
+        pnl, cost, win = options[0]['pnl'], round(options[0]['cost'], 2), options[0]['win']
+    else:
+        pnl, cost, win = 0.0, 0.0, None
+    return dict(lead=lead, pnl=round(pnl, 2), cost=cost, win=win, options=options, mid_pnl=mid_pnl, mid_hit=mid_hit,
+                rest_pnl=rest_pnl, rest_hit=rest_hit, n_plays=len(singles) + (1 if m else 0), detail='; '.join(detail),
+                rest_text=f"over {rm['a_line']:g}@{rm['a_price']} / under {rm['b_line']:g}@{rm['b_price']} x{rm['pairs']}" if rm else '')
 
 
 def results_rows(path=RESULTS_PATH):

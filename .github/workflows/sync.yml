@@ -14,6 +14,10 @@ on:
         description: 'Load log/halftime_log.csv (the halftimes priced before the mirror existed) into Supabase'
         type: boolean
         default: false
+      regrade:
+        description: 'Regrade every settled game from what was actually pushed (scripts/regrade.py)'
+        type: boolean
+        default: false
 concurrency:
   group: portfolio-sync
   cancel-in-progress: false
@@ -42,3 +46,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: python scripts/backfill_logs.py
+      - name: Regrade from the pushes
+        if: ${{ inputs.regrade == true }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python scripts/regrade.py

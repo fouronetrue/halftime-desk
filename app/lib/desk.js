@@ -178,3 +178,55 @@ export function shellHeight({ vis, inner, large, standalone }) {
   }
   return Math.round(vis + delta);
 }
+
+// Grade a push's sheet against the final total, the same rule as watch.py grade_sheet(): the play is what the
+// push led with (the first single, or the middle when the push led with one), the other singles are backups
+// (one or the other, never a stack), the middle is also graded on its own, and a read's resting middle is a
+// what-if only. Every screen uses this so Alerts, Record and the results table agree.
+export function gradeSheet(sh, T) {
+  if (!sh || T === null || T === undefined) return null;
+  const singles = sh.singles || [];
+  const lead = sh.lead || (singles.length ? 'single' : sh.mid ? 'mid' : 'rest');
+  const options = singles.map((x, i) => {
+    const win = x.kind === 'over' ? T > Number(x.line) : T < Number(x.line);
+    const pnl = Math.round((win ? Number(x.contracts) - Number(x.cost) : -Number(x.cost)) * 100) / 100;
+    return { ...x, win, pnl, play: i === 0 && lead === 'single' };
+  });
+  let mid = null;
+  if (sh.mid) {
+    const m = sh.mid, hit = Number(m.a_line) < T && T < Number(m.b_line);
+    mid = { ...m, hit, pnl: Math.round((hit ? 2 * m.pairs - m.cost : m.pairs - m.cost) * 100) / 100 };
+  }
+  let rest = null;
+  if (sh.rest_mid) {
+    const m = sh.rest_mid, hit = Number(m.a_line) < T && T < Number(m.b_line);
+    rest = { ...m, hit, pnl: Math.round((hit ? 2 * m.pairs - m.cost : m.pairs - m.cost) * 100) / 100 };
+  }
+  let play = null;
+  if (lead === 'mid' && mid) play = { what: `Middle O${Number(mid.a_line)} at ${mid.a_price}c + U${Number(mid.b_line)} at ${mid.b_price}c, ${mid.pairs} pairs`, win: mid.hit, pnl: mid.pnl, cost: mid.cost, label: mid.hit ? 'HIT' : 'MISS' };
+  else if (lead === 'single' && options.length) {
+    const o = options[0];
+    play = { what: `${o.kind === 'over' ? 'Over' : 'Under'} ${Number(o.line)} at ${o.price_c}c, ${o.contracts} shares`, win: o.win, pnl: o.pnl, cost: o.cost, label: o.win ? 'WIN' : 'LOSS' };
+  }
+  return { lead, play, options, mid, rest, T };
+}
+
+// The plays a push named, for an alert sent before sheets were kept: the first three cleared singles (one per
+// line, best first) and the best cleared middle from its suggestions row. Mirrors engine.chosen().
+export function sheetFromSuggestion(s) {
+  if (!s) return null;
+  const seen = new Set(), singles = [];
+  for (const x of (s.singles || []).filter((x) => x.ok)) {
+    if (seen.has(Number(x.line))) continue;
+    seen.add(Number(x.line)); singles.push(x);
+    if (singles.length >= 3) break;
+  }
+  const m = (s.mids || []).find((x) => x.ok);
+  return {
+    rebuilt: true, lead: singles.length ? 'single' : m ? 'mid' : 'rest',
+    total: s.total, spread: s.home_spread, h1a: s.half_away, h1h: s.half_home, fair: s.fair_line, mkt: s.market_line,
+    singles: singles.map((x) => ({ kind: x.kind, line: x.line, price_c: x.price_c, contracts: x.contracts, cost: x.cost })),
+    mid: m ? { a_line: m.a.line, a_price: m.a.price_c, b_line: m.b.line, b_price: m.b.price_c, pairs: m.pairs, cost: m.cost } : null,
+    rest_mid: null,
+  };
+}

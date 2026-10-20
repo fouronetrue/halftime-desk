@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { money } from '@/lib/desk';
+import { gradeSheet, money } from '@/lib/desk';
 
 // Record: every halftime the desk graded, newest first, and how the P&L got where it is. Plays are graded at
 // the sizes the push suggested (the first single is the play, the rest are backups; a middle is graded on its
@@ -14,18 +14,11 @@ const num = (v) => (v === null || v === undefined || v === '' ? null : Number(v)
 const signed = (v) => `${v >= 0 ? '+' : '-'}$${Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 2)}`;
 
 function grade(r) {
-  const sh = r.sheet || {};
   const T = num(r.final_total);
-  const singles = (sh.singles || []).map((s, i) => {
-    const win = T === null ? null : s.kind === 'over' ? T > Number(s.line) : T < Number(s.line);
-    const pnl = win === null ? null : win ? Number(s.contracts) - Number(s.cost) : -Number(s.cost);
-    return { ...s, win, pnl, play: i === 0 };
-  });
-  const mid = sh.mid ? { ...sh.mid, hit: T === null ? null : Number(sh.mid.a_line) < T && T < Number(sh.mid.b_line), pnl: num(r.mid_pnl) } : null;
-  const rest = sh.rest_mid ? { ...sh.rest_mid, pnl: num(r.rest_mid_pnl), hit: T !== null && Number(sh.rest_mid.a_line) < T && T < Number(sh.rest_mid.b_line) } : null;
+  const g = gradeSheet(r.sheet || {}, T);
   const fair = num(r.fair), mkt = num(r.mkt);
   const closer = fair === null || mkt === null || T === null ? null : Math.abs(T - fair) < Math.abs(T - mkt) ? 'model' : Math.abs(T - fair) > Math.abs(T - mkt) ? 'market' : 'tie';
-  return { singles, mid, rest, T, fair, mkt, closer, played: singles.length > 0 || !!mid };
+  return { singles: g?.options || [], mid: g?.mid || null, rest: g?.rest || null, play: g?.play || null, lead: g?.lead, T, fair, mkt, closer, played: Boolean(g?.play) };
 }
 
 function Spark({ points }) {
@@ -76,10 +69,10 @@ export default function Record() {
   const shown = only === 'plays' ? inSport.filter(({ g }) => g.played) : inSport;
 
   // the scorecard, over the sport filter
-  const plays = inSport.filter(({ g }) => g.singles.length);
-  const wins = plays.filter(({ g }) => g.singles[0].win).length;
-  const cost = plays.reduce((s, { r }) => s + Number(r.plays_cost || 0), 0);
-  const pnl = plays.reduce((s, { r }) => s + Number(r.plays_pnl || 0), 0);
+  const plays = inSport.filter(({ g }) => g.play);
+  const wins = plays.filter(({ g }) => g.play.win).length;
+  const cost = plays.reduce((s, { g }) => s + Number(g.play.cost || 0), 0);
+  const pnl = plays.reduce((s, { g }) => s + Number(g.play.pnl || 0), 0);
   const mids = inSport.filter(({ g }) => g.mid);
   const midHits = mids.filter(({ g }) => g.mid.hit).length;
   const midPnl = mids.reduce((s, { g }) => s + (g.mid.pnl || 0), 0);
@@ -90,7 +83,7 @@ export default function Record() {
   const restHits = rests.filter(({ g }) => g.rest.hit).length;
   const youTotal = inSport.reduce((s, { r }) => s + (you[r.game_id] || 0), 0);
   const youCount = inSport.filter(({ r }) => you[r.game_id] !== undefined).length;
-  const curve = [...plays].reverse().reduce((acc, { r }) => { acc.push((acc[acc.length - 1] || 0) + Number(r.plays_pnl || 0)); return acc; }, []);
+  const curve = [...plays].reverse().reduce((acc, { g }) => { acc.push((acc[acc.length - 1] || 0) + Number(g.play.pnl || 0)); return acc; }, []);
 
   if (rows === null) return <main />;
   let lastDate = null;
@@ -134,9 +127,9 @@ export default function Record() {
           const head = date !== lastDate;
           lastDate = date;
           const day = head ? inSport.filter((x) => x.r.date_et === date) : [];
-          const dayPnl = day.reduce((s, x) => s + Number(x.r.plays_pnl || 0) + (x.g.mid?.pnl || 0), 0);
+          const dayPnl = day.reduce((s, x) => s + (x.g.play ? x.g.play.pnl : 0), 0);
           const dayPlays = day.filter((x) => x.g.played).length;
-          const play = g.singles[0];
+          const play = g.lead === 'single' ? g.singles[0] : null;
           const yours = you[r.game_id];
           return (
             <li key={r.game_id} className="recwrap">
@@ -160,7 +153,7 @@ export default function Record() {
                   )}
                   {g.mid && (
                     <span className={`call ${g.mid.hit ? 'win' : 'loss'}`}>
-                      <b>{g.mid.hit ? 'HIT' : 'MISS'}</b> Middle O{Number(g.mid.a_line)} at {g.mid.a_price}c + U{Number(g.mid.b_line)} at {g.mid.b_price}c, {g.mid.pairs} pairs
+                      <b>{g.mid.hit ? 'HIT' : 'MISS'}</b> Middle O{Number(g.mid.a_line)} at {g.mid.a_price}c + U{Number(g.mid.b_line)} at {g.mid.b_price}c, {g.mid.pairs} pairs{g.lead === 'mid' ? ' (the play)' : ''}
                       <em className={(g.mid.pnl || 0) >= 0 ? 'pos' : 'neg'}>{signed(g.mid.pnl || 0)}</em>
                     </span>
                   )}
@@ -168,9 +161,10 @@ export default function Record() {
                 {open === r.game_id && (
                   <div className="recmore">
                     <p>Pregame o/u {Number(r.total)}{r.home_spread !== null && r.home_spread !== undefined ? `, home ${Number(r.home_spread) > 0 ? '+' : ''}${Number(r.home_spread)}` : ''}. Model fair {g.fair}, Kalshi {g.mkt ?? 'n/a'}, final {g.T}: {g.closer === 'model' ? 'model closer' : g.closer === 'market' ? 'Kalshi closer' : g.closer === 'tie' ? 'tie' : 'no market line'}.</p>
-                    {g.singles.slice(1).map((s, i) => (
-                      <p key={i} className="alt">Backup {s.kind === 'over' ? 'over' : 'under'} {Number(s.line)} at {s.price_c}c would have {s.win ? 'won' : 'lost'} {signed(s.pnl)}.</p>
+                    {g.singles.filter((s) => !s.play).map((s, i) => (
+                      <p key={i} className="alt">{g.lead === 'mid' ? 'Single' : 'Backup'} {s.kind === 'over' ? 'over' : 'under'} {Number(s.line)} at {s.price_c}c would have {s.win ? 'won' : 'lost'} {signed(s.pnl)}.</p>
                     ))}
+                    {r.sheet?.rebuilt && <p className="alt">Graded from the prices the push was priced at (sent before sheets were kept).</p>}
                     {g.rest && <p className="alt">Resting middle O{Number(g.rest.a_line)} at {g.rest.a_price}c + U{Number(g.rest.b_line)} at {g.rest.b_price}c, {g.rest.pairs} pairs: {g.rest.hit ? 'final inside the window' : 'missed'}, {signed(g.rest.pnl || 0)} if both sides had filled.</p>}
                     {yours !== undefined && <p className="alt">You on this total, after fees: <b className={yours >= 0 ? 'pos' : 'neg'}>{signed(yours)}</b>.</p>}
                     <Link className="link" href={`/desk/?g=${r.game_id}`}>Open the desk as it was</Link>

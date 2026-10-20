@@ -140,6 +140,19 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .alert .grade.pos { color: var(--win); }
 .alert .grade.neg { color: var(--loss); }
 .alert pre { white-space: pre-wrap; font: 14px/1.45 var(--body); color: var(--chalk); margin: 10px 0; }
+.alert .grade.call { display: flex; flex-wrap: wrap; gap: 2px 6px; font: 500 14px/1.35 var(--body); color: var(--chalk); margin-top: 2px; }
+.alert .grade.call b { font: 700 12px/1.5 var(--cond); letter-spacing: 0.6px; padding: 0 6px; border-radius: 5px; background: var(--field-2); color: var(--dim); }
+.alert .grade.call.win b { background: var(--win); color: var(--sky); }
+.alert .grade.call.loss b { background: var(--loss); color: var(--chalk); }
+.alert.won { border-left: 3px solid var(--win); }
+.alert.lost { border-left: 3px solid var(--loss); }
+.gradelist { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); display: grid; gap: 6px; font-size: 14px; color: var(--chalk); }
+.gradelist li b { font: 700 12px/1.5 var(--cond); letter-spacing: 0.5px; padding: 0 6px; border-radius: 5px; background: var(--field-2); color: var(--dim); margin-right: 4px; text-transform: uppercase; }
+.gradelist li.win b { background: var(--win); color: var(--sky); }
+.gradelist li.loss b { background: var(--loss); color: var(--chalk); }
+.gradelist li.alt { color: var(--dim); }
+.gradelist li.alt b { background: transparent; border: 1px solid var(--line); }
+.gradelist li.note { font-size: 12px; }
 .fills li { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; padding: 10px 0; border-top: 1px solid var(--line); }
 .fills .tk { font: 600 15px var(--cond); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fills .amt { font: 700 17px var(--cond); text-align: right; }

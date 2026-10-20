@@ -75,6 +75,9 @@ for gid, (sp, aw, hm, ev, d) in {'g6': ('cfb', 'PSU', 'MICH', 'KXNCAAFTOTAL-26OC
                                    'g8': ('nfl', 'LAC', 'KC', 'KXNFLTOTAL-26OCT19LACKC', yday), 'g9': ('cfb', 'FRES', 'SDSU', 'KXNCAAFTOTAL-26OCT18FRESSDSU', sat),
                                    'g10': ('nfl', 'BUF', 'LV', 'KXNFLTOTAL-26OCT19BUFLV', yday)}.items():
     T['games'].append(game(gid, sp, aw, hm, aw, hm, 'post', kalshi_total_event=ev, date_et=d, status='STATUS_FINAL'))
+# finals the mock alerts grade against: g8 34 (all three unders win), g6 72 (over 69.5 wins, the backups lose), g9 48 (middle hits), g7 55 (over 62.5 loses)
+for gid, (fa, fh) in {'g8': (18, 16), 'g6': (34, 38), 'g9': (24, 24), 'g7': (38, 17), 'g10': (33, 30)}.items():
+    g = next(x for x in T['games'] if x['id'] == gid); g.update(final_away=fa, final_home=fh, away_score=fa, home_score=fh)
 
 g1_sug = dict(taken_at=ago(0), game_id='g1', sport='nfl', game='BUF @ LAR', date_et=today, event_ticker='KXNFLTOTAL-26OCT20BUFLAR', phase='half', total=55.5, home_spread=-3.5,
               half_away=13, half_home=7, away_score=13, home_score=7, mu=27.4, sd=10.2, fair_line=47.5, market_line=45.5,
@@ -87,7 +90,10 @@ g2_sug = dict(g1_sug, taken_at=ago(6), game_id='g2', sport='cfb', game='UTAH @ C
               n_plays=1, singles=[single('under', 35.5, 27, 88, 0.107)], mids=[mid(32.5, 60, 38.5, 42, 60, 0.012, ok=False)])
 g5_sug = dict(g1_sug, taken_at=ago(188), game_id='g5', sport='nfl', game='DAL @ GB', date_et=yday, event_ticker='KXNFLTOTAL-26OCT19DALGB', total=47.5, home_spread=-6.5,
               half_away=0, half_home=17, away_score=0, home_score=17, fair_line=42.5, market_line=45.0, n_plays=2, singles=[single('under', 43.5, 44, 147, 0.052)], mids=[])
-T['suggestions'] = [g1_sug, g2_sug, g5_sug]
+g7_sug = dict(g1_sug, taken_at=ago(2200), game_id='g7', sport='cfb', game='TULN @ RICE', date_et=sat, event_ticker='KXNCAAFTOTAL-26OCT18TULNRICE', total=63.5, home_spread=6.5,
+              half_away=21, half_home=17, away_score=21, home_score=17, fair_line=66.5, market_line=60.5, n_plays=1,
+              singles=[single('over', 62.5, 51, 187, 0.04), single('over', 65.5, 40, 150, 0.01, ok=False)], mids=[])
+T['suggestions'] = [g1_sug, g2_sug, g5_sug, g7_sug]
 T['quote_snapshots'] = quotes('g1', g1_sug['taken_at'], 47.5, {39.5: (74, 78, 21, 25), 42.5: (56, 59, 40, 44), 45.5: (44, 47, 52, 56), 48.5: (33, 37, 61, 65),
                                                                  51.5: (24, 28, 70, 74), 54.5: (13, 17, 81, 85)}, 'KXNFLTOTAL-26OCT20BUFLAR')
 T['desk_state'] = [
@@ -145,17 +151,26 @@ T['results'] = [
            [], m=dict(a_line=45.5, a_price=55, b_line=50.5, b_price=52, pairs=120, cost=129.9), settled_min=1950),
     result('g7', 'cfb', 'TULN @ RICE', sat, '21-17', 63.5, 6.5, 66.5, 60.5, 'TULN 28, RICE 24', 52, [S('over', 62.5, 48, 187)], settled_min=2100),
 ]
+def psheet(lead, singles, mid=None, rest=None, **kw):
+    return dict(lead=lead, singles=singles, mid=mid, rest_mid=rest, total=kw.get('total', 47.5), spread=kw.get('spread', -3.5), h1a=kw.get('h1a', 3), h1h=kw.get('h1h', 3), fair=kw.get('fair', 42.5), mkt=kw.get('mkt', 44.5))
 T['alerts'] = [
-    dict(id=5, sent_at=ago(3), game_id='g1', sport='nfl', slot='half', kind='play', priority='high', title='PLAY: Bills 13, Rams 7 (half, NFL)',
-         body='Bills 13, Rams 7 at the half. Pregame o/u 55.5, Rams -3.5. Fair 47.5, Kalshi 45.5.\n\nBuy OVER 42.5 for $73 at 59c (-144), 121 shares. Best.\n\nMIDDLE: Buy OVER 42.5 at 59c (118 shares for $70) + UNDER 48.5 at 45c (118 shares for $53). Final 43 to 48 wins both, +$113; any other final, -$5.\n\nKXNFLTOTAL-26OCT20BUFLAR', event_ticker='KXNFLTOTAL-26OCT20BUFLAR', channels='ntfy', suggestion_at=ago(3)),
-    dict(id=4, sent_at=ago(19), game_id='g2', sport='cfb', slot='half', kind='update', priority='default', title='UPDATE: Utah 13, Colorado 0 (half, CFB)',
-         body='POSSIBLE MIDDLE (post as limit orders): OVER 32.5 at 58c (60 shares for $35) + UNDER 38.5 at 40c (60 shares for $24).\n\nKXNCAAFTOTAL-26OCT20UTAHCOLO', event_ticker='KXNCAAFTOTAL-26OCT20UTAHCOLO', channels='ntfy', suggestion_at=ago(19)),
-    dict(id=3, sent_at=ago(300), game_id='g5', sport='nfl', slot='half', kind='play', priority='high', title='PLAY: Cowboys 0, Packers 17 (half, NFL)',
-         body='Buy UNDER 43.5 for $65 at 44c (+127), 147 shares.\n\nKXNFLTOTAL-26OCT19DALGB', event_ticker='KXNFLTOTAL-26OCT19DALGB', channels='ntfy', suggestion_at=ago(300)),
-    dict(id=2, sent_at=ago(2010), game_id='g9', sport='cfb', slot='q3', kind='play', priority='high', title='PLAY: FRES 10, SDSU 14 (Q3, CFB)',
-         body='MIDDLE: Buy OVER 45.5 at 55c + UNDER 50.5 at 52c, 120 shares each.\n\nKXNCAAFTOTAL-26OCT18FRESSDSU', event_ticker='KXNCAAFTOTAL-26OCT18FRESSDSU', channels='ntfy', suggestion_at=ago(2010)),
+    dict(id=6, sent_at=ago(3), game_id='g1', sport='nfl', slot='half', kind='play', priority='high', title='PLAY: Bills 13, Rams 7 (half, NFL)',
+         body='Bills 13, Rams 7 at the half. Pregame o/u 55.5, Rams -3.5. Fair 47.5, Kalshi 45.5.\n\nBuy OVER 42.5 for $73 at 59c (-144), 121 shares. Best.\n\nKXNFLTOTAL-26OCT20BUFLAR', event_ticker='KXNFLTOTAL-26OCT20BUFLAR', channels='ntfy', suggestion_at=ago(3),
+         sheet=psheet('single', [S('over', 42.5, 59, 121)], total=55.5, h1a=13, h1h=7, fair=47.5, mkt=45.5)),
+    dict(id=5, sent_at=ago(300), game_id='g8', sport='nfl', slot='half', kind='play', priority='high', title='PLAY: Cardinals 3, Rams 3 (half, NFL)',
+         body='Fair total 30.5. No strong lean.\n\nBuy UNDER 37.5 for $90 at 17c (+488)\nBuy UNDER 40.5 for $90 at 27c (+270)\nBuy UNDER 43.5 for $90 at 35c (+186)\nBest first. The others are backups if that price is gone, not a stack.\n\nKXNFLTOTAL-26OCT19LACKC', event_ticker='KXNFLTOTAL-26OCT19LACKC', channels='ntfy', suggestion_at=ago(300),
+         sheet=psheet('single', [S('under', 37.5, 17, 529), S('under', 40.5, 27, 333), S('under', 43.5, 35, 257)], total=41.5, fair=30.5, mkt=38.5)),
+    dict(id=4, sent_at=ago(2000), game_id='g6', sport='cfb', slot='q3', kind='play', priority='high', title='PLAY: Navy 20, UTSA 21 (Q3, CFB)',
+         body='Fair total 72.5. No strong lean.\n\nBuy OVER 69.5 for $68 at 48c (+108)\nBuy OVER 72.5 for $49 at 39c (+156)\nBuy OVER 78.5 for $36 at 22c (+355)\nBest first. The others are backups if that price is gone, not a stack.\n\nKXNCAAFTOTAL-26OCT18PSUMICH', event_ticker='KXNCAAFTOTAL-26OCT18PSUMICH', channels='ntfy', suggestion_at=ago(2000),
+         sheet=psheet('single', [S('over', 69.5, 48, 141), S('over', 72.5, 39, 125), S('over', 78.5, 22, 163)], total=66, h1a=20, h1h=21, fair=72.5, mkt=70.5)),
+    dict(id=3, sent_at=ago(2010), game_id='g6', sport='cfb', slot='half', kind='update', priority='default', title='UPDATE: Navy 20, UTSA 21 (half, CFB)',
+         body='Nothing clears the 3c edge.\n\nPOSSIBLE MIDDLE (post as limit orders): OVER 66.5 at 55c + UNDER 72.5 at 52c, 60 shares each.\n\nKXNCAAFTOTAL-26OCT18PSUMICH', event_ticker='KXNCAAFTOTAL-26OCT18PSUMICH', channels='ntfy', suggestion_at=ago(2010),
+         sheet=psheet('rest', [], rest=dict(a_line=66.5, a_price=55, b_line=72.5, b_price=52, pairs=60, cost=64.2), total=66, h1a=20, h1h=21, fair=72.5, mkt=70.5)),
+    dict(id=2, sent_at=ago(2100), game_id='g9', sport='cfb', slot='half', kind='play', priority='high', title='PLAY: FRES 10, SDSU 14 (half, CFB)',
+         body='MIDDLE: Buy OVER 45.5 at 55c + UNDER 50.5 at 52c, 120 shares each.\n\nKXNCAAFTOTAL-26OCT18FRESSDSU', event_ticker='KXNCAAFTOTAL-26OCT18FRESSDSU', channels='ntfy', suggestion_at=ago(2100),
+         sheet=psheet('mid', [], mid=dict(a_line=45.5, a_price=55, b_line=50.5, b_price=52, pairs=120, cost=129.9), total=51.5, h1a=10, h1h=14, fair=48.5, mkt=49.5)),
     dict(id=1, sent_at=ago(2200), game_id='g7', sport='cfb', slot='half', kind='play', priority='high', title='PLAY: TULN 21, RICE 17 (half, CFB)',
-         body='Buy OVER 62.5 for $90 at 48c, 187 shares.\n\nKXNCAAFTOTAL-26OCT18TULNRICE', event_ticker='KXNCAAFTOTAL-26OCT18TULNRICE', channels='ntfy', suggestion_at=ago(2200)),
+         body='Buy OVER 62.5 for $90 at 51c, 187 shares.\n\nKXNCAAFTOTAL-26OCT18TULNRICE', event_ticker='KXNCAAFTOTAL-26OCT18TULNRICE', channels='ntfy', suggestion_at=ago(2200), sheet=None),
 ]
 
 
@@ -272,6 +287,13 @@ def main(only=None):
                 page.screenshot(path=os.path.join(OUT, f'{name}-tall.png'))   # the whole screen, for review
                 page.set_viewport_size({'width': 390, 'height': 844})
                 print(f'{name}: {shot}')
+            if only in (None, 'alerts'):   # Alerts with the three-unders push and the Navy push open
+                page.goto(f'http://localhost:{PORT}/alerts/', wait_until='domcontentloaded'); page.wait_for_timeout(2500)
+                page.get_by_role('button', name=re.compile('Cardinals 3, Rams 3')).click(); page.wait_for_timeout(300)
+                page.get_by_role('button', name=re.compile('Navy 20, UTSA 21 \\(Q3')).click(); page.wait_for_timeout(300)
+                page.set_viewport_size({'width': 390, 'height': 2400}); page.wait_for_timeout(300)
+                page.screenshot(path=os.path.join(OUT, 'alerts-open.png'))
+                page.set_viewport_size({'width': 390, 'height': 844})
             if only in (None, 'record'):   # the Record screen with a row open and with every half shown
                 page.goto(f'http://localhost:{PORT}/record/', wait_until='load')
                 page.wait_for_timeout(2500)

@@ -28,7 +28,13 @@ how many shares or pairs, and the resting limits for every strike near fair.
    The priority of an UPDATE comes from `read_push` per sport; a PLAY is always high priority.
 4. Logs every priced halftime to `log/halftime_log.csv`, and when the game goes final grades what the first push
    said against the final total in `log/results.csv` (first single, middle, and the what-if resting middle),
-   plus the model's fair line against the market's. `python watch.py --scorecard` prints the season to date;
+   plus the model's fair line against the market's. What is graded is what was pushed: every push carries its
+   sheet (the plays at their prices and sizes) on its row in the `alerts` table, and the game's record is the
+   first PLAY push (the half, or Q3 when the half was a read), else the first push's resting what-if. The play
+   is what the push led with: the first single (the rest are backups, one or the other, never a stack) or the
+   middle when the push led with one. Both watchers grade that same push, so a watcher that saw the game
+   late never overwrites the record with an empty sheet. `scripts/regrade.py` (the `regrade` input on the
+   portfolio sync workflow) rebuilds every settled game from its pushes. `python watch.py --scorecard` prints the season to date;
    every run prints it too. Both files and `state.json` are committed back to the repo by
    `scripts/save_run.py`, which appends the run's CSV rows to whatever is on main and takes `state.json`
    whole, so a run can never commit a merge conflict into the log.
@@ -69,7 +75,7 @@ how many shares or pairs, and the resting limits for every strike near fair.
 
 ## Supabase (optional, 10 minutes)
 1. Create a free project at supabase.com. In the SQL Editor paste `supabase/schema.sql` and run it, then
-   `002_week2.sql` and `003_live_score.sql` in order (all safe to run again). Every table has row level
+   `002_week2.sql`, `003_live_score.sql` and `004_alert_sheet.sql` in order (all safe to run again). Every table has row level
    security on; the app reads as a signed-in user and only the secret key can write.
 2. Settings > API Keys: copy the project URL and the **secret** key (`sb_secret_...`). Add two repository secrets:
    `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. The publishable key is for the app later, not for the worker.
