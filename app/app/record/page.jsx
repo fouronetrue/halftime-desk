@@ -18,7 +18,7 @@ function grade(r) {
   const g = gradeSheet(r.sheet || {}, T);
   const fair = num(r.fair), mkt = num(r.mkt);
   const closer = fair === null || mkt === null || T === null ? null : Math.abs(T - fair) < Math.abs(T - mkt) ? 'model' : Math.abs(T - fair) > Math.abs(T - mkt) ? 'market' : 'tie';
-  return { singles: g?.options || [], mid: g?.mid || null, rest: g?.rest || null, play: g?.play || null, lead: g?.lead, T, fair, mkt, closer, played: Boolean(g?.play) };
+  return { singles: g?.options || [], mid: g?.mid || null, rev: g?.rev || null, rest: g?.rest || null, play: g?.play || null, lead: g?.lead, T, fair, mkt, closer, played: Boolean(g?.play) };
 }
 
 function Spark({ points }) {
@@ -148,13 +148,19 @@ export default function Record() {
                       <b>{play.win ? 'WIN' : 'LOSS'}</b> {play.kind === 'over' ? 'Over' : 'Under'} {Number(play.line)} at {play.price_c}c, {play.contracts} shares
                       <em className={play.pnl >= 0 ? 'pos' : 'neg'}>{signed(play.pnl)}</em>
                     </span>
-                  ) : g.mid ? null : (
+                  ) : g.mid || g.rev ? null : (
                     <span className="call none">No play. Fair {g.fair}, Kalshi {g.mkt ?? 'n/a'}.</span>
                   )}
                   {g.mid && (
                     <span className={`call ${g.mid.hit ? 'win' : 'loss'}`}>
                       <b>{g.mid.hit ? 'HIT' : 'MISS'}</b> Middle O{Number(g.mid.a_line)} at {g.mid.a_price}c + U{Number(g.mid.b_line)} at {g.mid.b_price}c, {g.mid.pairs} pairs{g.lead === 'mid' ? ' (the play)' : ''}
                       <em className={(g.mid.pnl || 0) >= 0 ? 'pos' : 'neg'}>{signed(g.mid.pnl || 0)}</em>
+                    </span>
+                  )}
+                  {g.rev && (
+                    <span className={`call ${g.rev.hole ? 'loss' : 'win'}`}>
+                      <b>{g.rev.hole ? 'HOLE' : 'WIN'}</b> Reverse U{Number(g.rev.a_line)} at {g.rev.a_price}c + O{Number(g.rev.b_line)} at {g.rev.b_price}c, {g.rev.pairs} pairs{g.lead === 'rev' ? ' (the play)' : ''}
+                      <em className={(g.rev.pnl || 0) >= 0 ? 'pos' : 'neg'}>{signed(g.rev.pnl || 0)}</em>
                     </span>
                   )}
                 </button>

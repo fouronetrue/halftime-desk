@@ -93,6 +93,47 @@ export function middle(over, under, sport, sizing, pMidOverride) {
   };
 }
 
+// Price a reverse middle from two ladder rows, the way engine.suggest() scores one: under = the row bought NO
+// (the lower strike), over = the row bought YES (the higher one). One leg pays on any final outside the hole
+// between them, both lose inside it, so the edge a pair is 1 minus cost minus P(hole), the same numbers the
+// middle wins on. Sized as one bet: quarter Kelly on the pair with the hole loss as the risk, under the single
+// caps (max_risk, max_cost), never the middle's loss cap.
+export function reverse(under, over, sport, sizing, pHoleOverride) {
+  if (!under || !over || !(over.strike > under.strike)) return null;
+  const a = under.no_ask, b = over.yes_ask;
+  if (!a || !b) return { missing: true };
+  const pa = a / 100, pb = b / 100;
+  const c = pa + feePer(pa) + pb + feePer(pb);
+  const numbers = Math.round(over.strike - under.strike);
+  const pModel = Math.max(0, under.p_over - over.p_over - over.p_push);
+  const pHole = pHoleOverride ?? pModel;
+  const ev = 1 - c - pHole;
+  const breakeven = 1 - pHole - 0.03;                     // the most a pair may cost, fees in, to clear the 3c margin
+  const bankroll = Number(sizing?.bankroll || 0), maxRisk = Number(sizing?.max_risk || 0), maxCost = Number(sizing?.max_cost || 0);
+  let pairs = 0;
+  if (ev >= 0.03 - 1e-9 && c < 1) {
+    const f = Math.max(0, 0.25 * ev / (1 - c));
+    pairs = Math.min(Math.floor(Math.min(f * bankroll, maxRisk) / c + 1e-9), Math.floor(maxCost / c + 1e-9));
+  }
+  const ok = pairs >= 1;
+  const cost = pairs ? Math.round((pairs * (pa + pb) + orderFee(pairs, pa) + orderFee(pairs, pb)) * 100) / 100 : 0;
+  return {
+    kind: 'rev', a, b, c, numbers, breakeven, pHole, pModel, pairs, cost, ev, ok,
+    lo: under.strike + 0.5, hi: over.strike - 0.5,
+    win: Math.round((pairs - cost) * 100) / 100,
+    lose: Math.round(-cost * 100) / 100,
+    under: c < breakeven,
+  };
+}
+
+// The same reverse middle at a share count you pick: the win is one leg paid, the loss is the whole pair.
+export function reverseAt(r, pairs) {
+  const pa = r.a / 100, pb = r.b / 100;
+  const n = Math.max(0, Math.floor(Number(pairs) || 0));
+  const cost = n ? Math.round((n * (pa + pb) + orderFee(n, pa) + orderFee(n, pb)) * 100) / 100 : 0;
+  return { pairs: n, cost, win: Math.round((n - cost) * 100) / 100, lose: Math.round(-cost * 100) / 100, dollarsA: Math.round(n * pa * 100) / 100, dollarsB: Math.round(n * pb * 100) / 100 };
+}
+
 export function seriesOf(eventTicker) {
   return (eventTicker || '').split('-')[0].toLowerCase();
 }
@@ -197,6 +238,12 @@ export function gradeSheet(sh, T) {
     const m = sh.mid, hit = Number(m.a_line) < T && T < Number(m.b_line);
     mid = { ...m, hit, pnl: Math.round((hit ? 2 * m.pairs - m.cost : m.pairs - m.cost) * 100) / 100 };
   }
+  // the reverse middle: one leg pays on any final outside the hole (a_line is the under's strike, b_line the over's), both lose inside it
+  let rev = null;
+  if (sh.rev) {
+    const m = sh.rev, hole = Number(m.a_line) < T && T < Number(m.b_line);
+    rev = { ...m, hole, pnl: Math.round((hole ? -m.cost : m.pairs - m.cost) * 100) / 100 };
+  }
   let rest = null;
   if (sh.rest_mid) {
     const m = sh.rest_mid, hit = Number(m.a_line) < T && T < Number(m.b_line);
@@ -207,8 +254,8 @@ export function gradeSheet(sh, T) {
   else if (lead === 'single' && options.length) {
     const o = options[0];
     play = { what: `${o.kind === 'over' ? 'Over' : 'Under'} ${Number(o.line)} at ${o.price_c}c, ${o.contracts} shares`, win: o.win, pnl: o.pnl, cost: o.cost, label: o.win ? 'WIN' : 'LOSS' };
-  }
-  return { lead, play, options, mid, rest, T };
+  } else if (lead === 'rev' && rev) play = { what: `Reverse middle U${Number(rev.a_line)} at ${rev.a_price}c + O${Number(rev.b_line)} at ${rev.b_price}c, ${rev.pairs} pairs`, win: !rev.hole, pnl: rev.pnl, cost: rev.cost, label: rev.hole ? 'HOLE' : 'WIN' };
+  return { lead, play, options, mid, rev, rest, T };
 }
 
 // The plays a push named, for an alert sent before sheets were kept: the first three cleared singles (one per

@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { ago, etTime, gradeSheet, sheetFromSuggestion } from '@/lib/desk';
 
 // Every push, graded on its own text. A PLAY is graded on what it led with (the first single, or the middle when
-// it led with one); the other lines in the push are backups and are graded as what they would have done. An
+// it led with one, or the reverse middle when it was all that cleared); the other lines in the push are backups and are graded as what they would have done. An
 // UPDATE named no play, so it shows the final and nothing else. The grade comes from the push's own sheet
 // (alerts.sheet), rebuilt from its suggestions row for pushes sent before sheets were kept.
 const signed = (v) => `${v >= 0 ? '+' : '-'}$${Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 2)}`;
@@ -35,6 +35,9 @@ function Detail({ a, g, final }) {
       ))}
       {g.mid && (
         <li className={g.mid.hit ? 'win' : 'loss'}><b>{g.mid.hit ? 'HIT' : 'MISS'}</b> Middle O{Number(g.mid.a_line)} at {g.mid.a_price}c + U{Number(g.mid.b_line)} at {g.mid.b_price}c, {g.mid.pairs} pairs: {signed(g.mid.pnl)}.{g.lead === 'mid' ? ' The play.' : ' Alternative to the single, not on top of it.'}</li>
+      )}
+      {g.rev && (
+        <li className={g.rev.hole ? 'loss' : 'win'}><b>{g.rev.hole ? 'HOLE' : 'WIN'}</b> Reverse middle U{Number(g.rev.a_line)} at {g.rev.a_price}c + O{Number(g.rev.b_line)} at {g.rev.b_price}c, {g.rev.pairs} pairs: {signed(g.rev.pnl)}.{g.lead === 'rev' ? ' The play.' : ' Alternative to the above, not on top of it.'}</li>
       )}
       {g.rest && (
         <li className="alt"><b>what-if</b> Resting middle O{Number(g.rest.a_line)} at {g.rest.a_price}c + U{Number(g.rest.b_line)} at {g.rest.b_price}c: {g.rest.hit ? 'final inside the window' : 'missed'}, {signed(g.rest.pnl)} if both sides had filled.</li>
