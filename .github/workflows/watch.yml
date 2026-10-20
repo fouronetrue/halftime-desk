@@ -1,16 +1,18 @@
 name: halftime watch
 on:
   schedule:
-    - cron: '*/5 23 * * 4'
-    - cron: '*/5 0-3 * * 5'
-    - cron: '*/5 23 * * 5'
-    - cron: '*/5 0-3 * * 6'
-    - cron: '*/5 15-23 * * 6'
-    - cron: '*/5 0-4 * * 0'
-    - cron: '*/5 16-23 * * 0'
-    - cron: '*/5 0-4 * * 1'
-    - cron: '*/5 23 * * 1'
-    - cron: '*/5 0-4 * * 2'
+    # Every 5 minutes through each game window, UTC. The windows run late enough to see West Coast finals
+    # (a 10:30 PM ET kick ends around 06:00 UTC, a Hawaii home game around 07:30), so the backup can grade them.
+    - cron: '*/5 23 * * 4'      # Thursday night (TNF, Thursday CFB)
+    - cron: '*/5 0-6 * * 5'
+    - cron: '*/5 23 * * 5'      # Friday night CFB
+    - cron: '*/5 0-6 * * 6'
+    - cron: '*/5 15-23 * * 6'   # Saturday CFB
+    - cron: '*/5 0-8 * * 0'
+    - cron: '*/5 16-23 * * 0'   # Sunday NFL
+    - cron: '*/5 0-5 * * 1'
+    - cron: '*/5 23 * * 1'      # Monday night, doubleheaders included
+    - cron: '*/5 0-6 * * 2'
   workflow_dispatch:
 concurrency:
   group: halftime-watch
@@ -36,9 +38,9 @@ jobs:
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
         run: python watch.py
       - name: Save state and log
+        # Re-applies this run's rows on top of whatever is on main now; never commits a merge conflict.
+        if: ${{ !cancelled() }}
         run: |
           git config user.name "halftime-desk bot"
           git config user.email "bot@users.noreply.github.com"
-          git pull --rebase --autostash -q || true
-          mkdir -p log && git add state.json log
-          git diff --cached --quiet || (git commit -q -m "state $(date -u +%FT%TZ)" && git push -q)
+          python scripts/save_run.py ${{ github.sha }}
