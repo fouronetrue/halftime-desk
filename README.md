@@ -25,14 +25,27 @@ how many shares or pairs, and the resting limits for every strike near fair.
    - UPDATE body: `POSSIBLE MIDDLE (post as limit orders):` with the most you should pay on each side for the
      pair to still carry the edge, shares and dollars, and what happens if both fill. If they don't fill, you
      didn't want it.
+   - `REVERSE MIDDLE:` when the ladder prices the numbers between two strikes too dear: NO on the lower strike
+     plus YES on the higher one, one leg pays on any final outside that hole, both lose inside it. The edge a
+     pair is 1 minus the pair cost minus P(hole), the mirror of the middle's rule, and it is the two legs'
+     single edges added together: a reverse that clears is two cheap wings, sized as one bet (quarter Kelly
+     on the pair, the hole as the risk, under the single caps). It follows the singles and the middle
+     (instead of, not on top) and leads the push only when it is all that cleared. Expect it rarely; the
+     stale wings that feed middles run the other way.
+   - `YOU HOLD Over 44.5, 100 sh at 48c. Fair now 61c.` when you own a side of this total (from the Kalshi
+     sync): the bid against fair with a SELL or HOLD verdict and both numbers; `PAIR IT:` the other side
+     beyond your strike when it clears as a single (your shares, the three finals in dollars); `LAY OFF:` the
+     other side short of your strike when it clears (a reverse on the leg you own); `FREE:` the completion
+     your leg pays for outright, with that leg's own edge, which can be negative. On a read with something to
+     do the block goes first and the push is high priority whatever `read_push` says.
    The priority of an UPDATE comes from `read_push` per sport; a PLAY is always high priority.
 4. Logs every priced halftime to `log/halftime_log.csv`, and when the game goes final grades what the first push
-   said against the final total in `log/results.csv` (first single, middle, and the what-if resting middle),
+   said against the final total in `log/results.csv` (first single, middle, reverse middle, and the what-if resting middle),
    plus the model's fair line against the market's. What is graded is what was pushed: every push carries its
    sheet (the plays at their prices and sizes) on its row in the `alerts` table, and the game's record is the
    first PLAY push (the half, or Q3 when the half was a read), else the first push's resting what-if. The play
-   is what the push led with: the first single (the rest are backups, one or the other, never a stack) or the
-   middle when the push led with one. Both watchers grade that same push, so a watcher that saw the game
+   is what the push led with: the first single (the rest are backups, one or the other, never a stack), the
+   middle when the push led with one, or the reverse middle when it was all that cleared. Both watchers grade that same push, so a watcher that saw the game
    late never overwrites the record with an empty sheet. `scripts/regrade.py` (the `regrade` input on the
    portfolio sync workflow) rebuilds every settled game from its pushes. `python watch.py --scorecard` prints the season to date;
    every run prints it too. Both files and `state.json` are committed back to the repo by
@@ -42,7 +55,8 @@ how many shares or pairs, and the resting limits for every strike near fair.
    `poll_seconds` for up to `max_poll_minutes`, so a 5-minute cron still covers the whole halftime window.
 6. With Supabase keys set, everything above also lands in Supabase as it happens: `games`, `quote_snapshots`
    (every strike's bid and ask next to the model's number, every poll), `suggestions` (with the live score it
-   was priced at) and `alerts` (the exact push text) and `results`. The CSVs stay the source of truth; a
+   was priced at, the ranked singles, middles and reverse middles, and what you held with the verdicts;
+   `supabase/005_reverse.sql` adds the last two columns), `alerts` (the exact push text) and `results`. The CSVs stay the source of truth; a
    failed write prints one line and the watch goes on. A column the schema does not have yet (a file in
    `supabase/` not run) is dropped from the write and reported once, so the mirror keeps flowing.
 7. With a Kalshi API key set, the run ends by pulling your balance, positions and fills (read-only) into
@@ -144,4 +158,4 @@ read-only Kalshi sync. `held.py` open-position watch. `cli.py` manual desk. `mod
 residual quantiles. `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
 without ever committing a conflict. `tests/` parity check against the ledger artifact, the read-only proof, the
 mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), the NBA path (`nba.py`, on
-`fixtures_nba/`), and an offline run on fixtures.
+`fixtures_nba/`), reverse middles and held positions at the half (`reverse.py`), and an offline run on fixtures.
