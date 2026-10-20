@@ -7,11 +7,13 @@
   "order": "taker",
   "sports": [
     "nfl",
-    "cfb"
+    "cfb",
+    "nba"
   ],
   "read_push": {
     "nfl": "default",
-    "cfb": "default"
+    "cfb": "default",
+    "nba": "default"
   },
   "poll_seconds": 60,
   "max_poll_minutes": 22,
@@ -19,5 +21,8 @@
   "min_price_c": 15,
   "max_price_c": 85,
   "day_cost_pct": 20,
-  "mid_loss_cap": 15
+  "mid_loss_cap": 15,
+  "center_model_pct": {
+    "nba": 25
+  }
 }

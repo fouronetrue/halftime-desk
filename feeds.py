@@ -12,9 +12,17 @@ ET = ZoneInfo('America/New_York')
 ESPN = {
     'nfl': 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
     'cfb': 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&limit=300',
+    'nba': 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
 }
+ESPN_LEAGUE = {'nfl': 'football/leagues/nfl', 'cfb': 'football/leagues/college-football', 'nba': 'basketball/leagues/nba'}
 KALSHI = 'https://api.elections.kalshi.com/trade-api/v2'
-SERIES = {'nfl': {'total': 'KXNFLTOTAL', 'spread': 'KXNFLSPREAD'}, 'cfb': {'total': 'KXNCAAFTOTAL', 'spread': 'KXNCAAFSPREAD'}}
+SERIES = {'nfl': {'total': 'KXNFLTOTAL', 'spread': 'KXNFLSPREAD'}, 'cfb': {'total': 'KXNCAAFTOTAL', 'spread': 'KXNCAAFSPREAD'},
+          'nba': {'total': 'KXNBATOTAL', 'spread': 'KXNBASPREAD'}}
+# Kalshi's team codes where they differ from ESPN's abbreviation (ticker KXNBATOTAL-26OCT20PHINYK is PHI at NYK; ESPN says NY).
+KALSHI_CODES = {'nba': {'GS': 'GSW', 'NY': 'NYK', 'SA': 'SAS', 'NO': 'NOP', 'UTAH': 'UTA', 'WSH': 'WAS'}}
+# Seconds left in Q3 above which the game still counts as 'early3' (the Q3 push slot): the first minute of football,
+# the first 30 seconds of an NBA quarter (a basket comes in seconds, and the score-moved check then stops pricing).
+EARLY3_SECONDS = {'nfl': 12 * 60, 'cfb': 13 * 60, 'nba': 11 * 60 + 30}
 MONTHS = {m: i for i, m in enumerate(['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'], 1)}
 
 
@@ -34,9 +42,16 @@ def get_json(url, params=None, tries=3, timeout=20):
 
 # ---------- ESPN ----------
 def parse_clock(s):
-    """'12:34' -> seconds; '0:00' -> 0; anything odd -> None"""
-    m = re.match(r'^(\d+):(\d\d)', str(s or ''))
-    return int(m.group(1)) * 60 + int(m.group(2)) if m else None
+    """'12:34' -> seconds; '0:00' -> 0; the NBA's last-minute forms '45.3', ':45.3' and '0.0' -> whole seconds;
+    anything odd -> None"""
+    s = str(s or '').strip()
+    m = re.match(r'^(\d+):(\d\d)(?:\.\d+)?$', s)
+    if m:
+        return int(m.group(1)) * 60 + int(m.group(2))
+    m = re.match(r'^:?(\d+(?:\.\d+)?)$', s)
+    if m:
+        return int(float(m.group(1)))
+    return None
 
 
 def parse_espn(data, sport):
@@ -96,7 +111,7 @@ def phase(g):
         return 'half'
     if g['period'] == 2 and g['clock_s'] is not None and g['clock_s'] <= 300:
         return 'approaching'
-    if g['period'] == 3 and g['clock_s'] is not None and g['clock_s'] >= (12 * 60 if g['sport'] == 'nfl' else 13 * 60):
+    if g['period'] == 3 and g['clock_s'] is not None and g['clock_s'] >= EARLY3_SECONDS.get(g['sport'], 13 * 60):
         return 'early3'
     return 'live'
 
@@ -124,9 +139,9 @@ def espn_lines(g):
 
 def espn_odds_endpoint(sport, game_id):
     """Fallback pregame line from ESPN's odds endpoint: (home_spread, total) or (None, None)."""
-    league = 'nfl' if sport == 'nfl' else 'college-football'
+    league = ESPN_LEAGUE.get(sport, 'football/leagues/college-football')
     try:
-        data = get_json(f'https://sports.core.api.espn.com/v2/sports/football/leagues/{league}/events/{game_id}/competitions/{game_id}/odds', tries=1)
+        data = get_json(f'https://sports.core.api.espn.com/v2/sports/{league}/events/{game_id}/competitions/{game_id}/odds', tries=1)
     except Exception:
         return None, None
     items = data.get('items') or []
@@ -209,7 +224,9 @@ def match_event(game, events):
         if d != game['date_et']:
             continue
         s = 0.0
+        alias = KALSHI_CODES.get(game.get('sport'), {})
         ab, hb = game['away']['abbr'], game['home']['abbr']
+        ab, hb = alias.get(ab, ab), alias.get(hb, hb)
         if codes and ab and hb and (codes == ab + hb or codes == hb + ab):
             s += 10
         title = re.sub(r':.*$', '', ev.get('title') or '')

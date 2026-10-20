@@ -23,7 +23,12 @@ RESULTS_COLUMNS = ['settled_utc', 'sport', 'game', 'date', 'half', 'total', 'hom
                    'model_err', 'mkt_err', 'n_plays', 'plays_cost', 'plays_pnl', 'mid_pnl', 'plays', 'rest_mid', 'rest_mid_pnl']
 DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct=50, order='taker', sports=['nfl', 'cfb'],
                 read_push={'nfl': 'default', 'cfb': 'default'}, poll_seconds=75, max_poll_minutes=22, keep_days=10, min_price_c=15, max_price_c=85, day_cost_pct=20,
-                mid_loss_cap=None)
+                mid_loss_cap=None,
+                # Per sport, the weight the model's own second-half number keeps against the market's center (Kalshi's
+                # implied total at the half minus the first-half points). Football keeps its own center (100). The NBA
+                # model's center never beats the market, so it keeps 25 and the ladder is shaped around the market's number.
+                center_model_pct={'nba': 25})
+CENTER_2H_RANGE = {'nba': (70, 160)}   # a market center outside this (per sport, second-half points) is a bad read and is ignored
 
 
 def load_json(path, default):
@@ -310,6 +315,24 @@ class Desk:
                                         strike=k, phase='pre', yes_bid=q[k]['yb'], yes_ask=q[k]['y'], no_bid=q[k]['nb'], no_ask=q[k]['n'],
                                         p_over=None, p_push=None, over_take=None, over_rest=None, under_take=None, under_rest=None))
 
+    def market_center(self, g, ev, h1):
+        """(expected second-half points from the market, weight the model keeps) for sports that center on the
+        market; (None, 1.0) for the rest. The market center is Kalshi's implied full-game line at the half (the
+        50-50 crossing of the ladder's bid-ask midpoints) minus the first-half points. A line the ladder cannot
+        give, or one outside the sport's plausible range, leaves the model on its own center."""
+        cmp = self.cfg.get('center_model_pct') or {}
+        pct = cmp.get(g['sport']) if isinstance(cmp, dict) else None
+        if pct is None or pct >= 100:
+            return None, 1.0
+        line = feeds.kalshi_total_line(ev)
+        if line is None:
+            return None, 1.0
+        c = line - h1
+        lo, hi = CENTER_2H_RANGE.get(g['sport'], (0, 10**6))
+        if not lo <= c <= hi:
+            return None, 1.0
+        return c, pct / 100
+
     def evaluate(self, g, rec):
         hs = feeds.half_score(g)
         if hs is None:
@@ -352,7 +375,8 @@ class Desk:
         quotes = feeds.total_quotes(ev)
         if not quotes:
             return
-        m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts)
+        center, center_w = self.market_center(g, ev, away_pts + home_pts)
+        m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w)
         rows = engine.price_lines(m, list(quotes), 'fg', self.cfg['margin_c'] / 100)
         bank = float(self.cfg['bankroll'])
         # daily cap: plays already pushed today (by cost) count against day_cost_pct of bankroll
@@ -420,6 +444,7 @@ class Desk:
         resting middle when nothing cleared (graded as a what-if), and the model and market fair lines."""
         singles, mid = engine.chosen(sug)
         out = dict(at=now_iso(), total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2),
+                   mu_model=round(m.mu_model, 2), center=None if m.center is None else round(m.center, 2), center_w=m.center_w,
                    fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev),
                    singles=[dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost']) for s in singles],
                    mid=None, rest_mid=None)

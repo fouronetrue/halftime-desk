@@ -7,7 +7,7 @@ import engine
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ap = argparse.ArgumentParser()
-ap.add_argument('--sport', default='nfl', choices=['nfl', 'cfb'])
+ap.add_argument('--sport', default='nfl', choices=['nfl', 'cfb', 'nba'])
 ap.add_argument('--away', default='Away'); ap.add_argument('--home', default='Home')
 ap.add_argument('--spread', type=float, required=True, help='home line at kickoff, minus = home favored')
 ap.add_argument('--total', type=float, required=True)
@@ -15,10 +15,13 @@ ap.add_argument('--half', required=True, help='away-home score at the half, e.g.
 ap.add_argument('--quotes', default='', help='e.g. 45.5y59,48.5y47,51.5n66')
 ap.add_argument('--mode', default='fg', choices=['fg', '2h'])
 ap.add_argument('--order', default=None, choices=['taker', 'maker'])
+ap.add_argument('--center', type=float, default=None, help='the market full-game line at the half (NBA: Kalshi 50-50 line or a sharp 2H line plus the half); the model keeps center_model_pct of the center')
 a = ap.parse_args()
 cfg = json.load(open(os.path.join(HERE, 'config.json')))
 h1a, h1h = [int(x) for x in a.half.split('-')]
-m = engine.HalfModel(a.sport, a.total, a.spread, h1h, h1a)
+cmp = (cfg.get('center_model_pct') or {}).get(a.sport)
+center = None if a.center is None or cmp is None else a.center - (h1a + h1h)
+m = engine.HalfModel(a.sport, a.total, a.spread, h1h, h1a, center=center, center_w=1.0 if cmp is None else cmp / 100)
 quotes = {}
 for part in [p for p in a.quotes.split(',') if p.strip()]:
     import re
@@ -28,7 +31,8 @@ for part in [p for p in a.quotes.split(',') if p.strip()]:
     line, side, c = float(mm.group(1)), mm.group(2), int(mm.group(3))
     quotes.setdefault(line, {})[side] = c
 fair = engine.fair_line(m, a.mode)
-lines = sorted(set(list(quotes) + [fair + k for k in range(-5, 6)]))
+step = 2 if a.sport == 'nba' else 1   # Kalshi's NBA ladder runs every 2 points
+lines = sorted(set(list(quotes) + [fair + step * k for k in range(-5, 6)]))
 rows = engine.price_lines(m, lines, a.mode, cfg['margin_c'] / 100)
 bank = float(cfg['bankroll'])
 sug = engine.suggest(rows, quotes, a.order or cfg['order'], cfg['margin_c'] / 100, cfg['trust_pct'] / 100, bank, bank * cfg['risk_pct'] / 100, bank * cfg['cost_pct'] / 100, (cfg.get('min_price_c', 15), cfg.get('max_price_c', 85)), cfg.get('mid_loss_cap'))

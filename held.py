@@ -4,7 +4,7 @@ You bought a side of a full-game total (a Sharp pick, a tip, your own call) and 
 on a strike a few points away may now be cheap enough that owning both wins big on a final inside the window
 and loses only a little anywhere else. This module looks at every open total position each minute pregame,
 prices the other side from the same Kalshi events list the watcher already pulls, and pushes once when a
-middle clears the project breakeven (pair cost under 0.97 + 3.5c per winning number NFL, 2.4c CFB, fees in),
+middle clears the project breakeven (pair cost under 0.97 + 3.5c per winning number NFL, 2.4c CFB, 2.9c NBA, fees in),
 sized so a miss never costs more than MAX_LOSS. It pushes again only when the middle gets 2c a pair better.
 
 Positions and the price you paid come from Supabase (positions, bets), kept fresh by the worker's portfolio
@@ -15,11 +15,11 @@ import engine, feeds, store, notify
 
 MAX_LOSS = 15.0                                        # dollars a miss may cost on the paired shares
 BREAKEVEN_BASE = 0.97
-PER_NUMBER = {'nfl': 0.035, 'cfb': 0.024}              # project rule, same numbers as app/lib/desk.js
+PER_NUMBER = {'nfl': 0.035, 'cfb': 0.024, 'nba': 0.029}  # project rule, same numbers as app/lib/desk.js (NBA: 2.9c, a number at fair lands 2.9% of the time)
 BAND = (15, 85)                                        # cents; outside it the book is too thin to trust
 IMPROVE_C = 2.0                                        # cents a pair better before a repeat push
 MIN_ROOM_C = 1.0                                       # a pair must sit at least this far under the breakeven
-SPORT_OF = {'KXNFLTOTAL': 'nfl', 'KXNCAAFTOTAL': 'cfb'}
+SPORT_OF = {'KXNFLTOTAL': 'nfl', 'KXNCAAFTOTAL': 'cfb', 'KXNBATOTAL': 'nba'}
 
 
 def holdings():

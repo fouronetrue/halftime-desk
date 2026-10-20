@@ -27,9 +27,15 @@ def max_quote(max_all_in, order='taker'):
 
 
 class HalfModel:
-    """Game state at the half -> distribution of second-half points."""
+    """Game state at the half -> distribution of second-half points.
 
-    def __init__(self, sport, total, home_spread, h1h, h1a):
+    center / center_w: an outside expected second-half total (the market's) and the weight the model's own
+    number keeps against it. The football models keep their own center (center_w 1.0, the default). The NBA
+    model's center is 2.4 points from the sharp line in the median game and never beats it, while its shape is
+    calibrated to a cent, so the NBA desk centers on the market and keeps the model for the shape of the
+    ladder (see claude/nba-halftime.md). mu_model is always the model's own number, for the log."""
+
+    def __init__(self, sport, total, home_spread, h1h, h1a, center=None, center_w=1.0):
         m = MODEL.get(sport) or MODEL['nfl']
         self.sport = sport
         home_fav_by = -(home_spread or 0)
@@ -39,7 +45,10 @@ class HalfModel:
         self.h1 = h1h + h1a
         c = m['coef']
         mu = c[0] + c[1] * total + c[2] * self.h1 + c[3] * abs(self.favm) + c[4] * self.favm + c[5] * (self.fav_by if self.favm < 0 else 0)
-        self.mu = max(8.0, mu)
+        self.mu_model = max(8.0, mu)
+        self.center = center
+        self.center_w = 1.0 if center is None else max(0.0, min(1.0, center_w))
+        self.mu = self.mu_model if center is None else max(8.0, self.center_w * self.mu_model + (1 - self.center_w) * center)
         self.sd = m['k'] * math.sqrt(self.mu)
         self.q = m['z']
         self.n = m['n']
@@ -73,6 +82,15 @@ class HalfModel:
     def spot(self):
         """Plain-language label for the game state, from the halftime study."""
         fm, fb = self.favm, self.fav_by
+        if self.sport == 'nba':
+            # 24,437 games: the NBA second half runs at the pregame pace whatever the half looks like. No spot
+            # leans over or under against the market's 2H line (every cell 47 to 53 percent), blowouts included
+            # (20+ at the half ran 52 percent over, garbage-time pace beats the running clock).
+            if abs(fm) >= 20:
+                return 'blowout: pace holds, no lean (not the football under spot)'
+            if fm < 0:
+                return 'favorite trailing: no lean in the NBA'
+            return 'no lean: second half runs at the pregame pace'
         if fm >= 15:
             return 'blowout: second-half under spot'
         if fm < 0 and fm >= -14:
