@@ -248,3 +248,50 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .targets li.on span, .targets li.on b { color: var(--amber-ink); }
 .builtline { margin: 4px 0; font-size: 14px; color: var(--win); }
 .card.held .when { margin: 6px 0 0; font-size: 12px; color: var(--dim); }
+
+/* Today: one line when a held total has a middle open right now (the rest lives on Bets) */
+.openline { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; background: var(--amber); color: var(--amber-ink); font-size: 15px; }
+.openline b { font-family: var(--cond); font-size: 17px; margin-right: 4px; }
+.openline .link { color: var(--amber-ink); }
+.sub .chalk { color: var(--chalk); font: 700 16px var(--cond); }
+
+/* Bets: open positions */
+.poslist { list-style: none; margin: 0; padding: 0; }
+.pos-row { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; padding: 10px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.pos-row .what { font: 700 19px/1.2 var(--cond); }
+.pos-row .amt { font: 700 19px/1.2 var(--cond); text-align: right; }
+.pos-row .game, .pos-row .detail { font-size: 13px; color: var(--dim); }
+.pos-row .detail { text-align: right; }
+
+/* Record */
+.board.rec b { font-size: 26px; }
+.board.rec small { font-size: 12px; color: var(--dim); }
+.board.rec small.pos { color: var(--win); }
+.board.rec small.neg { color: var(--loss); }
+.sparkcap { margin: 10px 0 0; font: 600 12px var(--cond); color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.spark { display: block; width: 100%; height: 56px; margin: 2px 0; }
+.spark path { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.spark path.pos { stroke: var(--win); }
+.spark path.neg { stroke: var(--loss); }
+.spark .zero { stroke: var(--line); stroke-width: 1; }
+.reclist { list-style: none; margin: 0; padding: 0; }
+.recday { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 22px 0 8px; }
+.recday .dayline { font: 500 14px var(--body); text-transform: none; letter-spacing: 0; }
+.recday .dayline b { font: 700 16px var(--cond); }
+.rec { background: var(--field); border-radius: 12px; margin-bottom: 8px; border-left: 3px solid transparent; }
+.rec.played { border-left-color: var(--chalk); }
+.rec.quiet { opacity: 0.8; }
+.rechead { width: 100%; text-align: left; padding: 12px 14px; display: grid; gap: 3px; }
+.rechead .game { font: 700 19px/1.2 var(--cond); display: flex; align-items: baseline; gap: 8px; }
+.rechead .game small { font: 600 12px var(--cond); color: var(--dim); letter-spacing: 0.4px; }
+.rechead .recscore { font-size: 14px; color: var(--dim); }
+.call { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font: 600 16px/1.3 var(--cond); margin-top: 4px; }
+.call b { font-size: 13px; letter-spacing: 0.6px; padding: 2px 6px; border-radius: 5px; background: var(--field-2); color: var(--dim); }
+.call.win b { background: var(--win); color: var(--sky); }
+.call.loss b { background: var(--loss); color: var(--chalk); }
+.call em { font-style: normal; font-weight: 700; margin-left: auto; }
+.call.none { color: var(--dim); font-weight: 500; }
+.recmore { padding: 0 14px 12px; border-top: 1px solid var(--line); font-size: 14px; color: var(--dim); }
+.recmore p { margin: 10px 0 0; }
+.recmore .alt { color: var(--dim); }
+.recmore .link { display: inline-block; margin-top: 10px; }

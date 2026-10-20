@@ -97,6 +97,28 @@ export function seriesOf(eventTicker) {
   return (eventTicker || '').split('-')[0].toLowerCase();
 }
 
+const MONTHS = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
+
+// What a Kalshi market ticker is, in words. KXNFLTOTAL-26OCT19WSHSF-45 with a positive position is
+// "Over 44.5" on the WSH/SF total (the suffix is the strike rounded up; the market is over N minus a half).
+// Spread tickers end in TEAM plus the whole-number spread; anything else (props) keeps its suffix as the name.
+export function tickerInfo(ticker, position) {
+  const m = /^(KX[A-Z]+)-(\d\d)([A-Z]{3})(\d\d)([A-Z0-9]+)-(.+)$/.exec(ticker || '');
+  if (!m) return { what: ticker || '', game: '', sport: '', date: '' };
+  const [, series, yy, mon, dd, teams, tail] = m;
+  const sport = series.includes('NCAAF') ? 'cfb' : series.includes('NFL') ? 'nfl' : '';
+  const date = MONTHS[mon] ? `20${yy}-${String(MONTHS[mon]).padStart(2, '0')}-${dd}` : '';
+  const yes = Number(position) >= 0;
+  if (series.endsWith('TOTAL') && /^\d+$/.test(tail)) {
+    return { what: `${yes ? 'Over' : 'Under'} ${Number(tail) - 0.5}`, game: `${teams} total`, sport, date, kind: 'total' };
+  }
+  const sp = /^([A-Z]+?)(\d+)$/.exec(tail);
+  if (series.endsWith('SPREAD') && sp) {
+    return { what: `${sp[1]} ${yes ? 'wins by over' : 'does not win by'} ${Number(sp[2]) - 0.5}`, game: `${teams} spread`, sport, date, kind: 'spread' };
+  }
+  return { what: `${yes ? 'Yes' : 'No'} ${tail}`, game: teams, sport, date, kind: 'other' };
+}
+
 // Size a middle from the prices you actually see, against a loss budget you pick. a, b in cents; fills 'take' or 'rest'.
 // Taker fees use orderFee (rounded up per order); a resting fill pays none. budget and maxCost in dollars.
 export function sizeMiddle({ a, b, oFill = 'take', uFill = 'take', numbers, sport, budget, maxCost, pHit }) {

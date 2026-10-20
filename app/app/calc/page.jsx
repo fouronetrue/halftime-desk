@@ -13,8 +13,9 @@ function CalcView() {
   const ok = Number(u) > Number(o);
   return (
     <main>
-      <p className="back"><Link href="/desk/">Back to Desk</Link></p>
+      {q.get('o') && <p className="back"><Link href="/desk/">Back to the Desk</Link></p>}
       <h1>Middle calc</h1>
+      <p className="sub">Two lines, two prices, a loss budget. Pair cost against the breakeven, shares each side, what both pay.</p>
       <span className="seg" role="group" aria-label="Sport">
         {['nfl', 'cfb'].map((s) => <button key={s} className={sport === s ? 'on' : ''} aria-pressed={sport === s} onClick={() => setSport(s)}>{s.toUpperCase()}</button>)}
       </span>

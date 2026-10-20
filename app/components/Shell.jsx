@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase, configured } from '@/lib/supabase';
 
+// Today opens a game's Desk by tapping its card; the Desk and the Ledger are reachable by URL, not from here.
 const TABS = [
   { href: '/', label: 'Today', icon: 'M4 5h16M4 12h16M4 19h10' },
-  { href: '/desk/', label: 'Desk', icon: 'M5 4v16M12 4v16M19 4v16M3 8h4M10 14h4M17 10h4' },
+  { href: '/bets/', label: 'Bets', icon: 'M4 7h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4zM14 7v12' },
   { href: '/alerts/', label: 'Alerts', icon: 'M12 4a5 5 0 0 0-5 5v4l-2 3h14l-2-3V9a5 5 0 0 0-5-5zM10 19a2 2 0 0 0 4 0' },
-  { href: '/ledger/', label: 'Ledger', icon: 'M5 4h14v16H5zM8 9h8M8 13h8M8 17h5' },
-  { href: '/edge/', label: 'Edge', icon: 'M4 18l5-6 4 3 7-9' },
+  { href: '/calc/', label: 'Calc', icon: 'M6 3h12v18H6zM9 7h6M9 11h2M13 11h2M9 15h2M13 15h2' },
+  { href: '/record/', label: 'Record', icon: 'M4 18l5-6 4 3 7-9M16 6h4v4' },
 ];
 
 function SignIn() {
