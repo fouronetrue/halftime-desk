@@ -294,8 +294,10 @@ def sync(backfill=False, dry_run=False):
     if positions:
         store.write('positions', positions, on_conflict='ticker')
     store.write('portfolio_snapshots', [balance], on_conflict='taken_at')
+    # No dollar figures here: this line lands in the GitHub Actions log, which any GitHub account can read on a
+    # public repo. The balance goes to portfolio_snapshots and nowhere else.
     print(f"portfolio sync: {summary['fills']} fills seen ({summary['halftime']} tagged halftime), {summary['positions']} positions, "
-          f"balance ${summary['balance']}, portfolio ${summary['portfolio_value']}")
+          f"balance {'saved' if balance.get('balance') is not None else 'not returned'}")
     return summary
 
 
