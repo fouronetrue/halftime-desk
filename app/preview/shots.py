@@ -262,17 +262,22 @@ def main(only=None):
                 page.goto(f'http://localhost:{PORT}{path}', wait_until='domcontentloaded')
                 page.wait_for_timeout(2500)
                 shot = os.path.join(OUT, f'{name}.png')
-                page.screenshot(path=shot, full_page=True)
+                page.screenshot(path=shot)                        # the phone's viewport: the screen scrolls inside the shell
+                page.set_viewport_size({'width': 390, 'height': 2400})
+                page.wait_for_timeout(300)
+                page.screenshot(path=os.path.join(OUT, f'{name}-tall.png'))   # the whole screen, for review
+                page.set_viewport_size({'width': 390, 'height': 844})
                 print(f'{name}: {shot}')
             if only in (None, 'record'):   # the Record screen with a row open and with every half shown
                 page.goto(f'http://localhost:{PORT}/record/', wait_until='load')
                 page.wait_for_timeout(2500)
                 page.get_by_role('button', name=re.compile('DAL @ GB')).click()
                 page.wait_for_timeout(300)
-                page.screenshot(path=os.path.join(OUT, 'record-open.png'), full_page=True)
+                page.set_viewport_size({'width': 390, 'height': 2400}); page.wait_for_timeout(300)
+                page.screenshot(path=os.path.join(OUT, 'record-open.png'))
                 page.get_by_role('tab', name='Every half').click()
                 page.wait_for_timeout(300)
-                page.screenshot(path=os.path.join(OUT, 'record-all.png'), full_page=True)
+                page.screenshot(path=os.path.join(OUT, 'record-all.png'))
                 print('record-open, record-all')
             browser.close()
     finally:

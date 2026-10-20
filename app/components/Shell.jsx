@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase, configured } from '@/lib/supabase';
@@ -46,6 +46,17 @@ function SignIn() {
 export default function Shell({ children }) {
   const path = usePathname();
   const [session, setSession] = useState(undefined);
+  const screen = useRef(null);
+
+  // The screen is the scroll container, so a new tab starts at the top. And when an input gives up focus (the
+  // keyboard closes), put the window back where it belongs: iOS can leave it nudged after a keyboard on a page
+  // too short to scroll, which is what moved the tab bar around.
+  useEffect(() => { screen.current?.scrollTo(0, 0); }, [path]);
+  useEffect(() => {
+    const settle = () => setTimeout(() => window.scrollTo(0, 0), 60);
+    document.addEventListener('focusout', settle);
+    return () => document.removeEventListener('focusout', settle);
+  }, []);
 
   useEffect(() => {
     if (!supabase) return;
@@ -59,8 +70,8 @@ export default function Shell({ children }) {
   if (!session) return <SignIn />;
 
   return (
-    <>
-      <div className="screen">{children}</div>
+    <div className="shell">
+      <div className="screen" ref={screen}>{children}</div>
       <nav className="tabbar" aria-label="Screens">
         {TABS.map((t) => {
           const on = t.href === '/' ? path === '/' : path.startsWith(t.href.replace(/\/$/, ''));
@@ -72,6 +83,6 @@ export default function Shell({ children }) {
           );
         })}
       </nav>
-    </>
+    </div>
   );
 }
