@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { etDate, etDay, etTime, ago, phaseLabel, isHalfish, scoreMoved, spreadText } from '@/lib/desk';
@@ -11,7 +11,14 @@ function Heartbeat({ beat }) {
   const age = beat?.last_beat ? (Date.now() - new Date(beat.last_beat).getTime()) / 1000 : null;
   const state = age === null ? 'off' : age < 420 ? 'ok' : 'late';
   const text = age === null ? 'Watcher has not checked in' : state === 'ok' ? `Watching, last look ${ago(beat.last_beat)}` : `Watcher quiet since ${ago(beat.last_beat)}`;
-  return <p className={`beat ${state}`}><span className="dot" aria-hidden="true" />{text}</p>;
+  // five quick taps show the viewport numbers (Shell's debug readout), for sizing problems in the home-screen app
+  const taps = useRef([]);
+  const tap = () => {
+    const now = Date.now();
+    taps.current = taps.current.filter((t) => now - t < 3000).concat(now);
+    if (taps.current.length >= 5) { taps.current = []; window.dispatchEvent(new Event('hd-debug')); }
+  };
+  return <p className={`beat ${state}`} onClick={tap}><span className="dot" aria-hidden="true" />{text}</p>;
 }
 
 const MAX_MID_LOSS = 15;   // a middle on Today never risks more than this on a miss

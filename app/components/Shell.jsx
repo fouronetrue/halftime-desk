@@ -47,6 +47,7 @@ export default function Shell({ children }) {
   const path = usePathname();
   const [session, setSession] = useState(undefined);
   const screen = useRef(null);
+  const [debug, setDebug] = useState('');
 
   // The screen is the scroll container, so a new tab starts at the top. And when an input gives up focus (the
   // keyboard closes), put the window back where it belongs: iOS can leave it nudged after a keyboard on a page
@@ -58,29 +59,58 @@ export default function Shell({ children }) {
     return () => document.removeEventListener('focusout', settle);
   }, []);
 
-  // The shell is sized to what is actually visible (the visual viewport), not to what iOS says the page is.
-  // 100dvh came up short on the phone and left a dead strip under the tab bar. While the keyboard is up the
-  // visible area shrinks; the bar steps aside so the keyboard is not stacked on top of it.
+  // The shell is sized to what is actually visible. In the home-screen app on an iPhone the page runs under the
+  // status bar (black-translucent), and every viewport measure (innerHeight, 100dvh, visualViewport) comes up
+  // short by exactly the status bar height while the web view itself fills the screen: that was the dead strip
+  // under the tab bar. The shortfall is measured against the screen once at rest (keyboard down) and added back
+  // whenever it matches that signature and nothing else. While the keyboard is up the bar steps aside.
+  // Open any screen with ?debug in the URL, or tap the "Watching" line on Today five times, to see the numbers.
   useEffect(() => {
     const vv = window.visualViewport;
     const root = document.documentElement;
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+    document.body.appendChild(probe);
+    const cs = getComputedStyle(probe);
+    const insetTop = parseFloat(cs.paddingTop) || 0, insetBottom = parseFloat(cs.paddingBottom) || 0;
+    probe.remove();
+    const standalone = window.navigator.standalone === true;
+    let wantDebug = /[?&]debug/.test(window.location.search);
+    let delta = 0;
     const apply = () => {
       const h = vv ? vv.height : window.innerHeight;
       const t = vv ? vv.offsetTop : 0;
-      root.style.setProperty('--vvh', `${Math.round(h)}px`);
+      const kb = h < window.innerHeight * 0.75;
+      const portrait = window.innerHeight >= window.innerWidth;
+      const screenH = portrait ? Math.max(window.screen.width, window.screen.height) : Math.min(window.screen.width, window.screen.height);
+      if (standalone && insetTop > 0 && !kb) {
+        const short = screenH - h;
+        delta = short >= 1 && short <= insetTop + 2 ? short : 0;
+      }
+      const full = h + (standalone ? delta : 0);
+      root.style.setProperty('--vvh', `${Math.round(full)}px`);
       root.style.setProperty('--vvt', `${Math.round(t)}px`);
-      root.classList.toggle('kb', h < window.innerHeight * 0.75);
+      root.classList.toggle('kb', kb);
+      if (!kb && window.scrollY) window.scrollTo(0, 0);   // iOS nudges the window after a keyboard; put it back
+      if (wantDebug) {
+        setDebug(`standalone ${standalone} screen ${window.screen.width}x${window.screen.height} inner ${window.innerWidth}x${window.innerHeight} ` +
+                 `vv ${Math.round(vv?.width || 0)}x${Math.round(h)} top ${Math.round(t)} dvh ${root.clientHeight} inset ${insetTop}/${insetBottom} ` +
+                 `delta ${delta} shell ${Math.round(full)} scrollY ${window.scrollY}`);
+      }
     };
+    const toggle = () => { wantDebug = !wantDebug; if (!wantDebug) setDebug(''); apply(); };
     apply();
     vv?.addEventListener('resize', apply);
     vv?.addEventListener('scroll', apply);
     window.addEventListener('resize', apply);
     window.addEventListener('orientationchange', apply);
+    window.addEventListener('hd-debug', toggle);
     return () => {
       vv?.removeEventListener('resize', apply);
       vv?.removeEventListener('scroll', apply);
       window.removeEventListener('resize', apply);
       window.removeEventListener('orientationchange', apply);
+      window.removeEventListener('hd-debug', toggle);
     };
   }, []);
 
@@ -97,6 +127,7 @@ export default function Shell({ children }) {
 
   return (
     <div className="shell">
+      {debug && <pre className="vpdebug">{debug}</pre>}
       <div className="screen" ref={screen}>{children}</div>
       <nav className="tabbar" aria-label="Screens">
         {TABS.map((t) => {
