@@ -58,6 +58,32 @@ export default function Shell({ children }) {
     return () => document.removeEventListener('focusout', settle);
   }, []);
 
+  // The shell is sized to what is actually visible (the visual viewport), not to what iOS says the page is.
+  // 100dvh came up short on the phone and left a dead strip under the tab bar. While the keyboard is up the
+  // visible area shrinks; the bar steps aside so the keyboard is not stacked on top of it.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const root = document.documentElement;
+    const apply = () => {
+      const h = vv ? vv.height : window.innerHeight;
+      const t = vv ? vv.offsetTop : 0;
+      root.style.setProperty('--vvh', `${Math.round(h)}px`);
+      root.style.setProperty('--vvt', `${Math.round(t)}px`);
+      root.classList.toggle('kb', h < window.innerHeight * 0.75);
+    };
+    apply();
+    vv?.addEventListener('resize', apply);
+    vv?.addEventListener('scroll', apply);
+    window.addEventListener('resize', apply);
+    window.addEventListener('orientationchange', apply);
+    return () => {
+      vv?.removeEventListener('resize', apply);
+      vv?.removeEventListener('scroll', apply);
+      window.removeEventListener('resize', apply);
+      window.removeEventListener('orientationchange', apply);
+    };
+  }, []);
+
   useEffect(() => {
     if (!supabase) return;
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
