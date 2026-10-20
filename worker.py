@@ -6,7 +6,7 @@ Pace:
   5 min  nothing going on
 Portfolio sync every 2 minutes while anything is live or a kickoff is within 3 hours, every 30 otherwise, and a
 held-position check (held.py) once a minute in that same window: a MIDDLE OPEN push when a total you own can be
-paired cheaply enough.
+paired cheaply enough, and the positions handed to the desk so the half push can say what to do with them.
 
 State lives in Supabase (desk_state, id 'worker') so a redeploy or restart picks up where it left off, with
 every alert slot already pushed still marked. The GitHub Actions watcher can keep running as a backup: before
@@ -100,6 +100,7 @@ def main():
             try:
                 for title, _ in held.check(desk):
                     print(f'{watch.now_iso()} pushed {title}', flush=True)
+                desk.holdings = held.by_event(held.holdings())   # what the half push prices as YOU HOLD
                 summary = held.summary(desk)   # what Today shows under Your totals
                 store.write('desk_state', [dict(id='held', state=summary, last_beat=watch.now_iso(), note=f'{len(summary)} events', updated_at=watch.now_iso())], on_conflict='id')
             except Exception as e:   # a bad look at the ledger never touches the watch

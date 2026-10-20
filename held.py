@@ -168,6 +168,9 @@ def pair_up(rows):
     return by_ev
 
 
+by_event = pair_up   # what the watcher keeps as desk.holdings: the same grouping, by event ticker
+
+
 def summary(desk, max_loss=MAX_LOSS):
     """What Today shows under Your totals: every open full-game total you hold, with the strike to pair it on,
     the most to pay there (so a limit order can rest), the live ask, and the sizing at that price. A YES and a NO
@@ -217,6 +220,7 @@ def summary(desk, max_loss=MAX_LOSS):
                 m = best_middle(h, mine, quotes, max_loss)
                 if m:
                     leg['best'] = {k: m.get(k) for k in ('tier', 'kind', 'strike', 'price_c', 'numbers', 'lo', 'hi', 'pairs', 'cost', 'leg_cost', 'win', 'lose', 'slack_c', 'held_alone', 'other_alone', 'both')}
+            if quotes:   # the bid is worth showing at any phase; the half push carries the sell-or-hold verdict
                 sell = sell_now(h, quotes.get(mine, {}))
                 if sell:
                     leg['sell'] = sell

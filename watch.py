@@ -65,6 +65,7 @@ class Desk:
         self._pre_last = {}   # game id -> (quote key, time written) for the pregame line history
         self._db_evals = {}   # game id -> (quote key, time written): skip identical priced rows inside 30 s
         self._db_games = {}   # game id -> (row hash, time sent), so Supabase only hears about games that changed
+        self.holdings = {}   # event ticker -> open positions on that total (held.holdings rows), refreshed by the worker once a minute
 
     # ---- feeds (fixture-aware) ----
     def games(self, sport):
@@ -201,7 +202,7 @@ class Desk:
             rec['pre'] = pre
             print(f"{g['short']}: pregame line restored from the games table (o/u {pre['total']}, spread {pre.get('home_spread')})")
 
-    def db_eval(self, ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing):
+    def db_eval(self, ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=None):
         """One suggestions row (the halftime_log row plus the full ranked singles and middles) and one
         quote_snapshots row per strike: Kalshi's bid and ask next to the model's fair probability and limits."""
         if not store.enabled():
@@ -226,8 +227,11 @@ class Desk:
             best_single_edge_c=round(100 * best_single['edge'], 1) if best_single else None,
             best_mid=f"Y{best_mid['a']['line']}@{best_mid['a']['price_c']}+N{best_mid['b']['line']}@{best_mid['b']['price_c']}" if best_mid else None,
             best_mid_edge_c=round(100 * best_mid['ev'], 1) if best_mid else None,
-            n_plays=sum(1 for x in sug['mids'] + sug['singles'] if x['ok']),
+            n_plays=sum(1 for x in sug['mids'] + sug['singles'] + (sug.get('revs') or []) if x['ok']),
             singles=sug['singles'], mids=sug['mids'][:max(MIDS_KEPT, sum(1 for x in sug['mids'] if x['ok']))],   # best first, every cleared one kept
+            # reverse middles the same way (supabase/005_reverse.sql adds the column; written without it until then)
+            revs=(sug.get('revs') or [])[:max(10, sum(1 for x in sug.get('revs') or [] if x['ok']))],
+            held=held or [],   # the open positions on this total when priced, with the sell-or-hold verdict and the pairings (same file adds the column)
             bankroll=sizing['bankroll'], max_risk=sizing['max_risk'], max_cost=sizing['max_cost'])], on_conflict='taken_at,game_id')
         snaps = []
         for r in rows:
@@ -419,12 +423,20 @@ class Desk:
                       near_pts=(self.cfg.get('rest_near_pts') or {}).get(g['sport'], 3.5))
         focus = 'middles' if g['sport'] in (self.cfg.get('middle_focus') or []) else None
         kind, head, text = engine.order_sheet(m, inp, rows, sug, sizing, focus=focus)
-        plays = [x for x in sug['mids'] if x['ok']] + [x for x in sug['singles'] if x['ok']]
+        plays = [x for x in sug['mids'] if x['ok']] + [x for x in sug['singles'] if x['ok']] + [x for x in sug.get('revs') or [] if x['ok']]
+        # What you already own on this total, priced off the same ladder: sell or hold against fair, the middle
+        # completion or the lay-off when that leg clears, a free completion when the ask allows one. On a read it
+        # goes first (it is the actionable part) and lifts the push to high priority when there is something to do.
+        held_lines, held_rows, held_act = self.held_block(ev, rows, quotes)
+        if held_lines:
+            text = ('\n'.join(held_lines) + '\n\n' + text) if (not plays and held_act) else (text + '\n\n' + '\n'.join(held_lines))
         ts = now_iso()
         rec.setdefault('half_at', ts)
         self.log_row(g, rec, m, total, spread, quotes, sug, ev, ts)
-        self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing)
+        self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=held_rows)
         sheet = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec)
+        if held_rows:
+            sheet['held'] = held_rows
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
         # polling allows), one the first time it is seen after the Q3 kick while the score is still the
         # halftime score (the moved-score check above already returned otherwise). A PLAY goes out whenever
@@ -456,11 +468,13 @@ class Desk:
             # table holds the same for both watchers; these are the fallback when it cannot be reached.
             rec.setdefault('play_sheet', sheet)
             rec.setdefault('sheet', sheet)
-            top = ([x for x in sug['mids'] if x['ok']][:1] or [x for x in sug['singles'] if x['ok']][:1])
+            top = ([x for x in sug['mids'] if x['ok']][:1] or [x for x in sug['singles'] if x['ok']][:1] or [x for x in sug.get('revs') or [] if x['ok']][:1])
             if top and not rec.get('counted_day'):
                 day[g['date_et']] = round(spent + top[0]['cost'], 2)
                 rec['counted_day'] = True
-        elif read_pri != 'off':
+        elif read_pri != 'off' or held_act:
+            if held_act:
+                read_pri = 'high'   # something to do with a position you hold: this one buzzes whatever the sport's read setting
             body = text + f"\n\n{ev.get('event_ticker')}"
             if not self.claim_alert(ts, g, slot, 'update', read_pri, title, body, ev, sheet):
                 slots[slot] = 'elsewhere'
@@ -473,20 +487,47 @@ class Desk:
             rec.setdefault('sheet', sheet)
         rec['last_eval'] = now_iso()
 
+    def held_block(self, ev, rows, quotes):
+        """YOU HOLD lines for the open positions on this game's total, from self.holdings (held.holdings() rows,
+        keyed by event ticker, which the worker refreshes once a minute from the Kalshi sync; a plain watch.py run
+        loads them once at the start). Returns (lines, rows for the sheet, whether anything is actionable:
+        a SELL verdict, a pairing or a lay-off that clears, or a free completion)."""
+        hs = self.holdings.get(ev.get('event_ticker')) or []
+        lines, kept, act = [], [], False
+        for h in hs:
+            k = next((k for k, v in quotes.items() if v.get('ticker') == h.get('ticker')), None)
+            if k is None:
+                continue
+            hh = dict(h, strike=k)
+            o = engine.held_options(rows, quotes, hh, self.cfg['margin_c'] / 100, self.cfg['order'], (self.cfg['min_price_c'], self.cfg['max_price_c']))
+            if not o:
+                continue
+            if lines:
+                lines.append('')
+            lines += engine.held_lines(hh, o)
+            kept.append(dict(ticker=h.get('ticker'), side=h['side'], strike=k, shares=int(h['shares']), paid_c=h['paid_c'], fee=h.get('fee'), options=o))
+            act = act or bool(o.get('pair') or o.get('layoff') or o.get('free') or (o.get('sell') or {}).get('verdict') == 'SELL')
+        return lines, kept, act
+
     def sheet(self, g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec=None):
         """What the first push said, kept so the final can grade it: cleared plays at their prices and sizes, the
         resting middle when nothing cleared (graded as a what-if), and the model and market fair lines."""
         singles, mid = engine.chosen(sug)
+        rev = engine.chosen_rev(sug)
         focus = g['sport'] in (self.cfg.get('middle_focus') or [])
         # what the push led with, which is what the record grades as the play: the middle in a middle-focus
-        # sport whenever one cleared, otherwise the best single; a read has only the resting what-if
-        lead = 'mid' if (mid and (focus or not singles)) else 'single' if singles else 'rest'
+        # sport whenever one cleared, otherwise the best single, the reverse middle only when it is all that
+        # cleared; a read has only the resting what-if
+        lead = 'mid' if (mid and (focus or not singles)) else 'single' if singles else 'rev' if rev else 'rest'
         out = dict(at=now_iso(), lead=lead, total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2),
                    mu_model=round(m.mu_model, 2), center=None if m.center is None else round(m.center, 2), center_w=m.center_w,
                    pace=(rec or {}).get('pace'),
                    fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev),
                    singles=[dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost']) for s in singles],
                    mid=None, rest_mid=None)
+        if rev:
+            # a_line is the under's strike (the lower one), b_line the over's; the hole is the numbers between
+            out['rev'] = dict(a_line=rev['a']['line'], a_price=rev['a']['price_c'], b_line=rev['b']['line'], b_price=rev['b']['price_c'], pairs=rev['pairs'], cost=rev['cost'])
         if mid:
             out['mid'] = dict(a_line=mid['a']['line'], a_price=mid['a']['price_c'], b_line=mid['b']['line'], b_price=mid['b']['price_c'], pairs=mid['pairs'], cost=mid['cost'])
         else:
@@ -615,6 +656,12 @@ def grade_sheet(sh, T):
         mid_hit = m['a_line'] < T < m['b_line']
         mid_pnl = round((2 * m['pairs'] - m['cost']) if mid_hit else (m['pairs'] - m['cost']), 2)
         detail.append(f"mid {m['a_line']:g}/{m['b_line']:g} {'HIT' if mid_hit else 'miss'} {mid_pnl:+.0f}")
+    # the reverse middle: one leg pays on any final outside the hole, both lose inside it
+    rv, rev_pnl, rev_hole = sh.get('rev'), None, None
+    if rv:
+        rev_hole = rv['a_line'] < T < rv['b_line']
+        rev_pnl = round(-rv['cost'] if rev_hole else (rv['pairs'] - rv['cost']), 2)
+        detail.append(f"rev {rv['a_line']:g}/{rv['b_line']:g} {'HOLE' if rev_hole else 'clear'} {rev_pnl:+.0f}")
     rm, rest_pnl, rest_hit = sh.get('rest_mid'), None, None
     if rm:
         rest_hit = rm['a_line'] < T < rm['b_line']
@@ -623,10 +670,13 @@ def grade_sheet(sh, T):
         pnl, cost, win = mid_pnl, round(m['cost'], 2), mid_hit
     elif lead == 'single' and options:
         pnl, cost, win = options[0]['pnl'], round(options[0]['cost'], 2), options[0]['win']
+    elif lead == 'rev' and rv:
+        pnl, cost, win = rev_pnl, round(rv['cost'], 2), not rev_hole
     else:
         pnl, cost, win = 0.0, 0.0, None
     return dict(lead=lead, pnl=round(pnl, 2), cost=cost, win=win, options=options, mid_pnl=mid_pnl, mid_hit=mid_hit,
-                rest_pnl=rest_pnl, rest_hit=rest_hit, n_plays=len(singles) + (1 if m else 0), detail='; '.join(detail),
+                rev_pnl=rev_pnl, rev_hole=rev_hole,
+                rest_pnl=rest_pnl, rest_hit=rest_hit, n_plays=len(singles) + (1 if m else 0) + (1 if rv else 0), detail='; '.join(detail),
                 rest_text=f"over {rm['a_line']:g}@{rm['a_price']} / under {rm['b_line']:g}@{rm['b_price']} x{rm['pairs']}" if rm else '')
 
 
@@ -659,8 +709,8 @@ def scorecard(path=RESULTS_PATH, rows=None):
     ties = sum(1 for r in both if f(r, 'model_err') == f(r, 'mkt_err'))
     rest = [r for r in rows if r.get('rest_mid_pnl') not in (None, '')]
     rest_pnl = sum(f(r, 'rest_mid_pnl') for r in rest)
-    out = [f"scorecard: {len(rows)} halftimes graded, {len(played)} with a single: ${pnl:+.0f} on ${cost:.0f} risked ({100 * pnl / cost:+.1f}%)" if cost else
-           f"scorecard: {len(rows)} halftimes graded, none with a single"]
+    out = [f"scorecard: {len(rows)} halftimes graded, {len(played)} with a play: ${pnl:+.0f} on ${cost:.0f} risked ({100 * pnl / cost:+.1f}%)" if cost else
+           f"scorecard: {len(rows)} halftimes graded, none with a play"]
     if mids:
         out.append(f"middles called: {len(mids)}, ${mid_pnl:+.0f}")
     if both:
@@ -682,6 +732,12 @@ def main():
     cfg = load_json(CONFIG_PATH, {})
     state = load_json(STATE_PATH, {})
     desk = Desk(cfg, state, args.fixtures)
+    if not args.fixtures and store.enabled():
+        try:
+            import held
+            desk.holdings = held.by_event(held.holdings())
+        except Exception as e:
+            print(f'holdings unavailable: {e}')
     started = time.time()
     while True:
         active = desk.run_pass()
