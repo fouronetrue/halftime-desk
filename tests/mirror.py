@@ -48,10 +48,22 @@ for table in ('games', 'suggestions', 'quote_snapshots', 'alerts', 'results'):
     rows = c_on.get(table) or []
     assert rows, f'no {table} rows captured'
     keys = {tuple(sorted(r)) for r in rows}
-    assert len(keys) == 1, f'{table} rows have different keys: {keys}'
+    if table == 'games':
+        # Two shapes, two writes: a game with a pregame line carries the pre_* columns, a game without carries
+        # none of them, so a watcher with no line on record never nulls out the other watcher's line.
+        lined = [r for r in rows if 'pre_total' in r]
+        unlined = [r for r in rows if 'pre_total' not in r]
+        assert lined and unlined, 'expected games rows both with and without a pregame line'
+        assert all(r['pre_total'] for r in lined) and not any(k.startswith('pre_') for r in unlined for k in r), 'games rows mix pre_* columns'
+        assert len({tuple(sorted(r)) for r in lined}) == 1 and len({tuple(sorted(r)) for r in unlined}) == 1, f'games rows have different keys: {keys}'
+    else:
+        assert len(keys) == 1, f'{table} rows have different keys: {keys}'
     for r in rows:
         json.dumps(store.clean(r))   # must be JSON-serializable
 sug = c_on['suggestions'][0]
+# the priced game's line came from the games table (tests/fixtures/supabase_games.json), never from the feed at the half
+assert sug['total'] == 55.5 and sug['home_spread'] == -3.5 and state['games'][sug['game_id']]['pre'].get('restored'), 'pregame line not restored from the games table'
+assert (sug['away_score'], sug['home_score']) == (sug['half_away'], sug['half_home']), 'a priced row must carry the halftime score as its live score'
 half_q = [q for q in c_on['quote_snapshots'] if q['phase'] != 'pre']
 pre_q = [q for q in c_on['quote_snapshots'] if q['phase'] == 'pre']
 assert half_q and all(q['taken_at'] == sug['taken_at'] and q['game_id'] == sug['game_id'] for q in half_q)

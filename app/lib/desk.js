@@ -44,6 +44,14 @@ export function phaseLabel(g) {
 
 export const isHalfish = (g) => ['approaching', 'half', 'early3'].includes(g.phase);
 
+// A suggestions row is priced off the halftime score. Once the games row shows a different live score, the
+// row is stale: the watcher stops writing new rows at that moment, so the newest one is the last good one and
+// this is what tells the screens not to show it as a bet (desk-issues-oct17 #3).
+export function scoreMoved(g, sug) {
+  if (!g || !sug || g.away_score === null || g.away_score === undefined || sug.half_away === null || sug.half_away === undefined) return false;
+  return Number(g.away_score) !== Number(sug.half_away) || Number(g.home_score) !== Number(sug.half_home);
+}
+
 export function spreadText(g) {
   const s = g.pre_home_spread;
   if (s === null || s === undefined) return null;

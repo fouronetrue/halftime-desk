@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import MiddleCalc from '@/components/MiddleCalc';
 import MiddleCompare from '@/components/MiddleCompare';
 import FairMiddle from '@/components/FairMiddle';
-import { ago, etTime, isHalfish, middle, money, phaseLabel, seriesOf, spreadText } from '@/lib/desk';
+import { ago, etTime, isHalfish, middle, money, phaseLabel, scoreMoved, seriesOf, spreadText } from '@/lib/desk';
 
 function lastGame() {
   try { return localStorage.getItem('hd-last-game'); } catch { return null; }
@@ -133,7 +133,9 @@ function DeskView() {
   const onPick = (side, strike) => setPick((p) => ({ ...p, [side]: p[side] === strike ? null : strike }));
   const series = seriesOf(game.kalshi_total_event || sug?.event_ticker);
   const sp = spreadText(game);
-  const cleared = (sug?.singles || []).filter((l) => l.ok);
+  // Once the live score leaves the halftime score the pricing is stale: nothing glows, nothing counts as cleared.
+  const moved = scoreMoved(game, sug);
+  const cleared = moved ? [] : (sug?.singles || []).filter((l) => l.ok);
 
   return (
     <main>
@@ -155,9 +157,13 @@ function DeskView() {
             <div><span>Kalshi</span><b>{sug.market_line ?? 'n/a'}</b></div>
             <div><span>2H points</span><b>{Number(sug.mu).toFixed(1)}</b></div>
           </div>
-          <p className="stamp">Priced {ago(sug.taken_at)} ({etTime(sug.taken_at)}). {cleared.length ? `${cleared.length} line${cleared.length === 1 ? '' : 's'} clear the 3c edge.` : 'Nothing clears the 3c edge.'}</p>
+          {moved ? (
+            <p className="stamp stale"><b>Score moved since the half.</b> Priced at {sug.half_away}-{sug.half_home} ({etTime(sug.taken_at)}); the ladder below is that moment, not now. No bet.</p>
+          ) : (
+            <p className="stamp">Priced {ago(sug.taken_at)} ({etTime(sug.taken_at)}). {cleared.length ? `${cleared.length} line${cleared.length === 1 ? '' : 's'} clear the 3c edge.` : 'Nothing clears the 3c edge.'}</p>
+          )}
           <FairMiddle rows={rows} fair={Number(sug.fair_line)} sport={game.sport} maxCost={Number(sug?.max_cost || 0)} mids={sug?.mids} takenAt={sug.taken_at} onPick={(o, u) => setPick({ over: o, under: u })} />
-          <Ladder rows={rows} legs={legs} pick={pick} onPick={onPick} />
+          <Ladder rows={rows} legs={moved ? {} : legs} pick={pick} onPick={onPick} />
           <MiddleCompare rows={rows} sport={game.sport} budget={Number(budget) || 0} maxCost={Number(sug?.max_cost || 0)} mids={sug?.mids} pick={pick} onPick={(o, u) => setPick({ over: o, under: u })} />
           <MiddleBuilder m={m} pick={pick} sport={game.sport} sug={sug} budget={budget} setBudget={setBudget} clear={() => setPick({ over: null, under: null })} />
           {series && <a className="cta" href={`https://kalshi.com/markets/${series}`} target="_blank" rel="noopener noreferrer">Open on Kalshi</a>}

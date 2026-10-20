@@ -1,8 +1,11 @@
 """Halftime Desk watcher.
 Every run: read ESPN scoreboards, capture pregame lines for games not yet kicked off, and for games at the half
-(or early third quarter) pull Kalshi's full-game total markets, price every strike with the second-half model,
-and push a notification when a single leg or a middle clears the edge. Keeps polling inside the run while any game
-is approaching or at the half, so a 5-minute cron still sees the whole halftime window.
+(or early third quarter, while the score is still the halftime score) pull Kalshi's full-game total markets,
+price every strike with the second-half model, and push a notification when a single leg or a middle clears the
+edge. A game is priced only off a line captured before kickoff (its own record, or the games table in Supabase
+when its state was lost); nothing read from a feed after kickoff is ever used as the pregame line. Keeps polling
+inside the run while any game is approaching or at the half, so a 5-minute cron still sees the whole halftime
+window.
 
 Usage:
   python watch.py                 # one pass, then keeps polling while a halftime is live (up to max_poll_minutes)
@@ -87,8 +90,11 @@ class Desk:
                 print(f'espn {sport} unavailable: {e}')
                 continue
             for g in games:
+                self.state['games'].setdefault(g['id'], dict(sport=sport, name=g['name'], date=g['date_et'], first_seen=now_iso()))
+            self.restore_pregame([g for g in games if feeds.phase(g) not in ('pre', 'post')])
+            for g in games:
                 ph = feeds.phase(g)
-                rec = self.state['games'].setdefault(g['id'], dict(sport=sport, name=g['name'], date=g['date_et'], first_seen=now_iso()))
+                rec = self.state['games'][g['id']]
                 rec['last_seen'] = now_iso()
                 rec['phase'] = ph
                 self.phases[ph] = self.phases.get(ph, 0) + 1
@@ -100,8 +106,7 @@ class Desk:
                     active = True
                     self.evaluate(g, rec)
                 elif ph == 'approaching':
-                    active = True
-                    self.capture_pregame(g, rec, late=True)
+                    active = True   # the half is minutes away: poll fast, and read nothing as a pregame line
                 elif ph == 'post':
                     try:
                         self.settle(g, rec)
@@ -120,25 +125,69 @@ class Desk:
         ten minutes so last_seen stays fresh."""
         if not store.enabled():
             return
-        rows, now = [], time.time()
+        lined, unlined, now = [], [], time.time()
         for g, rec in seen:
             pre, half, post = rec.get('pre') or {}, rec.get('half') or {}, g['state'] == 'post'
             row = dict(id=g['id'], sport=g['sport'], name=g['name'], short=g['short'], date_et=g['date_et'], start_utc=g['start_utc'],
                        away_abbr=g['away']['abbr'], home_abbr=g['home']['abbr'],
                        away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'],
-                       pre_total=pre.get('total'), pre_home_spread=pre.get('home_spread'), pre_source=pre.get('source'), pre_at=pre.get('at'),
                        kalshi_total_event=rec.get('kalshi_total_event'), phase=rec.get('phase'), status=g['status'],
                        half_away=half.get('away'), half_home=half.get('home'), half_at=rec.get('half_at'),
                        final_away=g['away']['score'] if post else None, final_home=g['home']['score'] if post else None,
                        first_seen=rec.get('first_seen'),
                        away_score=g['away']['score'], home_score=g['home']['score'], period=g['period'], clock=g['clock'], detail=g['detail'])
+            if pre.get('total'):
+                row.update(pre_total=pre.get('total'), pre_home_spread=pre.get('home_spread'), pre_source=pre.get('source'), pre_at=pre.get('at'))
             h = hash(json.dumps(row, sort_keys=True, default=str))
             prev = self._db_games.get(g['id'])
             if prev and prev[0] == h and now - prev[1] < 600:
                 continue
             self._db_games[g['id']] = (h, now)
-            rows.append(dict(row, last_seen=rec.get('last_seen'), updated_at=now_iso()))
-        store.write('games', rows, on_conflict='id')
+            (lined if pre.get('total') else unlined).append(dict(row, last_seen=rec.get('last_seen'), updated_at=now_iso()))
+        # Two writes: a game with no pregame line on record sends no pre_* columns at all, so a watcher that lost
+        # its state (or first saw the game in play) never nulls out the line the other watcher captured before kickoff.
+        store.write('games', lined, on_conflict='id')
+        store.write('games', unlined, on_conflict='id')
+
+    def db_pregame(self, ids):
+        """The pregame line columns of the games table for these ids, keyed by id. Under --fixtures the rows come
+        from tests/fixtures/supabase_games.json instead of Supabase."""
+        if self.fixtures:
+            rows = load_json(os.path.join(self.fixtures, 'supabase_games.json'), [])
+        elif store.enabled() and ids:
+            rows = store.read('games', {'select': 'id,pre_total,pre_home_spread,pre_source,pre_at', 'id': 'in.(' + ','.join(ids) + ')'})
+        else:
+            rows = []
+        want = set(ids)
+        return {r['id']: r for r in rows if r.get('id') in want}
+
+    def restore_pregame(self, games):
+        """Games already kicked off whose record has no pregame line (state lost, or first seen in play): take the
+        line the games table captured before kickoff, and only that. ESPN's odds block and Kalshi's 50-50 line
+        are the live line once the game is on, and a live line saved as the pregame line priced nine halftimes
+        off the wrong number on Oct 17. One read per pass covers every game that needs it; a game that came
+        back empty is asked about again after two minutes."""
+        now = time.time()
+        need = []
+        for g in games:
+            rec = self.state['games'][g['id']]
+            if (rec.get('pre') or {}).get('total') or now - float(rec.get('pre_asked') or 0) < 120:
+                continue
+            need.append(g)
+        if not need:
+            return
+        rows = self.db_pregame([g['id'] for g in need])
+        for g in need:
+            rec = self.state['games'][g['id']]
+            rec['pre_asked'] = round(now)
+            row = rows.get(g['id']) or {}
+            if not row.get('pre_total'):
+                continue
+            pre = dict(total=float(row['pre_total']), source=row.get('pre_source'), at=row.get('pre_at'), restored=now_iso())
+            if row.get('pre_home_spread') is not None:
+                pre['home_spread'] = float(row['pre_home_spread'])
+            rec['pre'] = pre
+            print(f"{g['short']}: pregame line restored from the games table (o/u {pre['total']}, spread {pre.get('home_spread')})")
 
     def db_eval(self, ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing):
         """One suggestions row (the halftime_log row plus the full ranked singles and middles) and one
@@ -159,6 +208,7 @@ class Desk:
         store.write('suggestions', [dict(
             taken_at=ts, game_id=g['id'], sport=g['sport'], game=g['short'], date_et=g['date_et'], event_ticker=ev.get('event_ticker'),
             phase=rec.get('phase'), total=total, home_spread=spread, half_away=rec['half']['away'], half_home=rec['half']['home'],
+            away_score=g['away']['score'], home_score=g['home']['score'],   # the live score when priced: equal to the half by construction
             mu=round(m.mu, 2), sd=round(m.sd, 2), fair_line=engine.fair_line(m), market_line=feeds.kalshi_total_line(ev),
             best_single=f"{best_single['kind']} {best_single['line']} @{best_single['price_c']}" if best_single else None,
             best_single_edge_c=round(100 * best_single['edge'], 1) if best_single else None,
@@ -190,16 +240,23 @@ class Desk:
                                     title=title, body=body, event_ticker=ev.get('event_ticker'), channels=', '.join(sent), suggestion_at=ts)],
                     on_conflict='game_id,slot')
 
-    def capture_pregame(self, g, rec, late=False):
-        """Lines at kickoff: ESPN odds when present, Kalshi's 50-50 strikes as the fallback. Kept fresh until kickoff."""
+    def capture_pregame(self, g, rec):
+        """Lines before kickoff: ESPN's odds block, then ESPN's odds endpoint, then Kalshi's 50-50 strikes. Kept
+        fresh until kickoff. Only ever called while the game is in the 'pre' phase: from kickoff on every feed
+        shows the live line, and nothing read then may be stored as the pregame line (see restore_pregame)."""
         pre = rec.setdefault('pre', {})
-        if late and pre.get('total'):
-            return
         spread, total = feeds.espn_lines(g)
         if total:
             pre.update(total=total, source='espn', at=now_iso())
             if spread is not None:
                 pre['home_spread'] = spread
+        if (not pre.get('total') or pre.get('home_spread') is None) and not self.fixtures and time.time() - float(rec.get('odds_asked') or 0) > 1800:
+            rec['odds_asked'] = round(time.time())   # the odds endpoint is tried every 30 minutes until the line shows up
+            s2, t2 = feeds.espn_odds_endpoint(g['sport'], g['id'])
+            if t2 and not pre.get('total'):
+                pre.update(total=t2, source='espn-odds', at=now_iso())
+            if s2 is not None and pre.get('home_spread') is None:
+                pre['home_spread'] = s2
         if not pre.get('total') or pre.get('home_spread') is None:
             ev = feeds.match_event(g, self.events(g['sport'], 'total'))
             if ev:
@@ -214,11 +271,10 @@ class Desk:
                     if ks is not None:
                         pre['home_spread'] = ks
                         pre['spread_source'] = 'kalshi'
-        if not late:
-            try:
-                self.pregame_market(g, rec)
-            except Exception as e:
-                print(f"pregame market {g.get('short')} failed: {e}")
+        try:
+            self.pregame_market(g, rec)
+        except Exception as e:
+            print(f"pregame market {g.get('short')} failed: {e}")
 
     def pregame_market(self, g, rec):
         """Kalshi's live full-game total before kickoff: the market's 50-50 line and the asks on the strike just
@@ -260,27 +316,32 @@ class Desk:
             return
         away_pts, home_pts = hs
         rec['half'] = dict(away=away_pts, home=home_pts)
+        live = (g['away']['score'], g['home']['score'])
+        if live != (away_pts, home_pts):
+            # Someone scored since the half. The halftime model no longer describes the game, so from here on
+            # nothing is priced, logged or written: the newest suggestions row stays the last one priced at the
+            # halftime score, and the app marks it stale by comparing it with the live score on the games row.
+            # (Oct 17: a Q3 touchdown at 13:20 left "Under 35.5 at 27c" showing as a 10.7c edge for five minutes.)
+            if not rec.get('moved_at'):
+                rec['moved_at'] = now_iso()
+                rec['moved'] = dict(away=live[0], home=live[1])
+                print(f"{g['short']}: score moved from {away_pts}-{home_pts} to {live[0]}-{live[1]} after the half, pricing stopped")
+            rec['last_eval'] = now_iso()
+            return
+        # Only a line captured before kickoff prices the half. Nothing is read from a feed here: by now ESPN's
+        # odds block and Kalshi's 50-50 line are the live line (restore_pregame has the Oct 17 damage).
         pre = rec.get('pre') or {}
-        spread, total = feeds.espn_lines(g)
-        total = pre.get('total') or total
-        spread = pre.get('home_spread') if pre.get('home_spread') is not None else spread
-        if (not total or spread is None) and not self.fixtures and not rec.get('tried_odds_endpoint'):
-            rec['tried_odds_endpoint'] = True
-            s2, t2 = feeds.espn_odds_endpoint(g['sport'], g['id'])
-            total = total or t2
-            spread = spread if spread is not None else s2
-            if total:
-                pre.update(total=total, source='espn-odds', at=now_iso())
-                rec['pre'] = pre
-            if spread is not None:
-                pre['home_spread'] = spread
-        if spread is None:
-            spread = 0.0
+        total, spread = pre.get('total'), pre.get('home_spread')
         if not total:
             if not rec.get('noted_no_line'):
-                print(f"{g['short']}: no pregame total found, skipping")
+                print(f"{g['short']}: no pregame line on record, skipping (a line is never read once the game is on)")
                 rec['noted_no_line'] = True
             return
+        if spread is None:
+            if not rec.get('noted_no_spread'):
+                print(f"{g['short']}: no pregame spread on record, pricing as a pick")
+                rec['noted_no_spread'] = True
+            spread = 0.0
         ev = feeds.match_event(g, self.events(g['sport'], 'total'))
         if not ev:
             if not rec.get('noted_no_market'):
@@ -314,12 +375,10 @@ class Desk:
             rec['sheet'] = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing)
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
         # polling allows), one the first time it is seen after the Q3 kick while the score is still the
-        # halftime score. A PLAY goes out whenever something clears; a read goes out per read_push, which maps a
-        # sport to an ntfy priority ('min' is silent and only shows in the app's list).
+        # halftime score (the moved-score check above already returned otherwise). A PLAY goes out whenever
+        # something clears; a read goes out per read_push, which maps a sport to an ntfy priority ('min' is
+        # silent and only shows in the app's list).
         slot = 'q3' if rec.get('phase') == 'early3' else 'half'
-        if slot == 'q3' and (g['away']['score'], g['home']['score']) != (away_pts, home_pts):
-            rec['last_eval'] = now_iso()
-            return   # someone scored since the half; the halftime model no longer describes the state
         slots = rec.setdefault('slots', {})
         if slots.get(slot):
             rec['last_eval'] = now_iso()

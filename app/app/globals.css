@@ -28,6 +28,8 @@ b, .pts, .score, .board b, .ladder, .chip, .mstats dd { font-variant-numeric: ta
 main h1 { font: 700 34px/1.05 var(--cond); margin: 4px 0 6px; letter-spacing: 0.2px; }
 h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .sub, .stamp { color: var(--dim); font-size: 14px; margin: 0 0 12px; }
+.stamp.stale { color: var(--chalk); }
+.stamp.stale b { color: var(--loss); }
 .empty, .hint { color: var(--dim); margin: 20px 0; }
 .err { color: var(--loss); }
 .pos { color: var(--win); }

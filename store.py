@@ -4,12 +4,20 @@ exactly as before. A failed write prints one line and never blocks the watch; th
 
 Tables are created by supabase/schema.sql. Writes go through PostgREST (the /rest/v1 endpoint) with the secret
 key in the apikey header, which bypasses row level security. The secret key must never leave the worker."""
-import os, json, time
+import os, re, json, time
 
 try:
     import requests
 except ImportError:  # the engine and tests work without it
     requests = None
+
+_missing = set()   # (table, column) pairs already reported, so the schema warning prints once per run
+
+
+def missing_column(text):
+    """The column PostgREST could not find, from its PGRST204 message, or None."""
+    m = re.search(r"Could not find the '([^']+)' column", text or '')
+    return m.group(1) if m else None
 
 
 def _url():
@@ -61,19 +69,30 @@ def write(table, rows, on_conflict=None, ignore_duplicates=False):
     if on_conflict:
         params['on_conflict'] = on_conflict
         prefer += ',resolution=' + ('ignore-duplicates' if ignore_duplicates else 'merge-duplicates')
-    body = json.dumps(clean(rows), default=str)
-    err = 'unknown'
-    for attempt in range(3):
+    rows = clean(rows)
+    err, tries = 'unknown', 0
+    while tries < 3:
+        tries += 1
         try:
-            r = requests.post(f'{_url()}/rest/v1/{table}', params=params, data=body, headers=_headers(prefer), timeout=25)
+            r = requests.post(f'{_url()}/rest/v1/{table}', params=params, data=json.dumps(rows, default=str), headers=_headers(prefer), timeout=25)
             if r.status_code < 300:
                 return True
             err = f'HTTP {r.status_code} {r.text[:240]}'
+            col = missing_column(r.text) if r.status_code == 400 else None
+            if col and any(col in row for row in rows):
+                # The schema is behind the code (a file in supabase/ not run yet). Write without that column rather
+                # than lose the row, and say so once; the app shows what it can until the migration is run.
+                if (table, col) not in _missing:
+                    _missing.add((table, col))
+                    print(f"supabase {table}: no column '{col}' yet (run the newest file in supabase/), writing without it")
+                rows = [{k: v for k, v in row.items() if k != col} for row in rows]
+                tries -= 1   # a retry without the column is not a failed attempt
+                continue
             if 400 <= r.status_code < 500:
                 break  # a rejected row will not get better on retry
         except Exception as e:  # network hiccup, retry
             err = str(e)
-        time.sleep(1.5 * (attempt + 1))
+        time.sleep(1.5 * tries)
     print(f'supabase {table}: write of {len(rows)} rows failed ({err})')
     return False
 

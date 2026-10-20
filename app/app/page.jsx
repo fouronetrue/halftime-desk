@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { etDate, etDay, etTime, ago, money, phaseLabel, isHalfish, spreadText } from '@/lib/desk';
+import { etDate, etDay, etTime, ago, money, phaseLabel, isHalfish, scoreMoved, spreadText } from '@/lib/desk';
 
 const SPORTS = [['all', 'All'], ['nfl', 'NFL'], ['cfb', 'College']];
 
@@ -117,7 +117,14 @@ function GameCard({ g, sug, big, mkt }) {
           <span className="when">{ago(mkt.at)}</span>
         </div>
       )}
-      {big && sug && (
+      {big && sug && (scoreMoved(g, sug) ? (
+        <div className="halfline">
+          <span>Fair <b>{Number(sug.fair_line)}</b></span>
+          <span>Kalshi <b>{sug.market_line ?? 'n/a'}</b></span>
+          <span className="plays">priced at {sug.half_away}-{sug.half_home}</span>
+          <p className="betline none"><b>Score moved.</b> The half pricing is stale. No bet.</p>
+        </div>
+      ) : (
         <div className="halfline">
           <span>Fair <b>{Number(sug.fair_line)}</b></span>
           <span>Kalshi <b>{sug.market_line ?? 'n/a'}</b></span>
@@ -125,7 +132,7 @@ function GameCard({ g, sug, big, mkt }) {
           <span className="when">since {etTime(g.half_at)}</span>
           {isHalfish(g) && <BetLines sug={sug} />}
         </div>
-      )}
+      ))}
     </Link>
   );
 }
