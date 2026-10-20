@@ -11,7 +11,7 @@
 -- One row per ESPN game the watcher has seen. Pregame lines, halftime score, final score.
 create table if not exists games (
   id              text primary key,                    -- ESPN event id
-  sport           text not null check (sport in ('nfl', 'cfb')),
+  sport           text not null check (sport in ('nfl', 'cfb', 'nba')),
   name            text,
   short           text,                                -- "CSU @ TXST"
   date_et         date,

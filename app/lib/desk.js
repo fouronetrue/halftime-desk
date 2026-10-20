@@ -28,8 +28,8 @@ export function ago(iso, now = Date.now()) {
 export const feePer = (p) => 0.07 * p * (1 - p);
 export const orderFee = (n, p) => Math.ceil(n * feePer(p) * 100 - 1e-9) / 100;
 
-// Middle breakeven from the project rules: pair cost under 0.97 plus 3.5c per winning number (NFL), 2.4c (CFB)
-export const perNumber = (sport) => (sport === 'nfl' ? 0.035 : 0.024);
+// Middle breakeven from the project rules: pair cost under 0.97 plus 3.5c per winning number (NFL), 2.4c (CFB), 2.9c (NBA)
+export const perNumber = (sport) => (sport === 'nfl' ? 0.035 : sport === 'nba' ? 0.029 : 0.024);
 
 export function phaseLabel(g) {
   switch (g.phase) {
@@ -106,7 +106,7 @@ export function tickerInfo(ticker, position) {
   const m = /^(KX[A-Z]+)-(\d\d)([A-Z]{3})(\d\d)([A-Z0-9]+)-(.+)$/.exec(ticker || '');
   if (!m) return { what: ticker || '', game: '', sport: '', date: '' };
   const [, series, yy, mon, dd, teams, tail] = m;
-  const sport = series.includes('NCAAF') ? 'cfb' : series.includes('NFL') ? 'nfl' : '';
+  const sport = series.includes('NCAAF') ? 'cfb' : series.includes('NFL') ? 'nfl' : series.includes('NBA') ? 'nba' : '';
   const date = MONTHS[mon] ? `20${yy}-${String(MONTHS[mon]).padStart(2, '0')}-${dd}` : '';
   const yes = Number(position) >= 0;
   if (series.endsWith('TOTAL') && /^\d+$/.test(tail)) {

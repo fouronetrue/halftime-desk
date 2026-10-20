@@ -8,7 +8,7 @@ import { money } from '@/lib/desk';
 // the sizes the push suggested (the first single is the play, the rest are backups; a middle is graded on its
 // own). "You" is what your Kalshi positions on that game's total market actually settled for, after fees.
 const GATE = 250;
-const SPORTS = [['all', 'All'], ['nfl', 'NFL'], ['cfb', 'College']];
+const SPORTS = [['all', 'All'], ['nfl', 'NFL'], ['cfb', 'College'], ['nba', 'NBA']];
 
 const num = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
 const signed = (v) => `${v >= 0 ? '+' : '-'}$${Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 2)}`;
@@ -148,7 +148,7 @@ export default function Record() {
               )}
               <div className={`rec ${g.played ? 'played' : 'quiet'}`}>
                 <button className="rechead" onClick={() => setOpen(open === r.game_id ? null : r.game_id)} aria-expanded={open === r.game_id}>
-                  <span className="game">{r.game}<small>{r.sport === 'nfl' ? 'NFL' : 'CFB'}</small></span>
+                  <span className="game">{r.game}<small>{r.sport === 'nfl' ? 'NFL' : r.sport === 'nba' ? 'NBA' : 'CFB'}</small></span>
                   <span className="recscore">Half {r.half}. Final {r.final}, {g.T} points.</span>
                   {play ? (
                     <span className={`call ${play.win ? 'win' : 'loss'}`}>

@@ -12,7 +12,7 @@ const LINES_KEY = 'hd-calc-lines';
 function CalcView() {
   const q = useSearchParams();
   const fromDesk = Boolean(q.get('o'));
-  const [sport, setSport] = useState(q.get('s') === 'cfb' ? 'cfb' : 'nfl');
+  const [sport, setSport] = useState(['cfb', 'nba'].includes(q.get('s')) ? q.get('s') : 'nfl');
   const [o, setO] = useState(q.get('o') || '48.5');
   const [u, setU] = useState(q.get('u') || '51.5');
   const [loaded, setLoaded] = useState(false);
@@ -37,7 +37,7 @@ function CalcView() {
       <h1>Middle calc</h1>
       <p className="sub">Two lines, two prices, a loss budget. Pair cost against the breakeven, shares each side, what both pay.</p>
       <span className="seg" role="group" aria-label="Sport">
-        {['nfl', 'cfb'].map((s) => <button key={s} className={sport === s ? 'on' : ''} aria-pressed={sport === s} onClick={() => setSport(s)}>{s.toUpperCase()}</button>)}
+        {['nfl', 'cfb', 'nba'].map((s) => <button key={s} className={sport === s ? 'on' : ''} aria-pressed={sport === s} onClick={() => setSport(s)}>{s.toUpperCase()}</button>)}
       </span>
       <div className="mc-lines">
         <label htmlFor="mc-o">Over line<input id="mc-o" inputMode="decimal" value={o} onChange={(e) => setO(e.target.value)} /></label>

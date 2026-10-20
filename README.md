@@ -1,12 +1,12 @@
 # Halftime Desk
 
-Watches NFL and college football games, and at the half prices every Kalshi full-game total strike with a
-second-half points model fit on 2,290 NFL and 6,506 FBS games. When a single leg or a middle (Yes on a lower
-total plus No on a higher one) clears the edge, it sends a push notification with the play, the price, how many
-shares or pairs, and the resting limits for every strike near fair.
+Watches NFL, college football and NBA games, and at the half prices every Kalshi full-game total strike with a
+second-half points model fit on 2,290 NFL, 6,506 FBS and 12,849 NBA games. When a single leg or a middle (Yes on
+a lower total plus No on a higher one) clears the edge, it sends a push notification with the play, the price,
+how many shares or pairs, and the resting limits for every strike near fair.
 
 ## What it does each run
-1. Reads ESPN's scoreboards (NFL, FBS). For games not yet kicked off it stores the pregame spread and total
+1. Reads ESPN's scoreboards (NFL, FBS, NBA). For games not yet kicked off it stores the pregame spread and total
    (ESPN's odds block, then ESPN's odds endpoint, then Kalshi's 50-50 strikes). That stored line is the only
    line a game is ever priced off. Once a game has kicked off nothing read from a feed is accepted as its
    pregame line (by then the feeds show the live line); a watcher that lost its record of the line takes it
@@ -93,11 +93,32 @@ CFB, with at least 1c of room and both prices inside 15 to 85c) it pushes MIDDLE
 count (held to a $15 miss), both outcomes, and what selling at the bid would make instead. It pushes once, and
 again only when the pair gets 2c better. Games at the half are the engine's; live games are skipped.
 
+## NBA
+Same loop, same ladder, same rules (3-cent margin, 15 to 85c band, quarter Kelly and the caps, two pushes a
+game), one difference in where the center of the ladder comes from. 24,437 games of history (2007-08 through
+2025-26, `data/nba_games.csv`) say the NBA second half runs at the pregame pace whatever the half looks like:
+expected second-half points are 5.3 + 0.474 x the pregame total, and the halftime margin, who is favored, home
+or away and first-half pace all carry a coefficient of zero. No spot leans over or under against the market's
+own second-half line (home favorite trailing, small favorite leading, blowouts: every cell 47 to 53 percent).
+The model's center is 2.4 points from the sharp line in the median game and never beats it; its shape is
+calibrated to a cent at every strike. So for the NBA the watcher centers the ladder on the market (Kalshi's
+implied full-game line at the half minus the first-half points) and keeps the model for the shape, with
+`center_model_pct` (25) on the model's own number. Football keeps its own center as before. Kalshi's NBA
+ladder has 31 strikes every 2 points, so an NBA middle is two numbers wide at least; a number is worth 2.9c a
+pair in the breakeven rule. Overtime is in the fit (a full-game total settles on it). The Q3 push slot is the
+first 30 seconds of the third quarter, because a basket comes in seconds and the score-moved rule then stops
+pricing. The study and the decisions are in `claude/nba-halftime.md`; `python scripts/fit_nba.py
+data/nba_games.csv` reprints it (`--write` refits the block in `model.json`). Run `supabase/004_nba.sql` once
+so the games table accepts the sport.
+
 ## Manual use
 ```
 python cli.py --sport nfl --away BUF --home LAR --spread -3.5 --total 55.5 --half 13-7 --quotes "45.5y59,48.5y47,51.5n66"
+python cli.py --sport nba --away BOS --home DET --spread -1.5 --total 221.5 --half 58-61 --center 230.5 --quotes "236.5y21,238.5n73"
 ```
-Quotes are Kalshi asks in cents. Same engine, same PLAY/UPDATE text as the push, then the full ladder.
+Quotes are Kalshi asks in cents. Same engine, same PLAY/UPDATE text as the push, then the full ladder. For the
+NBA, `--center` is the market's full-game line at the half (Kalshi's 50-50 line, or a sharp 2H line plus the
+halftime score); without it the model prices on its own center.
 
 ## Honest limits
 - The model knows the lines, the score and the clock. It does not know injuries, weather or pace. That is why the
@@ -112,8 +133,9 @@ Quotes are Kalshi asks in cents. Same engine, same PLAY/UPDATE text as the push,
 
 ## Files
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
-state and alerts. `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
+state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
 read-only Kalshi sync. `held.py` open-position watch. `cli.py` manual desk. `model.json` fitted coefficients and
 residual quantiles. `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
 without ever committing a conflict. `tests/` parity check against the ledger artifact, the read-only proof, the
-mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), and an offline run on fixtures.
+mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), the NBA path (`nba.py`, on
+`fixtures_nba/`), and an offline run on fixtures.

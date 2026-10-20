@@ -13,6 +13,8 @@ on:
     - cron: '*/5 0-5 * * 1'
     - cron: '*/5 23 * * 1'      # Monday night, doubleheaders included
     - cron: '*/5 0-6 * * 2'
+    - cron: '*/5 23 * * *'      # NBA: every night, 7 PM ET tips through the last West Coast final (about 1:15 AM ET)
+    - cron: '*/5 0-5 * * *'
   workflow_dispatch:
 concurrency:
   group: halftime-watch
