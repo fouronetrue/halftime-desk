@@ -1,0 +1,81 @@
+"""NBA checks, no network:
+1. The NBA model block loads and prices like the study says: second half about 5.3 + 0.474 x the total, sd
+   1.29 x sqrt(mu), P(over) at fair+10 about 21 percent.
+2. A market center blends in at center_model_pct (25 for the NBA): mu = 0.25 x model + 0.75 x center; the
+   football models ignore the center (weight 1.0) and price exactly as before.
+3. ESPN's NBA clock forms parse; the Q3 slot is the first 30 seconds; Kalshi's NBA codes match ESPN's.
+4. The fixtures in tests/fixtures_nba run end to end: the halftime game is priced off the games-table line,
+   centered on the ladder, pushed once as a PLAY, and the pregame game captures its line and its Kalshi event.
+5. The per-number rule for NBA middles (2.9c) is the same in held.py and the app."""
+import sys, os, re, json, tempfile, math
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+import engine, feeds, watch, notify, held
+
+# 1. the model
+m = engine.HalfModel('nba', 230.0, -5.5, 60, 55)
+assert abs(m.mu_model - (5.3 + 0.4738 * 230 + 0.0006 * 115 + 0.0007 * 5 + 0.0125 * 5)) < 0.01, m.mu_model
+assert m.mu == m.mu_model and m.center is None and m.center_w == 1.0
+assert abs(m.sd - 1.2883 * math.sqrt(m.mu)) < 1e-6
+assert 0.47 < m.p_over_2h(math.floor(m.mu) + 0.5) < 0.51, m.p_over_2h(math.floor(m.mu) + 0.5)
+assert 0.19 < m.p_over_2h(math.floor(m.mu) + 10.5) < 0.23, m.p_over_2h(math.floor(m.mu) + 10.5)
+assert 0.75 < m.p_over_2h(math.floor(m.mu) - 9.5) < 0.79, m.p_over_2h(math.floor(m.mu) - 9.5)
+assert 'no lean' in m.spot()
+assert 'blowout' in engine.HalfModel('nba', 230.0, -5.5, 70, 48).spot()
+nfl = engine.HalfModel('nfl', 55.5, -3.5, 7, 13)
+assert (round(nfl.mu, 2), round(nfl.sd, 2)) == (round(engine.HalfModel('nfl', 55.5, -3.5, 7, 13, center=20.0, center_w=1.0).mu, 2), round(nfl.sd, 2)), 'football changed'
+print(f"model: mu {m.mu:.1f}, sd {m.sd:.1f}, P(over fair+10) {100*m.p_over_2h(math.floor(m.mu) + 10.5):.0f}%")
+
+# 2. the center blend
+c = engine.HalfModel('nba', 230.0, -5.5, 60, 55, center=111.5, center_w=0.25)
+assert abs(c.mu - (0.25 * c.mu_model + 0.75 * 111.5)) < 1e-9 and c.center == 111.5 and c.center_w == 0.25
+assert engine.HalfModel('nba', 230.0, -5.5, 60, 55, center=111.5, center_w=0.0).mu == 111.5
+assert engine.HalfModel('nba', 230.0, -5.5, 60, 55, center=111.5, center_w=1.0).mu == c.mu_model
+print('center: 25 percent model, 75 percent market')
+
+# 3. feeds
+for s, want in [('7:34', 454), ('7:34.0', 454), ('0:00', 0), ('45.3', 45), (':45.3', 45), ('0.0', 0), ('', None), ('end', None)]:
+    assert feeds.parse_clock(s) == want, (s, feeds.parse_clock(s), want)
+g = dict(sport='nba', state='in', status='STATUS_IN_PROGRESS', period=3, clock_s=feeds.parse_clock('11:40'))
+assert feeds.phase(g) == 'early3'
+g['clock_s'] = feeds.parse_clock('11:20'); assert feeds.phase(g) == 'live'
+g.update(period=2, clock_s=feeds.parse_clock('4:59')); assert feeds.phase(g) == 'approaching'
+assert feeds.ESPN['nba'].endswith('/basketball/nba/scoreboard') and feeds.SERIES['nba'] == {'total': 'KXNBATOTAL', 'spread': 'KXNBASPREAD'}
+print('feeds: clock forms, Q3 slot, series')
+
+# 4. the fixtures run
+FIX = os.path.join(ROOT, 'tests', 'fixtures_nba')
+pushes = []
+notify.push = lambda title, body, priority='default', tags='football': (pushes.append((title, body, priority)) or ['test'])
+scratch = tempfile.mkdtemp()
+watch.LOG_PATH = os.path.join(scratch, 'halftime_log.csv'); watch.RESULTS_PATH = os.path.join(scratch, 'results.csv')
+cfg = dict(watch.load_json(watch.CONFIG_PATH, {}), sports=['nba'])
+assert cfg.get('center_model_pct', {}).get('nba') == 25, 'config.json: center_model_pct.nba should be 25'
+d = watch.Desk(cfg, {}, FIX)
+d.run_pass()
+rec = d.state['games']['501']
+assert rec['pre'] == dict(rec['pre'], total=221.5, home_spread=-1.5) and rec['pre'].get('restored'), 'line not restored from the games table'
+assert rec['kalshi_total_event'] == 'KXNBATOTAL-26OCT20BOSDET' and rec['half'] == {'away': 58, 'home': 61}
+sh = rec['sheet']
+assert sh['center'] == 111.5 and sh['center_w'] == 0.25 and abs(sh['mu'] - (0.25 * sh['mu_model'] + 0.75 * 111.5)) < 0.02, sh
+assert sh['mkt'] == 230.5 and sh['fair'] == 229.5, sh
+assert len(pushes) == 1 and pushes[0][0] == 'PLAY: Celtics 58, Pistons 61 (half, NBA)' and pushes[0][2] == 'high', pushes
+assert 'Buy OVER 236.5' in pushes[0][1] and 'No lean' in pushes[0][1], pushes[0][1]
+assert rec['slots'] == {'half': 'play'}
+pre = d.state['games']['502']
+assert pre['pre'].get('total') == 231.5 and pre['pre'].get('home_spread') == -5.5 and pre.get('kalshi_total_event') == 'KXNBATOTAL-26OCT20PHINYK', pre
+assert pre['mkt']['line'] == 231.5
+# a second pass pushes nothing new
+d._events = {}; d.run_pass()
+assert len(pushes) == 1
+print('fixtures: halftime game priced off the games-table line, centered on the ladder, one PLAY; pregame game captured (NY matched NYK)')
+
+# 5. the per-number rule in both places
+js = open(os.path.join(ROOT, 'app', 'lib', 'desk.js')).read()
+mm = re.search(r"sport === 'nba' \? (0\.\d+)", js)
+assert mm and float(mm.group(1)) == held.PER_NUMBER['nba'] == 0.029, 'NBA per-number rule differs between held.py and the app'
+assert held.SPORT_OF['KXNBATOTAL'] == 'nba'
+cfg_file = watch.load_json(watch.CONFIG_PATH, {})
+assert 'nba' in cfg_file['sports'] and cfg_file['read_push'].get('nba')
+assert len(engine.MODEL['nba']['z']) == 201 and engine.MODEL['nba']['n'] == 12849
+print('nba: ok')

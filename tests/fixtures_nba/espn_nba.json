@@ -1,0 +1,118 @@
+{
+ "events": [
+  {
+   "id": "501",
+   "name": "Boston Celtics at Detroit Pistons",
+   "shortName": "BOS @ DET",
+   "date": "2026-10-20T23:00Z",
+   "status": {
+    "period": 2,
+    "displayClock": "0.0",
+    "type": {
+     "state": "in",
+     "name": "STATUS_HALFTIME",
+     "shortDetail": "STATUS_HALFTIME"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "score": "61",
+       "linescores": [
+        {
+         "value": 30
+        },
+        {
+         "value": 31
+        }
+       ],
+       "team": {
+        "abbreviation": "DET",
+        "displayName": "Detroit Pistons",
+        "location": "Detroit",
+        "shortDisplayName": "Pistons"
+       }
+      },
+      {
+       "homeAway": "away",
+       "score": "58",
+       "linescores": [
+        {
+         "value": 27
+        },
+        {
+         "value": 31
+        }
+       ],
+       "team": {
+        "abbreviation": "BOS",
+        "displayName": "Boston Celtics",
+        "location": "Boston",
+        "shortDisplayName": "Celtics"
+       }
+      }
+     ],
+     "neutralSite": false,
+     "odds": [
+      {
+       "details": "DET -4.5",
+       "overUnder": 229.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "502",
+   "name": "Philadelphia 76ers at New York Knicks",
+   "shortName": "PHI @ NY",
+   "date": "2026-10-21T00:00Z",
+   "status": {
+    "period": 0,
+    "displayClock": "0.0",
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED",
+     "shortDetail": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "score": "0",
+       "linescores": [],
+       "team": {
+        "abbreviation": "NY",
+        "displayName": "New York Knicks",
+        "location": "New York",
+        "shortDisplayName": "Knicks"
+       }
+      },
+      {
+       "homeAway": "away",
+       "score": "0",
+       "linescores": [],
+       "team": {
+        "abbreviation": "PHI",
+        "displayName": "Philadelphia 76ers",
+        "location": "Philadelphia",
+        "shortDisplayName": "76ers"
+       }
+      }
+     ],
+     "neutralSite": false,
+     "odds": [
+      {
+       "details": "NY -5.5",
+       "overUnder": 231.5
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
