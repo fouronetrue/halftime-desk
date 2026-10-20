@@ -29,20 +29,45 @@ function Fill({ name, value, set }) {
 }
 
 // The calculator under the Desk's middle builder and on /calc/. Prices start at the ladder's asks; nudge them to what Kalshi shows.
-export default function MiddleCalc({ sport, overLine, underLine, askA, askB, budget0, budget: budgetIn, setBudget: setBudgetIn, maxCost, pHit }) {
+// On the Desk a new pick loads that pick's asks. With storeKey set (the Calc tab) nothing ever resets what you typed:
+// prices, fills and the budget stay put while you change the lines, and come back when you return to the tab.
+export default function MiddleCalc({ sport, overLine, underLine, askA, askB, budget0, budget: budgetIn, setBudget: setBudgetIn, maxCost, pHit, storeKey, restore = true }) {
   const [a, setA] = useState(askA ?? '');
   const [b, setB] = useState(askB ?? '');
   const [oFill, setOFill] = useState('take');
   const [uFill, setUFill] = useState('take');
   const [budgetOwn, setBudgetOwn] = useState(budget0 ? Math.round(budget0) : 10);
+  const [loaded, setLoaded] = useState(!storeKey);
   // The Desk owns the budget so Compare middles and this calculator size to the same number.
   const budget = budgetIn ?? budgetOwn, setBudget = setBudgetIn ?? setBudgetOwn;
 
   // A new pick resets the prices to that pick's asks; a ladder refresh on the same pick leaves your nudges alone.
-  useEffect(() => { setA(askA ?? ''); setB(askB ?? ''); }, [overLine, underLine]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!storeKey) { setA(askA ?? ''); setB(askB ?? ''); } }, [overLine, underLine]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Calc tab: remember the last prices, fills and budget on this phone (a convenience, never load-bearing).
+  useEffect(() => {
+    if (!storeKey) return;
+    if (!restore) { setLoaded(true); return; }   // the Desk sent its own asks: keep those, start saving from here
+    try {
+      const s = JSON.parse(localStorage.getItem(storeKey) || 'null');
+      if (s) {
+        if (s.a !== undefined) setA(s.a);
+        if (s.b !== undefined) setB(s.b);
+        if (s.oFill) setOFill(s.oFill);
+        if (s.uFill) setUFill(s.uFill);
+        if (s.budget !== undefined && budgetIn === undefined) setBudgetOwn(s.budget);
+      }
+    } catch { /* private mode or blocked storage */ }
+    setLoaded(true);
+  }, [storeKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!storeKey || !loaded) return;
+    try { localStorage.setItem(storeKey, JSON.stringify({ a, b, oFill, uFill, budget })); } catch { /* ignore */ }
+  }, [storeKey, loaded, a, b, oFill, uFill, budget]);
 
   const numbers = Math.round(Number(underLine) - Number(overLine));
-  const r = sizeMiddle({ a: Number(a), b: Number(b), oFill, uFill, numbers, sport, budget: Number(budget) || 0, maxCost, pHit });
+  const linesOk = Number(underLine) > Number(overLine) && numbers >= 1;
+  const r = linesOk ? sizeMiddle({ a: Number(a), b: Number(b), oFill, uFill, numbers, sport, budget: Number(budget) || 0, maxCost, pHit }) : null;
   const moved = askA !== undefined && askB !== undefined && (Number(a) !== Number(askA) || Number(b) !== Number(askB));
   const band = [a, b].some((p) => Number(p) < 15 || Number(p) > 85);
 
@@ -57,7 +82,7 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
         {BUDGETS.map((v) => <button key={v} type="button" className={Number(budget) === v ? 'on' : ''} aria-pressed={Number(budget) === v} onClick={() => setBudget(v)}>${v}</button>)}
         <input id="mc-budget" aria-label="Loss budget in dollars" inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value.replace(/[^0-9.]/g, ''))} />
       </div>
-      {!r ? <p className="hint">Enter both prices.</p> : (
+      {!r ? <p className="hint">{linesOk ? 'Enter both prices.' : 'The under line has to sit above the over line. Your prices and budget are kept.'}</p> : (
         <>
           <p className={`mc-verdict ${r.verdict}`}>
             <b>{r.verdict === 'play' ? 'Play' : r.verdict === 'thin' ? 'Thin play' : 'Pass'}</b>

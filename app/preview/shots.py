@@ -258,7 +258,8 @@ def main(only=None):
             for name, path in ROUTES.items():
                 if only and name != only:
                     continue
-                page.goto(f'http://localhost:{PORT}{path}', wait_until='load')
+                page.set_default_navigation_timeout(180000)
+                page.goto(f'http://localhost:{PORT}{path}', wait_until='domcontentloaded')
                 page.wait_for_timeout(2500)
                 shot = os.path.join(OUT, f'{name}.png')
                 page.screenshot(path=shot, full_page=True)
