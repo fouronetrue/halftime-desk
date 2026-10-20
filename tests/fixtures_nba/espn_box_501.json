@@ -1,0 +1,86 @@
+{
+ "boxscore": {
+  "teams": [
+   {
+    "homeAway": "home",
+    "team": {
+     "abbreviation": "DET"
+    },
+    "statistics": [
+     {
+      "name": "fieldGoalsMade-fieldGoalsAttempted",
+      "displayValue": "24-49"
+     },
+     {
+      "name": "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
+      "displayValue": "6-18"
+     },
+     {
+      "name": "freeThrowsMade-freeThrowsAttempted",
+      "displayValue": "7-9"
+     },
+     {
+      "name": "offensiveRebounds",
+      "displayValue": "7"
+     },
+     {
+      "name": "turnovers",
+      "displayValue": "6"
+     },
+     {
+      "name": "teamTurnovers",
+      "displayValue": "1"
+     },
+     {
+      "name": "totalTurnovers",
+      "displayValue": "7"
+     },
+     {
+      "name": "fouls",
+      "displayValue": "10"
+     }
+    ]
+   },
+   {
+    "homeAway": "away",
+    "team": {
+     "abbreviation": "BOS"
+    },
+    "statistics": [
+     {
+      "name": "fieldGoalsMade-fieldGoalsAttempted",
+      "displayValue": "21-47"
+     },
+     {
+      "name": "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
+      "displayValue": "8-22"
+     },
+     {
+      "name": "freeThrowsMade-freeThrowsAttempted",
+      "displayValue": "8-10"
+     },
+     {
+      "name": "offensiveRebounds",
+      "displayValue": "5"
+     },
+     {
+      "name": "turnovers",
+      "displayValue": "8"
+     },
+     {
+      "name": "teamTurnovers",
+      "displayValue": "0"
+     },
+     {
+      "name": "totalTurnovers",
+      "displayValue": "8"
+     },
+     {
+      "name": "fouls",
+      "displayValue": "9"
+     }
+    ]
+   }
+  ]
+ }
+}

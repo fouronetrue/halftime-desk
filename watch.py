@@ -336,6 +336,24 @@ class Desk:
             return None, 1.0
         return c, pct / 100
 
+    def first_half_box(self, g, rec):
+        """NBA only: the first-half box score (shots, free throws, offensive rebounds, turnovers, fouls, and the
+        possession count they imply), read once per game at the half from ESPN's summary and kept on the record
+        and the graded sheet. Logged, not priced: first-half possessions carry about 0.2 points of second-half
+        total per possession above average in 8,900 games of history (t 3.0), the sharp 2H line half-prices it,
+        and whether Kalshi's ladder prices it at all is what the graded NBA halftimes will show
+        (claude/nba-halftime.md, section 11). Under --fixtures the box comes from espn_box_<id>.json if present."""
+        if g['sport'] != 'nba' or rec.get('pace') or rec.get('pace_asked'):
+            return
+        rec['pace_asked'] = True
+        if self.fixtures:
+            box = feeds.parse_box_stats(load_json(os.path.join(self.fixtures, f"espn_box_{g['id']}.json"), {}))
+        else:
+            box = feeds.espn_box_stats(g['sport'], g['id'])
+        if box:
+            rec['pace'] = dict(box, at=now_iso(), half=f"{g['away']['score']}-{g['home']['score']}")
+            print(f"{g['short']}: first-half box read, {box['poss']} possessions a side")
+
     def evaluate(self, g, rec):
         hs = feeds.half_score(g)
         if hs is None:
@@ -379,6 +397,7 @@ class Desk:
         if not quotes:
             return
         center, center_w = self.market_center(g, ev, away_pts + home_pts)
+        self.first_half_box(g, rec)
         m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w)
         rows = engine.price_lines(m, list(quotes), 'fg', self.cfg['margin_c'] / 100)
         bank = float(self.cfg['bankroll'])
@@ -399,7 +418,7 @@ class Desk:
         self.log_row(g, rec, m, total, spread, quotes, sug, ev, ts)
         self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing)
         if 'sheet' not in rec:
-            rec['sheet'] = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing)
+            rec['sheet'] = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec)
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
         # polling allows), one the first time it is seen after the Q3 kick while the score is still the
         # halftime score (the moved-score check above already returned otherwise). A PLAY goes out whenever
@@ -442,12 +461,13 @@ class Desk:
             self.db_alert(ts, g, slot, 'update', read_pri, title, body, ev, sent)
         rec['last_eval'] = now_iso()
 
-    def sheet(self, g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing):
+    def sheet(self, g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec=None):
         """What the first push said, kept so the final can grade it: cleared plays at their prices and sizes, the
         resting middle when nothing cleared (graded as a what-if), and the model and market fair lines."""
         singles, mid = engine.chosen(sug)
         out = dict(at=now_iso(), total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2),
                    mu_model=round(m.mu_model, 2), center=None if m.center is None else round(m.center, 2), center_w=m.center_w,
+                   pace=(rec or {}).get('pace'),
                    fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev),
                    singles=[dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost']) for s in singles],
                    mid=None, rest_mid=None)

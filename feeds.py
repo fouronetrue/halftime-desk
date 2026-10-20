@@ -161,6 +161,52 @@ def espn_odds_endpoint(sport, game_id):
     return spread, total
 
 
+def parse_box_stats(data, sport='nba'):
+    """Per-team box score from ESPN's summary endpoint (cumulative at the moment it is read, so at the half it is
+    the first-half box): field goal and free throw attempts, offensive rebounds, turnovers, fouls, and the
+    possession estimate FGA - OREB + TOV + 0.44 x FTA. {'home': {...}, 'away': {...}, 'poss': mean of the two}
+    or None when the box is not there yet."""
+    teams = ((data or {}).get('boxscore') or {}).get('teams') or []
+    out = {}
+    for t in teams:
+        side = t.get('homeAway')
+        st = {x.get('name'): x.get('displayValue') for x in (t.get('statistics') or [])}
+        def pair(key):
+            v = st.get(key) or ''
+            m = re.match(r'^\s*(\d+)\s*-\s*(\d+)', str(v))
+            return (int(m.group(1)), int(m.group(2))) if m else (None, None)
+        def num(key):
+            try:
+                return int(float(st.get(key)))
+            except Exception:
+                return None
+        fgm, fga = pair('fieldGoalsMade-fieldGoalsAttempted')
+        ftm, fta = pair('freeThrowsMade-freeThrowsAttempted')
+        tpm, tpa = pair('threePointFieldGoalsMade-threePointFieldGoalsAttempted')
+        oreb, fouls = num('offensiveRebounds'), num('fouls')
+        tov = num('totalTurnovers') if num('totalTurnovers') is not None else num('turnovers')
+        if side not in ('home', 'away') or None in (fga, fta, oreb, tov):
+            continue
+        out[side] = dict(fga=fga, fgm=fgm, fta=fta, ftm=ftm, tpa=tpa, oreb=oreb, tov=tov, fouls=fouls,
+                         poss=round(fga - oreb + tov + 0.44 * fta, 2))
+    if 'home' not in out or 'away' not in out:
+        return None
+    out['poss'] = round((out['home']['poss'] + out['away']['poss']) / 2, 2)
+    return out
+
+
+def espn_box_stats(sport, game_id):
+    """The live box score for a game (one request), or None."""
+    league = ESPN_LEAGUE.get(sport)
+    if not league:
+        return None
+    try:
+        data = get_json(f'https://site.api.espn.com/apis/site/v2/sports/{league.replace("/leagues/", "/")}/summary', {'event': game_id}, tries=1)
+    except Exception:
+        return None
+    return parse_box_stats(data, sport)
+
+
 # ---------- Kalshi ----------
 def cents(m, key):
     """Price in cents from either the dollars-string fields or legacy integer-cents fields."""

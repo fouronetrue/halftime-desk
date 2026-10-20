@@ -62,13 +62,16 @@ assert sh['mkt'] == 230.5 and sh['fair'] == 229.5, sh
 assert len(pushes) == 1 and pushes[0][0] == 'PLAY: Celtics 58, Pistons 61 (half, NBA)' and pushes[0][2] == 'high', pushes
 assert 'Buy OVER 236.5' in pushes[0][1] and 'No lean' in pushes[0][1], pushes[0][1]
 assert rec['slots'] == {'half': 'play'}
+assert rec['pace'] and rec['pace']['poss'] == round(((49 - 7 + 7 + 0.44 * 9) + (47 - 5 + 8 + 0.44 * 10)) / 2, 2) and rec['pace']['home']['fouls'] == 10, rec.get('pace')
+assert sh['pace']['poss'] == rec['pace']['poss'], 'the sheet should carry the first-half box'
+assert feeds.parse_box_stats({}) is None and feeds.parse_box_stats({'boxscore': {'teams': [{'homeAway': 'home', 'statistics': []}]}}) is None
 pre = d.state['games']['502']
 assert pre['pre'].get('total') == 231.5 and pre['pre'].get('home_spread') == -5.5 and pre.get('kalshi_total_event') == 'KXNBATOTAL-26OCT20PHINYK', pre
 assert pre['mkt']['line'] == 231.5
 # a second pass pushes nothing new
 d._events = {}; d.run_pass()
 assert len(pushes) == 1
-print('fixtures: halftime game priced off the games-table line, centered on the ladder, one PLAY; pregame game captured (NY matched NYK)')
+print('fixtures: halftime game priced off the games-table line, centered on the ladder, one PLAY, first-half box kept; pregame game captured (NY matched NYK)')
 
 # 5. the per-number rule in both places
 js = open(os.path.join(ROOT, 'app', 'lib', 'desk.js')).read()
