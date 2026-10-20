@@ -14,4 +14,5 @@ jobs:
       - run: python tests/mirror.py
       - run: python tests/worker.py
       - run: python tests/held.py
+      - run: python tests/fixes.py
       - run: cp state.json /tmp/state.bak && python watch.py --fixtures tests/fixtures && cp /tmp/state.bak state.json

@@ -7,10 +7,16 @@ shares or pairs, and the resting limits for every strike near fair.
 
 ## What it does each run
 1. Reads ESPN's scoreboards (NFL, FBS). For games not yet kicked off it stores the pregame spread and total
-   (ESPN's odds block, or Kalshi's 50-50 strikes as the fallback).
-2. For games at the half, or in the first minutes of the third quarter, it pulls the Kalshi total event for that
-   game, prices each strike (fair over and under, max price to take, max resting limit), scores every single leg
-   and every Yes-low/No-high pair against the asks, and sizes anything that clears the edge.
+   (ESPN's odds block, then ESPN's odds endpoint, then Kalshi's 50-50 strikes). That stored line is the only
+   line a game is ever priced off. Once a game has kicked off nothing read from a feed is accepted as its
+   pregame line (by then the feeds show the live line); a watcher that lost its record of the line takes it
+   from the games table in Supabase, where the other watcher saved it before kickoff, or skips the game.
+2. For games at the half, or in the first minutes of the third quarter while the score is still the halftime
+   score, it pulls the Kalshi total event for that game, prices each strike (fair over and under, max price to
+   take, max resting limit), scores every single leg and every Yes-low/No-high pair against the asks, and sizes
+   anything that clears the edge. The moment the live score moves off the halftime score, pricing stops: no
+   row is logged or written and nothing is pushed, so the newest suggestions row is always one priced at the
+   score it shows, and the app marks it stale when the games row's live score no longer matches it.
 3. Pushes exactly twice per game: once the first time the game is seen at the half (within about a minute of
    the end of Q2), once the first time it is seen after the Q3 kick with the score unchanged. The title is
    `PLAY: Away 21, Home 45 (half, CFB)` when something clears, `UPDATE: ...` when nothing does.
@@ -23,16 +29,21 @@ shares or pairs, and the resting limits for every strike near fair.
 4. Logs every priced halftime to `log/halftime_log.csv`, and when the game goes final grades what the first push
    said against the final total in `log/results.csv` (first single, middle, and the what-if resting middle),
    plus the model's fair line against the market's. `python watch.py --scorecard` prints the season to date;
-   every run prints it too. Both files and `state.json` are committed back to the repo.
+   every run prints it too. Both files and `state.json` are committed back to the repo by
+   `scripts/save_run.py`, which appends the run's CSV rows to whatever is on main and takes `state.json`
+   whole, so a run can never commit a merge conflict into the log.
 5. If any game is approaching the half (Q2 under 5:00) or at the half, the run keeps polling every
    `poll_seconds` for up to `max_poll_minutes`, so a 5-minute cron still covers the whole halftime window.
 6. With Supabase keys set, everything above also lands in Supabase as it happens: `games`, `quote_snapshots`
-   (every strike's bid and ask next to the model's number, every poll), `suggestions`, `alerts` (the exact push
-   text) and `results`. The CSVs stay the source of truth; a failed write prints one line and the watch goes on.
+   (every strike's bid and ask next to the model's number, every poll), `suggestions` (with the live score it
+   was priced at) and `alerts` (the exact push text) and `results`. The CSVs stay the source of truth; a
+   failed write prints one line and the watch goes on. A column the schema does not have yet (a file in
+   `supabase/` not run) is dropped from the write and reported once, so the mirror keeps flowing.
 7. With a Kalshi API key set, the run ends by pulling your balance, positions and fills (read-only) into
    `portfolio_snapshots`, `positions` and `bets`. A separate `portfolio sync` workflow does the same every two
    hours between game windows. Fills in a market the watcher priced at the half, filled after the half, are
-   tagged `halftime`; everything else is `personal` until you retag it. The sync never overwrites a tag.
+   tagged `halftime`; everything else is `personal` until you retag it. The sync never overwrites a tag. The
+   balance goes to Supabase only; no dollar figure is printed to the Actions log.
 
 ## Setup (10 minutes)
 1. Create a GitHub repo (public is free for Actions minutes; private gets 2,000 minutes a month, enough if you
@@ -57,8 +68,9 @@ shares or pairs, and the resting limits for every strike near fair.
 | poll_seconds, max_poll_minutes | in-run polling during a halftime | 60, 22 |
 
 ## Supabase (optional, 10 minutes)
-1. Create a free project at supabase.com. In the SQL Editor paste `supabase/schema.sql` and run it (safe to run
-   again). Every table has row level security on with no policies, so only the secret key can read or write.
+1. Create a free project at supabase.com. In the SQL Editor paste `supabase/schema.sql` and run it, then
+   `002_week2.sql` and `003_live_score.sql` in order (all safe to run again). Every table has row level
+   security on; the app reads as a signed-in user and only the secret key can write.
 2. Settings > API Keys: copy the project URL and the **secret** key (`sb_secret_...`). Add two repository secrets:
    `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. The publishable key is for the app later, not for the worker.
 
@@ -93,10 +105,15 @@ Quotes are Kalshi asks in cents. Same engine, same PLAY/UPDATE text as the push,
 - Kalshi's second-half line already discounts blowouts. The edge the desk reports is the gap between the model
   and the price you can actually get, nothing more.
 - GitHub's cron can run a few minutes late. In-run polling covers most of it; the log shows what was missed.
+  The windows run until about 4 AM Eastern after each game night so West Coast finals get graded.
+- A game the watcher never saw before kickoff has no pregame line on record and is skipped at the half, on
+  purpose: a line read after kickoff is the live line, and pricing off it cost real money on Oct 17.
 - Nothing here places orders. You tap buy. Auto-execution is a different risk discussion.
 
 ## Files
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
-state and alerts. `notify.py` push. `store.py` Supabase writer. `portfolio.py` read-only Kalshi sync.
-`cli.py` manual desk. `model.json` fitted coefficients and residual quantiles. `supabase/schema.sql` the tables.
-`tests/` parity check against the ledger artifact, the read-only proof, the mirror check, the held-position watch, and an offline run on fixtures.
+state and alerts. `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
+read-only Kalshi sync. `held.py` open-position watch. `cli.py` manual desk. `model.json` fitted coefficients and
+residual quantiles. `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
+without ever committing a conflict. `tests/` parity check against the ledger artifact, the read-only proof, the
+mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), and an offline run on fixtures.
