@@ -60,7 +60,10 @@ sh = rec['sheet']
 assert sh['center'] == 111.5 and sh['center_w'] == 0.25 and abs(sh['mu'] - (0.25 * sh['mu_model'] + 0.75 * 111.5)) < 0.02, sh
 assert sh['mkt'] == 230.5 and sh['fair'] == 229.5, sh
 assert len(pushes) == 1 and pushes[0][0] == 'PLAY: Celtics 58, Pistons 61 (half, NBA)' and pushes[0][2] == 'high', pushes
-assert 'Buy OVER 236.5' in pushes[0][1] and 'No lean' in pushes[0][1], pushes[0][1]
+body = pushes[0][1]
+assert body.index('MIDDLE (clears') < body.index('SINGLE') and 'RESTING MIDDLE' in body and 'WIDER MIDDLE' in body, body
+assert 'Buy OVER 236.5' in body and 'No lean' in body, body
+assert sh['mid'] and sh['rest_mid'] is None, 'a cleared middle is graded as the play; the resting what-if belongs to an UPDATE'
 assert rec['slots'] == {'half': 'play'}
 assert rec['pace'] and rec['pace']['poss'] == round(((49 - 7 + 7 + 0.44 * 9) + (47 - 5 + 8 + 0.44 * 10)) / 2, 2) and rec['pace']['home']['fouls'] == 10, rec.get('pace')
 assert sh['pace']['poss'] == rec['pace']['poss'], 'the sheet should carry the first-half box'
@@ -71,6 +74,26 @@ assert pre['mkt']['line'] == 231.5
 # a second pass pushes nothing new
 d._events = {}; d.run_pass()
 assert len(pushes) == 1
+# the same ladder with the stale strike repaired: an UPDATE that still leads with middles
+import json, shutil
+fix = json.load(open(os.path.join(FIX, 'kalshi_KXNBATOTAL.json')))
+for mk in fix['events'][0]['markets']:
+    if mk['floor_strike'] == 236.5:
+        mk['yes_bid_dollars'], mk['yes_ask_dollars'], mk['no_bid_dollars'], mk['no_ask_dollars'] = '0.3200', '0.3400', '0.6600', '0.6800'
+clean = tempfile.mkdtemp()
+for f in os.listdir(FIX):
+    shutil.copy(os.path.join(FIX, f), clean)
+json.dump(fix, open(os.path.join(clean, 'kalshi_KXNBATOTAL.json'), 'w'))
+pushes.clear()
+d = watch.Desk(cfg, {}, clean); d.run_pass()
+assert len(pushes) == 1 and pushes[0][0].startswith('UPDATE: Celtics 58, Pistons 61') and pushes[0][2] == 'default', pushes
+body = pushes[0][1]
+assert 'No single or middle clears' in body and 'Closest middle at the asks' in body and 'RESTING MIDDLE' in body and 'WIDER MIDDLE' in body, body
+assert ' shares for $' in body and body.count('Buy OVER') == 2 and body.count('Buy UNDER') == 2, body
+sh = d.state['games']['501']['sheet']
+assert sh['rest_mid']['b_line'] - sh['rest_mid']['a_line'] < 6 <= sh['rest_mid_wide']['b_line'] - sh['rest_mid_wide']['a_line'], (sh['rest_mid'], sh['rest_mid_wide'])
+assert f"Buy OVER {sh['rest_mid']['a_line']:.1f} at {sh['rest_mid']['a_price']}c ({sh['rest_mid']['pairs']} shares" in body, 'the graded resting middle must be the one the push posted first'
+print('middles: PLAY leads with the middle, UPDATE carries the closest middle and a tight and a wide resting middle')
 print('fixtures: halftime game priced off the games-table line, centered on the ladder, one PLAY, first-half box kept; pregame game captured (NY matched NYK)')
 
 # 5. the per-number rule in both places

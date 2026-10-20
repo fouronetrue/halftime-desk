@@ -193,12 +193,14 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
     return dict(legs=legs, singles=singles, mids=mids)
 
 
-def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.0, max_cost=225.0, rest_scale=0.5, mid_loss=None):
+def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.0, max_cost=225.0, rest_scale=0.5, mid_loss=None, near_pts=3.5):
     """Resting limit orders near fair: a quarter-Kelly size at the limit price (where the edge equals the margin),
     scaled by rest_scale because a resting order fills when the market moves through it. Also the best resting
-    middle: YES on a lower line plus NO on a higher one, both at their limits."""
+    middle: YES on a lower line plus NO on a higher one, both at their limits ('middle'), and 'middles': that one
+    plus the best wide one (strikes 6+ apart) when it is a different pair, so a push can offer a tight window and
+    a wide one. near_pts is how far from fair a strike may sit: 3.5 for football, wider for the NBA ladder."""
     fl = fair_line(model, mode)
-    near = [r for r in rows if abs(r['line'] - fl) <= 3.5 and r['over_rest'] >= 1 and r['under_rest'] >= 1]
+    near = [r for r in rows if abs(r['line'] - fl) <= near_pts and r['over_rest'] >= 1 and r['under_rest'] >= 1]
     def size(price_c):
         p = price_c / 100
         f = 0.25 * margin / max(0.05, 1 - p) * rest_scale
@@ -210,7 +212,7 @@ def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.
         ny, cy = size(r['over_rest'])
         nn, cn = size(r['under_rest'])
         legs.append(dict(line=r['line'], y_c=r['over_rest'], y_n=ny, y_cost=cy, n_c=r['under_rest'], n_n=nn, n_cost=cn))
-    best = None
+    best, best_tight, best_wide = None, None, None
     for a in near:
         for b in near:
             if b['line'] - a['line'] < 3:
@@ -229,7 +231,11 @@ def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.
             cand = dict(a=a, b=b, p_mid=p_mid, c=c, ev=ev, pairs=pairs, cost=round(pairs * c, 2), best=round(pairs * (2 - c), 2), worst=round(pairs * (1 - c), 2))
             if best is None or cand['ev'] > best['ev']:
                 best = cand
-    return dict(legs=legs, middle=best)
+            if b['line'] - a['line'] < 6 and (best_tight is None or cand['ev'] > best_tight['ev']):
+                best_tight = cand
+            if b['line'] - a['line'] >= 6 and (best_wide is None or cand['ev'] > best_wide['ev']):
+                best_wide = cand
+    return dict(legs=legs, middle=best, middles=[m for m in (best_tight, best_wide) if m])
 
 
 def describe(model, inp, rows, sug, mode='fg', top=3, tickers=None, sizing=None):
@@ -317,16 +323,78 @@ def chosen(sug, top=3):
     return singles, (mids[0] if mids else None)
 
 
-def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3):
+def rest_block(model, rows, sizing, mode='fg', head='POSSIBLE MIDDLE (post as limit orders):'):
+    """The resting-middle lines of a push: one middle for football, a tight one and a wide one for a sport that
+    sets near_pts wide enough to hold both. (lines, plan)"""
+    rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0),
+                   mid_loss=sizing.get('mid_loss'), near_pts=sizing.get('near_pts', 3.5))
+    out = []
+    for i, m in enumerate(rp.get('middles') or []):
+        a, b = m['a'], m['b']
+        label = head if i == 0 else 'WIDER MIDDLE (place this OR the one above, not both):'
+        out += [label,
+                f"Buy OVER {a['line']:.1f} at {a['over_rest']}c ({m['pairs']} shares for ${m['pairs'] * a['over_rest'] / 100:.0f})",
+                f"Buy UNDER {b['line']:.1f} at {b['under_rest']}c ({m['pairs']} shares for ${m['pairs'] * b['under_rest'] / 100:.0f})",
+                f"Both filled: final {a['line'] + 0.5:.0f} to {b['line'] - 0.5:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {money(m['worst'])}. One side alone is a fair single."]
+        if i == 0 and len(rp['middles']) > 1:
+            out.append('')
+    return out, rp
+
+
+def closest_middle_line(sug, margin=0.03):
+    """One line on the best middle at the asks when nothing clears: how far it sits from the margin. Windows of
+    4 to 8 numbers (the ones worth posting) first; anything else only if no such window has a quote."""
+    sized = [m for m in sug['mids'] if 3 <= m['b']['line'] - m['a']['line'] <= 8]
+    best = (sized[:1] or sug['mids'][:1] or [None])[0]
+    if not best:
+        return None
+    return (f"Closest middle at the asks: OVER {best['a']['line']:.1f} at {best['a']['price_c']}c + UNDER {best['b']['line']:.1f} at {best['b']['price_c']}c "
+            f"= ${best['c']:.2f} a pair, hits {100*best['p_mid']:.0f}%, edge {100*best['ev']:+.1f}c (needs +{100*margin:.0f}).")
+
+
+def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, focus=None):
     """The push text Nick asked for: PLAY when something clears, UPDATE otherwise.
     Returns (kind, title, body): title is 'PLAY: Away 21, Home 45', body is the order lines.
-    Names come from inp['away_name'] / inp['home_name'] when given."""
+    Names come from inp['away_name'] / inp['home_name'] when given.
+    focus='middles' (the NBA): the middle leads the PLAY, singles follow, and every push ends with the resting
+    middles (a tight one and a wide one) and, on an UPDATE, the closest middle at the asks."""
     away = inp.get('away_name') or inp.get('away', 'Away')
     home = inp.get('home_name') or inp.get('home', 'Home')
     score = f"{away} {inp['h1a']}, {home} {inp['h1h']}"
     fl = fair_line(model, mode)
     ctx = f"Fair total {fl:.1f}. {model.spot().capitalize()}."
     singles, mid = chosen(sug, top)
+    if focus == 'middles':
+        out = [ctx, '']
+        if mid:
+            m = mid
+            a, b = m['a'], m['b']
+            out += ['MIDDLE (clears the edge at the asks):',
+                    f"Buy OVER {a['line']:.1f} at {a['price_c']}c ({m['pairs']} shares for ${m['pairs'] * a['price_c'] / 100:.0f})",
+                    f"Buy UNDER {b['line']:.1f} at {b['price_c']}c ({m['pairs']} shares for ${m['pairs'] * b['price_c'] / 100:.0f})",
+                    f"Final {m['lo']:.0f} to {m['hi']:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {money(m['worst'])}.", '']
+        if singles:
+            out.append('SINGLE' + ('S' if len(singles) > 1 else '') + (' (instead of the middle, not on top of it):' if mid else ':'))
+            for s in singles:
+                side = 'OVER' if s['kind'] == 'over' else 'UNDER'
+                out.append(f"Buy {side} {s['line']:.1f} for ${s['cost']:.0f} at {s['price_c']}c ({american(s['price_c'])})")
+            if len(singles) > 1:
+                out.append('Best first. The others are backups if that price is gone, not a stack.')
+            out.append('')
+        if not (mid or singles):
+            out.append('No single or middle clears at the asks.')
+            cl = closest_middle_line(sug, sizing.get('margin', 0.03))
+            if cl:
+                out.append(cl)
+            out.append('')
+        rest, rp = rest_block(model, rows, sizing, mode, head='RESTING MIDDLE (post as limit orders, cancel what has not filled by the 4th):')
+        if rest:
+            out += rest
+        elif not (mid or singles):
+            near = sorted(rows, key=lambda r: abs(r['line'] - fl))[:2]
+            out.append('No middle to post. Fair prices: ' + '; '.join(f"OVER {r['line']:.1f} {r['over_rest']}c / UNDER {r['line']:.1f} {r['under_rest']}c" for r in near) + '.')
+        kind = 'PLAY' if (mid or singles) else 'UPDATE'
+        return kind, f'{kind}: {score}', '\n'.join(out).rstrip()
     if mid or singles:
         out = [ctx, '']
         if singles:
@@ -345,7 +413,7 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3):
                     f"Final {m['lo']:.0f} to {m['hi']:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {money(m['worst'])}."]
         return 'PLAY', f'PLAY: {score}', '\n'.join(out).rstrip()
     out = [ctx, '']
-    rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0), mid_loss=sizing.get('mid_loss'))
+    rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0), mid_loss=sizing.get('mid_loss'), near_pts=sizing.get('near_pts', 3.5))
     m = rp['middle']
     if m:
         a, b = m['a'], m['b']
