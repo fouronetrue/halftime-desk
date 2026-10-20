@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase, configured } from '@/lib/supabase';
+import { shellHeight } from '@/lib/desk';
 
 // Today opens a game's Desk by tapping its card; the Desk and the Ledger are reachable by URL, not from here.
 const TABS = [
@@ -59,48 +60,36 @@ export default function Shell({ children }) {
     return () => document.removeEventListener('focusout', settle);
   }, []);
 
-  // The shell is sized to what is actually visible. In the home-screen app on an iPhone the page runs under the
-  // status bar (black-translucent), and every viewport measure (innerHeight, 100dvh, visualViewport) comes up
-  // short by exactly the status bar height while the web view itself fills the screen: that was the dead strip
-  // under the tab bar. The shortfall is measured against the screen once at rest (keyboard down) and added back
-  // whenever it matches that signature and nothing else. While the keyboard is up the bar steps aside.
-  // Open any screen with ?debug in the URL, or tap the "Watching" line on Today five times, to see the numbers.
+  // The shell is sized to what is actually visible. In the home-screen app iOS lays the page out short by the
+  // status bar (innerHeight, 100dvh and the visual viewport all read screen minus status bar) while the web view
+  // fills the screen and only 100lvh says so; shellHeight() adds that back. Under the keyboard the visible area
+  // shrinks and the bar steps aside. ?debug in the URL, or five quick taps on the Watching line on Today, show
+  // the numbers and draw a line where the browser puts the bottom of the page.
   useEffect(() => {
     const vv = window.visualViewport;
     const root = document.documentElement;
-    const probe = document.createElement('div');
-    probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
-    document.body.appendChild(probe);
-    const cs = getComputedStyle(probe);
-    const insetTop = parseFloat(cs.paddingTop) || 0, insetBottom = parseFloat(cs.paddingBottom) || 0;
-    probe.remove();
     const standalone = window.navigator.standalone === true;
     let wantDebug = /[?&]debug/.test(window.location.search);
-    let delta = 0;
+    const measure = (css) => { const d = document.createElement('div'); d.style.cssText = `position:fixed;left:0;width:0;visibility:hidden;${css}`; document.body.appendChild(d); const r = d.getBoundingClientRect(); d.remove(); return r; };
     const apply = () => {
-      const h = vv ? vv.height : window.innerHeight;
+      const vis = vv ? vv.height : window.innerHeight;
       const t = vv ? vv.offsetTop : 0;
-      const kb = h < window.innerHeight * 0.75;
-      const portrait = window.innerHeight >= window.innerWidth;
-      const screenH = portrait ? Math.max(window.screen.width, window.screen.height) : Math.min(window.screen.width, window.screen.height);
-      if (standalone && insetTop > 0 && !kb) {
-        const short = screenH - h;
-        delta = short >= 1 && short <= insetTop + 2 ? short : 0;
-      }
-      const full = h + (standalone ? delta : 0);
-      root.style.setProperty('--vvh', `${Math.round(full)}px`);
+      const kb = vis < window.innerHeight * 0.75;
+      const large = measure('top:0;height:100lvh').height;
+      const full = shellHeight({ vis, inner: window.innerHeight, large, standalone });
+      root.style.setProperty('--vvh', `${full}px`);
       root.style.setProperty('--vvt', `${Math.round(t)}px`);
       root.classList.toggle('kb', kb);
       if (!kb && window.scrollY) window.scrollTo(0, 0);   // iOS nudges the window after a keyboard; put it back
       if (wantDebug) {
-        // what the browser says, then what it drew: the shell and bar rectangles, and 100dvh/svh/lvh measured
         const sh = document.querySelector('.shell'), bar = document.querySelector('.tabbar');
         const r = sh ? sh.getBoundingClientRect() : null, br = bar ? bar.getBoundingClientRect() : null;
-        const units = ['dvh', 'svh', 'lvh'].map((u) => { const d = document.createElement('div'); d.style.cssText = `position:fixed;top:0;left:0;width:0;height:100${u};visibility:hidden`; document.body.appendChild(d); const v = d.offsetHeight; d.remove(); return `${u} ${v}`; }).join(' ');
-        setDebug(`standalone ${standalone} screen ${window.screen.width}x${window.screen.height} avail ${window.screen.availHeight} outer ${window.outerHeight} inner ${window.innerWidth}x${window.innerHeight} ` +
-                 `vv ${Math.round(vv?.width || 0)}x${Math.round(h)} top ${Math.round(t)} page ${Math.round(vv?.pageTop || 0)} client ${root.clientHeight} ${units} inset ${insetTop}/${insetBottom} ` +
-                 `delta ${delta} want ${Math.round(full)} var ${getComputedStyle(root).getPropertyValue('--vvh').trim()} ` +
-                 `shell ${r ? `${Math.round(r.top)}+${Math.round(r.height)}` : '?'} css ${sh ? getComputedStyle(sh).height : '?'} bar ${br ? `${Math.round(br.top)}-${Math.round(br.bottom)}` : '?'} scrollY ${window.scrollY}`);
+        const insetTop = measure('top:env(safe-area-inset-top);height:0').top;
+        const insetBottom = window.innerHeight - measure('bottom:env(safe-area-inset-bottom);height:0').bottom;
+        const units = ['dvh', 'svh', 'lvh'].map((u) => `${u} ${Math.round(measure(`top:0;height:100${u}`).height)}`).join(' ');
+        setDebug(`standalone ${standalone} screen ${window.screen.width}x${window.screen.height} inner ${window.innerWidth}x${window.innerHeight} ` +
+                 `vv ${Math.round(vv?.width || 0)}x${Math.round(vis)} top ${Math.round(t)} client ${root.clientHeight} ${units} inset ${Math.round(insetTop)}/${Math.round(insetBottom)} ` +
+                 `shell ${full} drawn ${r ? `${Math.round(r.top)}+${Math.round(r.height)}` : '?'} bar ${br ? `${Math.round(br.top)}-${Math.round(br.bottom)}` : '?'} scrollY ${window.scrollY}`);
       }
     };
     const toggle = () => { wantDebug = !wantDebug; if (!wantDebug) setDebug(''); apply(); };

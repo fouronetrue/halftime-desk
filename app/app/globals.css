@@ -28,6 +28,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 b, .pts, .score, .board b, .ladder, .chip, .mstats dd { font-variant-numeric: tabular-nums; }
 
 .shell { position: fixed; left: 0; right: 0; top: var(--vvt, 0px); height: var(--vvh, 100dvh); display: flex; flex-direction: column; }
+/* Home-screen app before the script has measured: 100lvh is the one unit iOS gets right there (see Shell.jsx). */
+@media (display-mode: standalone) { .shell { height: var(--vvh, 100lvh); } }
 .kb .tabbar { display: none; }
 .vpline { position: fixed; left: 0; right: 0; bottom: 0; height: 4px; background: #3DB39E; z-index: 30; }   /* where fixed bottom:0 lands */
 .vpdebug { position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; z-index: 20; margin: 0; padding: 4px 8px; font: 11px/1.3 ui-monospace, monospace; white-space: pre-wrap; background: var(--amber); color: var(--amber-ink); }

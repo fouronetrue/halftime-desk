@@ -150,3 +150,17 @@ export function sizeMiddle({ a, b, oFill = 'take', uFill = 'take', numbers, spor
     ev: pHit === undefined ? null : 1 - c + pHit,
   };
 }
+
+// Height of the app shell. iOS lays a home-screen web app out short by the status bar: innerHeight, 100dvh and the
+// visual viewport all read screen minus status bar while the web view fills the screen, and 100lvh alone reads the
+// full height (a 16 Pro Max: 894 against 956). The difference is added back in the home-screen app only; a
+// browser tab (toolbars come and go, the visual viewport is right) and Android are left alone. vis is the visual
+// viewport height, which shrinks under the keyboard, so the shell follows the keyboard either way.
+export function shellHeight({ vis, inner, large, standalone }) {
+  let delta = 0;
+  if (standalone && large > inner) {
+    const d = large - inner;
+    if (d <= 120) delta = d;   // status bar sized; anything bigger is something else, leave it
+  }
+  return Math.round(vis + delta);
+}
