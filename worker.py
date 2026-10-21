@@ -49,7 +49,7 @@ def save_state(state, note):
 def pace(desk, now=None):
     """Seconds to sleep after this pass, from what the pass saw."""
     ph = desk.phases or {}
-    if ph.get('approaching') or ph.get('half') or ph.get('early3'):
+    if ph.get('approaching') or ph.get('half') or ph.get('early3') or ph.get('approaching3') or ph.get('q3end') or ph.get('early4'):
         return FAST
     if ph.get('live'):
         return LIVE

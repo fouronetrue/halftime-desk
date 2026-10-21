@@ -20,7 +20,9 @@ CONFIG_PATH, STATE_PATH, LOG_PATH = os.path.join(HERE, 'config.json'), os.path.j
 RESULTS_PATH = os.path.join(HERE, 'log', 'results.csv')
 MIDS_KEPT = 40   # middles stored per priced row (plus any more that clear): all 230-odd ran 120 KB a row
 RESULTS_COLUMNS = ['settled_utc', 'sport', 'game', 'date', 'half', 'total', 'home_spread', 'fair', 'mkt', 'final', 'final_total',
-                   'model_err', 'mkt_err', 'n_plays', 'plays_cost', 'plays_pnl', 'mid_pnl', 'plays', 'rest_mid', 'rest_mid_pnl']
+                   'model_err', 'mkt_err', 'n_plays', 'plays_cost', 'plays_pnl', 'mid_pnl', 'plays', 'rest_mid', 'rest_mid_pnl',
+                   # the NBA's second window, the end of the third, graded the same way (supabase/007_q3.sql adds the columns)
+                   'q3_score', 'q3_fair', 'q3_mkt', 'q3_n_plays', 'q3_plays_cost', 'q3_plays_pnl', 'q3_mid_pnl', 'q3_plays', 'q3_rest_mid', 'q3_rest_mid_pnl']
 DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct=50, order='taker', sports=['nfl', 'cfb'],
                 # Sports whose pushes lead with the middle and always carry the resting middles (tight and wide), and
                 # how far from fair a resting strike may sit: Kalshi's NBA ladder runs every 2 points and the second
@@ -33,6 +35,7 @@ DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct
                 # model's center never beats the market, so it keeps 25 and the ladder is shaped around the market's number.
                 center_model_pct={'nba': 25})
 CENTER_2H_RANGE = {'nba': (70, 160)}   # a market center outside this (per sport, second-half points) is a bad read and is ignored
+CENTER_Q4_RANGE = {'nba': (30, 95)}    # the same for the points left at the end of the third (a 4th quarter plus the overtime chance)
 
 
 def load_json(path, default):
@@ -115,8 +118,11 @@ class Desk:
                 elif ph in ('half', 'early3'):
                     active = True
                     self.evaluate(g, rec)
-                elif ph == 'approaching':
-                    active = True   # the half is minutes away: poll fast, and read nothing as a pregame line
+                elif ph in ('q3end', 'early4'):
+                    active = True
+                    self.evaluate_q3(g, rec)
+                elif ph in ('approaching', 'approaching3'):
+                    active = True   # a break is minutes away: poll fast, and read nothing as a pregame line
                 elif ph == 'post':
                     try:
                         self.settle(g, rec)
@@ -202,14 +208,15 @@ class Desk:
             rec['pre'] = pre
             print(f"{g['short']}: pregame line restored from the games table (o/u {pre['total']}, spread {pre.get('home_spread')})")
 
-    def db_eval(self, ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=None):
+    def db_eval(self, ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=None, score=None):
         """One suggestions row (the halftime_log row plus the full ranked singles and middles) and one
         quote_snapshots row per strike: Kalshi's bid and ask next to the model's fair probability and limits."""
         if not store.enabled():
             return
         # At a 5-second pace most passes see the same quotes. Write a priced row only when the quotes, score or
         # phase changed, or 30 seconds have passed, so Supabase keeps a full record without 3x the rows.
-        key = (rec.get('phase'), rec['half']['away'], rec['half']['home'], total,
+        score = score or rec['half']   # half_away / half_home hold the break score the row was priced at (the end-of-third score for a q3end row)
+        key = (rec.get('phase'), score['away'], score['home'], total,
                tuple((r['line'],) + tuple((quotes.get(r['line']) or {}).get(k) for k in ('yb', 'y', 'nb', 'n')) for r in rows))
         last = self._db_evals.get(g['id'])
         now = time.time()
@@ -220,7 +227,7 @@ class Desk:
         best_single = sug['singles'][0] if sug['singles'] else None
         store.write('suggestions', [dict(
             taken_at=ts, game_id=g['id'], sport=g['sport'], game=g['short'], date_et=g['date_et'], event_ticker=ev.get('event_ticker'),
-            phase=rec.get('phase'), total=total, home_spread=spread, half_away=rec['half']['away'], half_home=rec['half']['home'],
+            phase=rec.get('phase'), total=total, home_spread=spread, half_away=score['away'], half_home=score['home'],
             away_score=g['away']['score'], home_score=g['home']['score'],   # the live score when priced: equal to the half by construction
             mu=round(m.mu, 2), sd=round(m.sd, 2), fair_line=engine.fair_line(m), market_line=feeds.kalshi_total_line(ev),
             best_single=f"{best_single['kind']} {best_single['line']} @{best_single['price_c']}" if best_single else None,
@@ -327,11 +334,11 @@ class Desk:
                                         strike=k, phase='pre', yes_bid=q[k]['yb'], yes_ask=q[k]['y'], no_bid=q[k]['nb'], no_ask=q[k]['n'],
                                         p_over=None, p_push=None, over_take=None, over_rest=None, under_take=None, under_rest=None))
 
-    def market_center(self, g, ev, h1):
-        """(expected second-half points from the market, weight the model keeps) for sports that center on the
-        market; (None, 1.0) for the rest. The market center is Kalshi's implied full-game line at the half (the
-        50-50 crossing of the ladder's bid-ask midpoints) minus the first-half points. A line the ladder cannot
-        give, or one outside the sport's plausible range, leaves the model on its own center."""
+    def market_center(self, g, ev, h1, stage='half'):
+        """(expected points left from the market, weight the model keeps) for sports that center on the market;
+        (None, 1.0) for the rest. The market center is Kalshi's implied full-game line at the break (the 50-50
+        crossing of the ladder's bid-ask midpoints) minus the points so far. A line the ladder cannot give, or one
+        outside the sport's plausible range for the stage, leaves the model on its own center."""
         cmp = self.cfg.get('center_model_pct') or {}
         pct = cmp.get(g['sport']) if isinstance(cmp, dict) else None
         if pct is None or pct >= 100:
@@ -340,7 +347,7 @@ class Desk:
         if line is None:
             return None, 1.0
         c = line - h1
-        lo, hi = CENTER_2H_RANGE.get(g['sport'], (0, 10**6))
+        lo, hi = (CENTER_Q4_RANGE if stage == 'q3' else CENTER_2H_RANGE).get(g['sport'], (0, 10**6))
         if not lo <= c <= hi:
             return None, 1.0
         return c, pct / 100
@@ -386,21 +393,36 @@ class Desk:
             print(f"{g['short']}: spread ladder at the half: Kalshi home {row['mkt_home_spread']:+.1f}, model home margin {model_m:+.1f}, naive {naive_m:+.1f}")
 
     def evaluate(self, g, rec):
-        hs = feeds.half_score(g)
+        """The halftime window (and football's first minute of Q3)."""
+        self.evaluate_stage(g, rec, 'half')
+
+    def evaluate_q3(self, g, rec):
+        """The NBA's second window: the break before the fourth quarter, and its first 30 seconds while the score
+        is still the end-of-third score. Same ladder, rules and pushes; the model is the end-of-third one
+        (engine.LateModel), the slot is 'q3', the record keys carry a _q3 suffix."""
+        if (g['sport'] + '_q3') not in engine.MODEL:
+            return
+        self.evaluate_stage(g, rec, 'q3')
+
+    def evaluate_stage(self, g, rec, stage):
+        q3 = stage == 'q3'
+        K = (lambda k: k + '_q3') if q3 else (lambda k: k)   # record keys: half / half_at / moved / clear / sheet, or the _q3 versions
+        hs = feeds.third_score(g) if q3 else feeds.half_score(g)
         if hs is None:
             return
         away_pts, home_pts = hs
-        rec['half'] = dict(away=away_pts, home=home_pts)
+        rec['third' if q3 else 'half'] = dict(away=away_pts, home=home_pts)
+        score = rec['third' if q3 else 'half']
         live = (g['away']['score'], g['home']['score'])
         if live != (away_pts, home_pts):
-            # Someone scored since the half. The halftime model no longer describes the game, so from here on
-            # nothing is priced, logged or written: the newest suggestions row stays the last one priced at the
-            # halftime score, and the app marks it stale by comparing it with the live score on the games row.
+            # Someone scored since the break. The model no longer describes the game, so from here on nothing is
+            # priced, logged or written: the newest suggestions row stays the last one priced at the break score,
+            # and the app marks it stale by comparing it with the live score on the games row.
             # (Oct 17: a Q3 touchdown at 13:20 left "Under 35.5 at 27c" showing as a 10.7c edge for five minutes.)
-            if not rec.get('moved_at'):
-                rec['moved_at'] = now_iso()
-                rec['moved'] = dict(away=live[0], home=live[1])
-                print(f"{g['short']}: score moved from {away_pts}-{home_pts} to {live[0]}-{live[1]} after the half, pricing stopped")
+            if not rec.get(K('moved_at')):
+                rec[K('moved_at')] = now_iso()
+                rec[K('moved')] = dict(away=live[0], home=live[1])
+                print(f"{g['short']}: score moved from {away_pts}-{home_pts} to {live[0]}-{live[1]} after the {'third' if q3 else 'half'}, pricing stopped")
             rec['last_eval'] = now_iso()
             return
         # Only a line captured before kickoff prices the half. Nothing is read from a feed here: by now ESPN's
@@ -427,10 +449,13 @@ class Desk:
         quotes = feeds.total_quotes(ev)
         if not quotes:
             return
-        center, center_w = self.market_center(g, ev, away_pts + home_pts)
-        self.first_half_box(g, rec)
-        self.spread_at_half(g, rec, spread, home_pts, away_pts)
-        m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w)
+        center, center_w = self.market_center(g, ev, away_pts + home_pts, stage)
+        if q3:
+            m = engine.LateModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w)
+        else:
+            self.first_half_box(g, rec)
+            self.spread_at_half(g, rec, spread, home_pts, away_pts)
+            m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w)
         rows = engine.price_lines(m, list(quotes), 'fg', self.cfg['margin_c'] / 100)
         bank = float(self.cfg['bankroll'])
         # daily cap: plays already pushed today (by cost) count against day_cost_pct of bankroll
@@ -454,11 +479,11 @@ class Desk:
         if held_lines:
             text = ('\n'.join(held_lines) + '\n\n' + text) if (not plays and held_act) else (text + '\n\n' + '\n'.join(held_lines))
         ts = now_iso()
-        rec.setdefault('half_at', ts)
-        # Every cleared line gets stamped with when it first cleared this half, so Today can say "clear for 2 min"
+        rec.setdefault(K('half_at'), ts)
+        # Every cleared line gets stamped with when it first cleared this break, so Today can say "clear for 2 min"
         # and a one-look flicker reads differently from a line that has held. The full history (every priced row)
         # is in the suggestions table; settle() grades all of it, pushed or not.
-        clear = rec.setdefault('clear', {})
+        clear = rec.setdefault(K('clear'), {})
         for x in sug['singles']:
             if x.get('ok'):
                 e = clear.setdefault(f"single {x['kind']} {x['line']}", dict(first=ts, n=0))
@@ -469,22 +494,24 @@ class Desk:
                 e = clear.setdefault(f"mid {x['a']['line']} {x['b']['line']}", dict(first=ts, n=0))
                 e['last'], e['n'] = ts, e['n'] + 1
                 x['since'] = e['first']
-        self.log_row(g, rec, m, total, spread, quotes, sug, ev, ts)
-        self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=held_rows)
+        self.log_row(g, rec, m, total, spread, quotes, sug, ev, ts, score)
+        self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=held_rows, score=score)
         sheet = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec)
+        sheet['stage'] = stage
         if held_rows:
             sheet['held'] = held_rows
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
         # polling allows), one the first time it is seen after the Q3 kick while the score is still the
-        # halftime score (the moved-score check above already returned otherwise). A PLAY goes out whenever
-        # something clears; a read goes out per read_push, which maps a sport to an ntfy priority ('min' is
-        # silent and only shows in the app's list).
-        slot = 'q3' if rec.get('phase') == 'early3' else 'half'
+        # halftime score (the moved-score check above already returned otherwise). For the NBA the second slot
+        # is the end of the third instead (a basket comes in seconds, so the early-Q3 look never happens there).
+        # A PLAY goes out whenever something clears; a read goes out per read_push, which maps a sport to an
+        # ntfy priority ('min' is silent and only shows in the app's list).
+        slot = 'q3' if (q3 or rec.get('phase') == 'early3') else 'half'
         slots = rec.setdefault('slots', {})
         if slots.get(slot):
             rec['last_eval'] = now_iso()
             return
-        when = 'half' if slot == 'half' else 'Q3'
+        when = 'end of 3rd' if q3 else ('half' if slot == 'half' else 'Q3')
         title = f"{head} ({when}, {g['sport'].upper()})"
         rp = self.cfg['read_push']
         read_pri = (rp.get(g['sport']) if isinstance(rp, dict) else ('default' if g['sport'] in rp else 'off')) or 'off'
@@ -503,12 +530,12 @@ class Desk:
             self.db_alert(ts, g, slot, 'play', 'high', title, body, ev, sent, sheet)
             # The game's record is the first PLAY push (the half, or Q3 when the half was a read). The alerts
             # table holds the same for both watchers; these are the fallback when it cannot be reached.
-            rec.setdefault('play_sheet', sheet)
-            rec.setdefault('sheet', sheet)
+            rec.setdefault(K('play_sheet'), sheet)
+            rec.setdefault(K('sheet'), sheet)
             top = ([x for x in sug['mids'] if x['ok']][:1] or [x for x in sug['singles'] if x['ok']][:1] or [x for x in sug.get('revs') or [] if x['ok']][:1])
-            if top and not rec.get('counted_day'):
+            if top and not rec.get(K('counted_day')):
                 day[g['date_et']] = round(spent + top[0]['cost'], 2)
-                rec['counted_day'] = True
+                rec[K('counted_day')] = True
         elif read_pri != 'off' or held_act:
             if held_act:
                 read_pri = 'high'   # something to do with a position you hold: this one buzzes whatever the sport's read setting
@@ -521,7 +548,7 @@ class Desk:
             slots[slot] = 'read'
             self.pushed.append(title)
             self.db_alert(ts, g, slot, 'update', read_pri, title, body, ev, sent, sheet)
-            rec.setdefault('sheet', sheet)
+            rec.setdefault(K('sheet'), sheet)
         rec['last_eval'] = now_iso()
 
     def held_block(self, ev, rows, quotes):
@@ -583,13 +610,18 @@ class Desk:
                 out['rest_mid_wide'] = rest_row(mids[1])
         return out
 
-    def record_sheet(self, g, rec):
+    def record_sheet(self, g, rec, stage='half'):
         """The sheet the final grades: the first PLAY push for the game (the half, or Q3 when the half was a
         read), else the first push of any kind. Read from the alerts table, which both watchers share and which
         holds exactly what went out; an alert pushed before sheets were kept is rebuilt from its suggestions row.
-        Falls back to this watcher's own pushes when the table cannot be reached. None when nothing was pushed."""
+        Falls back to this watcher's own pushes when the table cannot be reached. None when nothing was pushed.
+        A sport with a second window (the NBA's end of the third) has two records: stage 'half' is the half
+        slot's alerts, stage 'q3' the q3 slot's; football's two slots are both the half stage."""
+        two = (g['sport'] + '_q3') in engine.MODEL
         if store.enabled():
             alerts = store.read('alerts', {'select': 'kind,slot,sent_at,suggestion_at,sheet', 'game_id': f"eq.{g['id']}", 'order': 'sent_at'})
+            if two:
+                alerts = [a for a in alerts if (a.get('slot') == 'q3') == (stage == 'q3')]
             if alerts:
                 pick = next((a for a in alerts if a.get('kind') == 'play'), alerts[0])
                 sh = pick.get('sheet')
@@ -599,15 +631,17 @@ class Desk:
                     sh.setdefault('kind', pick.get('kind'))
                     sh.setdefault('slot', pick.get('slot'))
                     return sh
+        if stage == 'q3':
+            return rec.get('play_sheet_q3') or rec.get('sheet_q3')
         return rec.get('play_sheet') or rec.get('sheet')
 
-    def flickers(self, game_id, T, pushed=None):
-        """Everything that cleared the edge at any moment of this half, graded. Read from the suggestions table
+    def flickers(self, game_id, T, pushed=None, stage='half'):
+        """Everything that cleared the edge at any moment of this break, graded. Read from the suggestions table
         (every priced row, from both watchers), so both grade the same set; [] when it cannot be reached."""
         if not store.enabled():
             return []
         rows = store.read('suggestions', {'select': 'taken_at,phase,singles,mids,revs', 'game_id': f'eq.{game_id}',
-                                          'phase': 'in.(half,early3)', 'order': 'taken_at', 'limit': 2000})
+                                          'phase': 'in.(q3end,early4)' if stage == 'q3' else 'in.(half,early3)', 'order': 'taken_at', 'limit': 2000})
         return flickers_from_rows(rows, T, pushed)
 
     def sheet_from_suggestion(self, game_id, taken_at):
@@ -631,38 +665,57 @@ class Desk:
         return out
 
     def settle(self, g, rec):
-        """Grade what was pushed against the final score: a row in log/results.csv and the results table."""
-        if rec.get('settled') or g['state'] != 'post' or not (rec.get('half_at') or rec.get('slots') or rec.get('sheet')):
+        """Grade what was pushed against the final score: a row in log/results.csv and the results table. A sport
+        with a second window (the NBA's end of the third) gets that push graded on the same row, in the q3_ columns."""
+        if rec.get('settled') or g['state'] != 'post' or not (rec.get('half_at') or rec.get('half_at_q3') or rec.get('slots') or rec.get('sheet') or rec.get('sheet_q3')):
             return
         sh = self.record_sheet(g, rec)
-        if not sh:
+        two = (g['sport'] + '_q3') in engine.MODEL
+        sh3 = self.record_sheet(g, rec, 'q3') if two else None
+        if not sh and not sh3:
             rec['settled'] = dict(at=now_iso(), nothing_pushed=True)
             return
         T = g['away']['score'] + g['home']['score']
-        gr = grade_sheet(sh, T)
-        fl = self.flickers(g['id'], T, sh)
-        fair, mkt = sh.get('fair'), sh.get('mkt')
-        row = [now_iso(), g['sport'], g['short'], g['date_et'], f"{sh['h1a']}-{sh['h1h']}", sh['total'], sh['spread'], fair, mkt,
+        pre = rec.get('pre') or {}
+        gr = grade_sheet(sh, T) if sh else None
+        fl = self.flickers(g['id'], T, sh) if sh else []
+        fair, mkt = (sh.get('fair'), sh.get('mkt')) if sh else (None, None)
+        row = [now_iso(), g['sport'], g['short'], g['date_et'], f"{sh['h1a']}-{sh['h1h']}" if sh else '', (sh or {}).get('total', pre.get('total')), (sh or {}).get('spread', pre.get('home_spread')), fair, mkt,
                f"{g['away']['abbr']} {g['away']['score']}, {g['home']['abbr']} {g['home']['score']}", T,
                round(abs(T - fair), 1) if fair is not None else '', round(abs(T - mkt), 1) if mkt is not None else '',
-               gr['n_plays'], gr['cost'], gr['pnl'], gr['mid_pnl'] if gr['mid_pnl'] is not None else '', gr['detail'],
-               gr['rest_text'], gr['rest_pnl'] if gr['rest_pnl'] is not None else '']
+               gr['n_plays'] if gr else 0, gr['cost'] if gr else '', gr['pnl'] if gr else '', gr['mid_pnl'] if gr and gr['mid_pnl'] is not None else '', gr['detail'] if gr else '',
+               gr['rest_text'] if gr else '', gr['rest_pnl'] if gr and gr['rest_pnl'] is not None else '']
+        gr3, fl3 = None, []
+        if sh3:
+            gr3 = grade_sheet(sh3, T)
+            fl3 = self.flickers(g['id'], T, sh3, 'q3')
+            f3, m3 = sh3.get('fair'), sh3.get('mkt')
+            row += [f"{sh3['h1a']}-{sh3['h1h']}", f3, m3, gr3['n_plays'], gr3['cost'], gr3['pnl'], gr3['mid_pnl'] if gr3['mid_pnl'] is not None else '', gr3['detail'],
+                    gr3['rest_text'], gr3['rest_pnl'] if gr3['rest_pnl'] is not None else '']
+        else:
+            row += [''] * 10
         os.makedirs(os.path.dirname(RESULTS_PATH), exist_ok=True)
+        upgrade_results_csv(RESULTS_PATH)
         newfile = not os.path.exists(RESULTS_PATH)
         with open(RESULTS_PATH, 'a', newline='') as f:
             wr = csv.writer(f)
             if newfile:
                 wr.writerow(RESULTS_COLUMNS)
             wr.writerow(row)
-        rec['settled'] = dict(at=now_iso(), final_total=T, plays_pnl=gr['pnl'], mid_pnl=gr['mid_pnl'])
+        rec['settled'] = dict(at=now_iso(), final_total=T, plays_pnl=gr['pnl'] if gr else None, mid_pnl=gr['mid_pnl'] if gr else None,
+                              q3_plays_pnl=gr3['pnl'] if gr3 else None, q3_mid_pnl=gr3['mid_pnl'] if gr3 else None)
         if store.enabled():
-            # same row, same column names (settled_utc becomes settled_at), blanks become nulls, plus the graded sheet
+            # same row, same column names (settled_utc becomes settled_at), blanks become nulls, plus the graded sheets
             db = {('settled_at' if k == 'settled_utc' else 'date_et' if k == 'date' else k): (None if v == '' else v) for k, v in zip(RESULTS_COLUMNS, row)}
             db['game_id'], db['sheet'], db['flickers'] = g['id'], sh, fl
+            if sh3:
+                db['sheet_q3'], db['flickers_q3'] = sh3, fl3
             store.write('results', [db], on_conflict='game_id')
-        print(f"settled {g['short']}: final {T}, fair {fair}, market {mkt}, play {gr['pnl']:+.0f}, middle {gr['mid_pnl'] or 0:+.0f}")
+        print(f"settled {g['short']}: final {T}, fair {fair}, market {mkt}, play {gr['pnl'] if gr else 0:+.0f}, middle {(gr or {}).get('mid_pnl') or 0:+.0f}"
+              + (f"; end of 3rd: fair {sh3.get('fair')}, play {gr3['pnl']:+.0f}, middle {gr3['mid_pnl'] or 0:+.0f}" if gr3 else ''))
 
-    def log_row(self, g, rec, m, total, spread, quotes, sug, ev, ts=None):
+    def log_row(self, g, rec, m, total, spread, quotes, sug, ev, ts=None, score=None):
+        score = score or rec['half']
         os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
         newfile = not os.path.exists(LOG_PATH)
         best_mid = sug['mids'][0] if sug['mids'] else None
@@ -673,7 +726,7 @@ class Desk:
                 w.writerow(['time_utc', 'sport', 'game', 'date', 'event', 'phase', 'total', 'home_spread', 'half_away', 'half_home', 'mu', 'sd', 'fair_line',
                             'quotes', 'best_single', 'best_single_edge_c', 'best_mid', 'best_mid_edge_c', 'plays'])
             q = ' '.join(f"{k:g}:{v['y']}/{v['n']}" for k, v in sorted(quotes.items()))
-            w.writerow([ts or now_iso(), g['sport'], g['short'], g['date_et'], ev.get('event_ticker'), rec.get('phase'), total, spread, rec['half']['away'], rec['half']['home'],
+            w.writerow([ts or now_iso(), g['sport'], g['short'], g['date_et'], ev.get('event_ticker'), rec.get('phase'), total, spread, score['away'], score['home'],
                         round(m.mu, 1), round(m.sd, 1), engine.fair_line(m), q,
                         f"{best_single['kind']} {best_single['line']} @{best_single['price_c']}" if best_single else '', round(100 * best_single['edge'], 1) if best_single else '',
                         f"Y{best_mid['a']['line']}@{best_mid['a']['price_c']}+N{best_mid['b']['line']}@{best_mid['b']['price_c']}" if best_mid else '', round(100 * best_mid['ev'], 1) if best_mid else '',
@@ -683,6 +736,27 @@ class Desk:
         cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=self.cfg['keep_days'])).isoformat()
         for k in [k for k, v in self.state['games'].items() if (v.get('last_seen') or '') < cutoff]:
             del self.state['games'][k]
+
+
+def upgrade_results_csv(path=RESULTS_PATH):
+    """log/results.csv was written with fewer columns before the end-of-third window existed. When the file's
+    header is shorter than RESULTS_COLUMNS, rewrite it with the full header, old rows padded with blanks, so a
+    row appended today lines up with the header. Nothing else about the old rows changes."""
+    try:
+        with open(path, newline='') as f:
+            rows = list(csv.reader(f))
+    except FileNotFoundError:
+        return
+    if not rows or rows[0] == RESULTS_COLUMNS or len(rows[0]) >= len(RESULTS_COLUMNS):
+        return
+    old_n = len(rows[0])
+    tmp = path + '.tmp'
+    with open(tmp, 'w', newline='') as f:
+        wr = csv.writer(f)
+        wr.writerow(RESULTS_COLUMNS)
+        for r in rows[1:]:
+            wr.writerow(list(r[:old_n]) + [''] * (len(RESULTS_COLUMNS) - old_n))
+    os.replace(tmp, path)
 
 
 def grade_sheet(sh, T):
@@ -829,6 +903,13 @@ def scorecard(path=RESULTS_PATH, rows=None):
         out.append(f"model closer to the final than the market in {closer} of {len(both)} ({ties} ties); mean miss model {sum(f(r, 'model_err') for r in both) / len(both):.1f}, market {sum(f(r, 'mkt_err') for r in both) / len(both):.1f}")
     if rest:
         out.append(f"resting middles (what-if, assumes both sides filled): {len(rest)} games, ${rest_pnl:+.0f}")
+    q3 = [r for r in rows if r.get('q3_score') not in (None, '')]
+    if q3:
+        q3p = [r for r in q3 if f(r, 'q3_plays_cost')]
+        c3 = sum(f(r, 'q3_plays_cost') or 0 for r in q3p); p3 = sum(f(r, 'q3_plays_pnl') or 0 for r in q3p)
+        r3 = [r for r in q3 if r.get('q3_rest_mid_pnl') not in (None, '')]
+        out.append(f"end of 3rd (NBA): {len(q3)} graded, {len(q3p)} with a play: ${p3:+.0f} on ${c3:.0f} risked" + (f" ({100 * p3 / c3:+.1f}%)" if c3 else '')
+                   + (f"; resting middles what-if {len(r3)} games, ${sum(f(r, 'q3_rest_mid_pnl') for r in r3):+.0f}" if r3 else ''))
     return '\n'.join(out)
 
 

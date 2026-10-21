@@ -102,6 +102,89 @@ class HalfModel:
         return 'no strong lean'
 
 
+class LateModel:
+    """Game state at the end of the third quarter (NBA) -> distribution of the points left to play: the fourth
+    quarter plus overtime. Same interface as HalfModel (h1 is the points so far, mu the expected points left,
+    p_over_2h / p_push_2h on the points left), so price_lines, suggest, rest_plan and order_sheet run unchanged.
+
+    Regulation Q4 points come from the model block (total, points through three, |margin after three| and
+    min(|margin|, 5)); overtime is a mixture on top: P(OT) from a table by |margin after three| (9 percent in a
+    game within 7, 0.3 percent at 18+), adding ot_pts when it happens. Pooled quantiles were 2 to 4 cents off
+    in the tails here (section 15 of claude/nba-halftime.md); the mixture is within 1.5 cents."""
+
+    def __init__(self, sport, total, home_spread, home_pts, away_pts, center=None, center_w=1.0):
+        m = MODEL[sport + '_q3']
+        self.sport = sport
+        self.stage = 'q3'
+        home_fav_by = -(home_spread or 0)
+        self.fav_by = abs(home_fav_by)
+        m3 = home_pts - away_pts
+        self.favm = m3 if home_fav_by >= 0 else -m3
+        self.m3 = m3
+        self.h1 = home_pts + away_pts               # points so far (through three), the offset for full-game lines
+        c = m['coef']
+        a = abs(m3)
+        reg = c[0] + c[1] * total + c[2] * self.h1 + c[3] * a + c[4] * min(a, 5.0)
+        self.p_ot = next(p for lim, p in m['ot'] if a <= lim)
+        self.ot_pts = m['ot_pts']
+        self.mu_reg_model = max(6.0, reg)
+        self.mu_model = self.mu_reg_model + self.p_ot * self.ot_pts
+        self.center = center
+        self.center_w = 1.0 if center is None else max(0.0, min(1.0, center_w))
+        self.mu = self.mu_model if center is None else max(6.0, self.center_w * self.mu_model + (1 - self.center_w) * center)
+        self.mu_reg = max(6.0, self.mu - self.p_ot * self.ot_pts)
+        self.sd_reg = m['k'] * math.sqrt(self.mu_reg)
+        self.q = m['z']
+        self.n = m['n']
+        var = (1 - self.p_ot) * self.sd_reg ** 2 + self.p_ot * self.sd_reg ** 2 + self.p_ot * (1 - self.p_ot) * self.ot_pts ** 2
+        self.sd = math.sqrt(var)
+        self.state = 'trail' if self.favm < 0 else ('lead' if self.favm > 0 else 'tied')
+        self.bucket = 'q3'
+        self.ref = None
+        self.median = self._median()
+
+    def _cdf_reg(self, z):
+        q = self.q
+        if z <= q[0]:
+            return 0.0
+        if z >= q[-1]:
+            return 1.0
+        hi = bisect_right(q, z)
+        lo = hi - 1
+        f = (z - q[lo]) / ((q[hi] - q[lo]) or 1)
+        return (lo + f) / (len(q) - 1)
+
+    def cdf(self, x):
+        return (1 - self.p_ot) * self._cdf_reg((x - self.mu_reg) / self.sd_reg) + self.p_ot * self._cdf_reg((x - self.ot_pts - self.mu_reg) / self.sd_reg)
+
+    def _median(self):
+        lo, hi = self.mu_reg - 40, self.mu_reg + 60
+        for _ in range(40):
+            mid = (lo + hi) / 2
+            if self.cdf(mid) < 0.5:
+                lo = mid
+            else:
+                hi = mid
+        return (lo + hi) / 2
+
+    def p_over_2h(self, t):
+        """P(points left > t); points are whole numbers."""
+        return 1 - self.cdf(math.floor(t) + 0.5)
+
+    def p_push_2h(self, t):
+        if float(t).is_integer():
+            return max(0.0, self.cdf(t + 0.5) - self.cdf(t - 0.5))
+        return 0.0
+
+    def spot(self):
+        a = abs(self.m3)
+        if a <= 7:
+            return f'end of 3rd, close game: 4th scores a point less, overtime {100*self.p_ot:.0f}% (the tail the ladder has to carry)'
+        if a >= 18:
+            return 'end of 3rd, blowout: no overtime tail, tight ladder, the leader gives back a sixth of the lead'
+        return f'end of 3rd, {a}-point game: overtime {100*self.p_ot:.0f}%, no lean on the total'
+
+
 # Second-half margin for the pregame favorite, NBA: the halftime lead shrinks. Fit on 14,691 games 2008-09 through
 # 2019-20 with the market's sided 2H spread (claude/nba-halftime.md, section 13): a favorite down 15 at the half wins
 # the second half by 7, a favorite up 15 loses it by 1. Ties the market's own 2H spread out of sample (MAE 7.88 vs
@@ -526,6 +609,10 @@ def rev_lines(r, alone):
             f"final {r['lo']:.0f} to {r['hi']:.0f} loses both (-${-r['lose']:.0f}). Edge +{100 * r['ev']:.1f}c a pair."]
 
 
+def cancel_by(model):
+    return 'by the first timeout of the 4th' if getattr(model, 'stage', None) == 'q3' else 'by the 4th'
+
+
 def rest_block(model, rows, sizing, mode='fg', head='POSSIBLE MIDDLE (post as limit orders):'):
     """The resting-middle lines of a push: one middle for football, a tight one and a wide one for a sport that
     sets near_pts wide enough to hold both. (lines, plan)"""
@@ -593,7 +680,7 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
             if cl:
                 out.append(cl)
             out.append('')
-        rest, rp = rest_block(model, rows, sizing, mode, head='RESTING MIDDLE (post as limit orders, cancel what has not filled by the 4th):')
+        rest, rp = rest_block(model, rows, sizing, mode, head=f'RESTING MIDDLE (post as limit orders, cancel what has not filled {cancel_by(model)}):')
         if rest:
             out += rest
         elif not (mid or singles or rev):

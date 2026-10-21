@@ -136,6 +136,15 @@ pricing. The study and the decisions are in `claude/nba-halftime.md`; `python sc
 data/nba_games.csv` reprints it (`--write` refits the block in `model.json`). Run `supabase/004_nba.sql` once
 so the games table accepts the sport.
 
+The NBA's second push is the end of the third quarter, not the start (a basket comes in seconds, so the
+early-Q3 look never happens there). In the break before the fourth, and its first 30 seconds while the score is
+still the end-of-third score, the watcher prices the same ladder with the end-of-third model (`engine.LateModel`,
+the `nba_q3` block: regulation fourth-quarter points plus an overtime mixture by the margin after three, 9 percent
+in a close game and 0.3 percent at 18+), centered on the ladder the same way, and pushes once as slot q3 ("end of
+3rd, NBA"). Resting middles there say "cancel what has not filled by the first timeout of the 4th". The final
+grades it on the game's results row in the q3_ columns (`supabase/007_q3.sql`); `log/results.csv` upgrades its
+own header the first time. `python scripts/fit_nba_q3.py` reprints the fit and its calibration.
+
 ## Manual use
 ```
 python cli.py --sport nfl --away BUF --home LAR --spread -3.5 --total 55.5 --half 13-7 --quotes "45.5y59,48.5y47,51.5n66"

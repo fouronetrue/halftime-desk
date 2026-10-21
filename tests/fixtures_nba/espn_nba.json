@@ -113,6 +113,76 @@
      ]
     }
    ]
+  },
+  {
+   "id": "503",
+   "name": "Oklahoma City Thunder at San Antonio Spurs",
+   "shortName": "OKC @ SA",
+   "date": "2026-10-21T02:00Z",
+   "status": {
+    "period": 3,
+    "displayClock": "0.0",
+    "type": {
+     "state": "in",
+     "name": "STATUS_END_PERIOD",
+     "shortDetail": "End of 3rd"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "score": "85",
+       "linescores": [
+        {
+         "value": 28
+        },
+        {
+         "value": 30
+        },
+        {
+         "value": 27
+        }
+       ],
+       "team": {
+        "abbreviation": "SA",
+        "displayName": "San Antonio Spurs",
+        "location": "San Antonio",
+        "shortDisplayName": "Spurs"
+       }
+      },
+      {
+       "homeAway": "away",
+       "score": "82",
+       "linescores": [
+        {
+         "value": 26
+        },
+        {
+         "value": 29
+        },
+        {
+         "value": 27
+        }
+       ],
+       "team": {
+        "abbreviation": "OKC",
+        "displayName": "Oklahoma City Thunder",
+        "location": "Oklahoma City",
+        "shortDisplayName": "Thunder"
+       }
+      }
+     ],
+     "neutralSite": false,
+     "odds": [
+      {
+       "details": "SA -3.5",
+       "overUnder": 232.5
+      }
+     ]
+    }
+   ]
   }
  ]
 }

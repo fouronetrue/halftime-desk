@@ -101,8 +101,20 @@ def half_score(g):
     return None
 
 
+def third_score(g):
+    """(away_pts, home_pts) at the end of the third quarter, or None if not known yet."""
+    if g['period'] == 3 and (g['status'] == 'STATUS_END_PERIOD' or (g['clock_s'] == 0 and g['state'] == 'in')):
+        return g['away']['score'], g['home']['score']
+    if g['period'] >= 4 and len(g['home']['linescores']) >= 3 and len(g['away']['linescores']) >= 3:
+        return sum(g['away']['linescores'][:3]), sum(g['home']['linescores'][:3])
+    return None
+
+
 def phase(g):
-    """pre | approaching (Q2 under 5:00) | half | early3 | live | post"""
+    """pre | approaching (Q2 under 5:00) | half | early3 | live | post
+    NBA only, the second window: approaching3 (Q3 under 5:00) | q3end (the break before the 4th) | early4 (the first
+    30 seconds of the 4th, while the score is still the end-of-third score). The NBA has no early3: a basket comes
+    in seconds, so its second push slot is the end of the third instead of the start."""
     if g['state'] == 'pre':
         return 'pre'
     if g['state'] == 'post':
@@ -111,6 +123,14 @@ def phase(g):
         return 'half'
     if g['period'] == 2 and g['clock_s'] is not None and g['clock_s'] <= 300:
         return 'approaching'
+    if g['sport'] == 'nba':
+        if g['period'] == 3 and (g['status'] == 'STATUS_END_PERIOD' or g['clock_s'] == 0):
+            return 'q3end'
+        if g['period'] == 4 and g['clock_s'] is not None and g['clock_s'] >= 11 * 60 + 30:
+            return 'early4'
+        if g['period'] == 3 and g['clock_s'] is not None and g['clock_s'] <= 300:
+            return 'approaching3'
+        return 'live'
     if g['period'] == 3 and g['clock_s'] is not None and g['clock_s'] >= EARLY3_SECONDS.get(g['sport'], 13 * 60):
         return 'early3'
     return 'live'

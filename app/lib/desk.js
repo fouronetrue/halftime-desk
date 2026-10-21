@@ -36,13 +36,16 @@ export function phaseLabel(g) {
     case 'half': return 'HALF';
     case 'early3': return 'Q3';
     case 'approaching': return 'Q2 late';
+    case 'approaching3': return 'Q3 late';
+    case 'q3end': return 'END 3RD';
+    case 'early4': return 'Q4';
     case 'live': return g.detail || 'Live';
     case 'post': return 'Final';
     default: return etTime(g.start_utc);
   }
 }
 
-export const isHalfish = (g) => ['approaching', 'half', 'early3'].includes(g.phase);
+export const isHalfish = (g) => ['approaching', 'half', 'early3', 'approaching3', 'q3end', 'early4'].includes(g.phase);
 
 // A suggestions row is priced off the halftime score. Once the games row shows a different live score, the
 // row is stale: the watcher stops writing new rows at that moment, so the newest one is the last good one and

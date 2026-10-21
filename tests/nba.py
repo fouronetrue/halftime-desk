@@ -37,11 +37,17 @@ print('center: 25 percent model, 75 percent market')
 for s, want in [('7:34', 454), ('7:34.0', 454), ('0:00', 0), ('45.3', 45), (':45.3', 45), ('0.0', 0), ('', None), ('end', None)]:
     assert feeds.parse_clock(s) == want, (s, feeds.parse_clock(s), want)
 g = dict(sport='nba', state='in', status='STATUS_IN_PROGRESS', period=3, clock_s=feeds.parse_clock('11:40'))
-assert feeds.phase(g) == 'early3'
+assert feeds.phase(g) == 'live', 'the NBA has no early-Q3 slot; its second window is the end of the third'
+g['clock_s'] = feeds.parse_clock('4:59'); assert feeds.phase(g) == 'approaching3'
+g['clock_s'] = 0; assert feeds.phase(g) == 'q3end'
+g.update(status='STATUS_END_PERIOD', clock_s=feeds.parse_clock('0.0')); assert feeds.phase(g) == 'q3end'
+g.update(status='STATUS_IN_PROGRESS', period=4, clock_s=feeds.parse_clock('11:45')); assert feeds.phase(g) == 'early4'
 g['clock_s'] = feeds.parse_clock('11:20'); assert feeds.phase(g) == 'live'
 g.update(period=2, clock_s=feeds.parse_clock('4:59')); assert feeds.phase(g) == 'approaching'
+nfl = dict(sport='nfl', state='in', status='STATUS_IN_PROGRESS', period=3, clock_s=feeds.parse_clock('14:20')); assert feeds.phase(nfl) == 'early3'
+nfl.update(clock_s=0); assert feeds.phase(nfl) == 'live', 'football keeps its own phases'
 assert feeds.ESPN['nba'].endswith('/basketball/nba/scoreboard') and feeds.SERIES['nba'] == {'total': 'KXNBATOTAL', 'spread': 'KXNBASPREAD'}
-print('feeds: clock forms, Q3 slot, series')
+print('feeds: clock forms, the end-of-third window, series')
 
 # 4. the fixtures run
 FIX = os.path.join(ROOT, 'tests', 'fixtures_nba')
@@ -59,8 +65,9 @@ assert rec['kalshi_total_event'] == 'KXNBATOTAL-26OCT20BOSDET' and rec['half'] =
 sh = rec['sheet']
 assert sh['center'] == 111.5 and sh['center_w'] == 0.25 and abs(sh['mu'] - (0.25 * sh['mu_model'] + 0.75 * 111.5)) < 0.02, sh
 assert sh['mkt'] == 230.5 and sh['fair'] == 229.5, sh
-assert len(pushes) == 1 and pushes[0][0] == 'PLAY: Celtics 58, Pistons 61 (half, NBA)' and pushes[0][2] == 'high', pushes
-body = pushes[0][1]
+halfp = [p for p in pushes if '(half' in p[0]]
+assert len(halfp) == 1 and halfp[0][0] == 'PLAY: Celtics 58, Pistons 61 (half, NBA)' and halfp[0][2] == 'high', pushes
+body = halfp[0][1]
 assert body.index('MIDDLE (clears') < body.index('SINGLE') and 'RESTING MIDDLE' in body and 'WIDER MIDDLE' in body, body
 assert 'Buy OVER 236.5' in body and 'No lean' in body, body
 assert sh['mid'] and sh['rest_mid'] is None, 'a cleared middle is graded as the play; the resting what-if belongs to an UPDATE'
@@ -84,9 +91,9 @@ assert feeds.parse_box_stats({}) is None and feeds.parse_box_stats({'boxscore': 
 pre = d.state['games']['502']
 assert pre['pre'].get('total') == 231.5 and pre['pre'].get('home_spread') == -5.5 and pre.get('kalshi_total_event') == 'KXNBATOTAL-26OCT20PHINYK', pre
 assert pre['mkt']['line'] == 231.5
-# a second pass pushes nothing new
+# a second pass pushes nothing new (one push for the half game, one for the end-of-third game, see 6 below)
 d._events = {}; d.run_pass()
-assert len(pushes) == 1
+assert len(pushes) == 2, [p[0] for p in pushes]
 # the same ladder with the stale strike repaired: an UPDATE that still leads with middles
 import json, shutil
 fix = json.load(open(os.path.join(FIX, 'kalshi_KXNBATOTAL.json')))
@@ -99,8 +106,9 @@ for f in os.listdir(FIX):
 json.dump(fix, open(os.path.join(clean, 'kalshi_KXNBATOTAL.json'), 'w'))
 pushes.clear()
 d = watch.Desk(cfg, {}, clean); d.run_pass()
-assert len(pushes) == 1 and pushes[0][0].startswith('UPDATE: Celtics 58, Pistons 61') and pushes[0][2] == 'default', pushes
-body = pushes[0][1]
+halfp = [p for p in pushes if '(half' in p[0]]
+assert len(halfp) == 1 and halfp[0][0].startswith('UPDATE: Celtics 58, Pistons 61') and halfp[0][2] == 'default', pushes
+body = halfp[0][1]
 assert 'No single or middle clears' in body and 'Closest middle at the asks' in body and 'RESTING MIDDLE' in body and 'WIDER MIDDLE' in body, body
 assert ' shares for $' in body and body.count('Buy OVER') == 2 and body.count('Buy UNDER') == 2, body
 sh = d.state['games']['501']['sheet']
@@ -108,6 +116,45 @@ assert sh['rest_mid']['b_line'] - sh['rest_mid']['a_line'] < 6 <= sh['rest_mid_w
 assert f"Buy OVER {sh['rest_mid']['a_line']:.1f} at {sh['rest_mid']['a_price']}c ({sh['rest_mid']['pairs']} shares" in body, 'the graded resting middle must be the one the push posted first'
 print('middles: PLAY leads with the middle, UPDATE carries the closest middle and a tight and a wide resting middle')
 print('fixtures: halftime game priced off the games-table line, centered on the ladder, one PLAY, first-half box and spread ladder kept; pregame game captured (NY matched NYK)')
+
+# 6. the end-of-third window: OKC at SA, 82-85 after three, priced off the games-table line with the end-of-third model,
+# pushed once as slot q3, and graded next to the half on the results row
+pushes.clear()
+d = watch.Desk(cfg, {}, FIX); d.run_pass()
+rec3 = d.state['games']['503']
+assert rec3['third'] == {'away': 82, 'home': 85} and rec3.get('sheet_q3') and rec3['slots'].get('q3') == 'play', (rec3.get('third'), rec3.get('slots'))
+p3 = [p for p in pushes if 'end of 3rd' in p[0]]
+assert len(p3) == 1 and p3[0][0] == 'PLAY: Thunder 82, Spurs 85 (end of 3rd, NBA)' and p3[0][2] == 'high' and 'first timeout of the 4th' in p3[0][1], p3
+assert 'Buy OVER 230.5 at 15c' in p3[0][1] and 'overtime 9%' in p3[0][1] and 'RESTING MIDDLE' in p3[0][1], p3[0][1]
+sh3 = rec3['sheet_q3']
+assert sh3['stage'] == 'q3' and sh3['h1a'] == 82 and sh3['h1h'] == 85 and sh3['fair'] and sh3['mkt'] == 223.5 and sh3['center'] == 223.5 - 167, sh3
+assert abs(sh3['mu'] - (0.25 * sh3['mu_model'] + 0.75 * sh3['center'])) < 0.02
+m3 = engine.LateModel('nba', 229.5, -1.5, 85, 82)
+assert m3.p_ot == 0.089 and 'close game' in m3.spot() and abs(m3.mu_model - (m3.mu_reg_model + 0.089 * 24.3)) < 1e-9
+assert 0.17 < m3.p_over_2h(math.floor(m3.median) + 10.5) < 0.21 and m3.sd > engine.LateModel('nba', 229.5, -1.5, 105, 72).sd + 1.5, 'the overtime tail widens a close game'
+# a second pass pushes nothing new; a basket in the first seconds of the 4th stops the pricing
+d._events = {}; d.run_pass(); assert len([p for p in pushes if 'end of 3rd' in p[0]]) == 1
+import copy
+g3 = copy.deepcopy([x for x in d.games('nba') if x['id'] == '503'][0])
+g3.update(status='STATUS_IN_PROGRESS', period=4, clock='11:50', clock_s=710); g3['home']['score'] = 87; g3['home']['linescores'].append(2)
+assert feeds.phase(g3) == 'early4' and feeds.third_score(g3) == (82, 85)
+n_before = len(pushes); d.evaluate_q3(g3, rec3)
+assert len(pushes) == n_before and rec3.get('moved_q3') == {'away': 82, 'home': 87}, 'priced after the score moved'
+# the final grades the half and the end of the third on one row, after upgrading an old-format results.csv
+import csv
+with open(watch.RESULTS_PATH, 'w', newline='') as f:
+    w = csv.writer(f); w.writerow(watch.RESULTS_COLUMNS[:20]); w.writerow(['2026-10-20T00:00:00+00:00', 'nfl', 'A @ B', '2026-10-19', '7-3', 45.5, -3.0, 44.5, 45.5, 'A 20, B 21', 41, 3.5, 4.5, 1, 50, -50, '', 'over 44.5@55 L -50', '', ''])
+gf = copy.deepcopy(g3); gf.update(state='post', status='STATUS_FINAL', period=4, clock='0:00', clock_s=0); gf['home']['score'], gf['away']['score'] = 112, 108
+gf['home']['linescores'], gf['away']['linescores'] = [28, 30, 27, 27], [26, 29, 27, 26]
+d.settle(gf, rec3)
+rows = list(csv.DictReader(open(watch.RESULTS_PATH)))
+assert len(rows) == 2 and rows[0]['q3_score'] == '' and rows[0]['plays_pnl'] == '-50', rows[0]
+r = rows[1]
+assert r['half'] == '' and r['q3_score'] == '82-85' and r['final_total'] == '220' and float(r['q3_plays_cost']) > 0 and r['q3_plays'].startswith('mid 230.5/232.5 miss') or r['q3_plays'].startswith('over 230.5@15 L'), r
+assert rec3['settled']['q3_plays_pnl'] is not None and rec3['settled']['plays_pnl'] is None
+sc = watch.scorecard(watch.RESULTS_PATH)
+assert 'end of 3rd (NBA): 1 graded, 1 with a play' in sc, sc
+print('end of 3rd: priced, pushed once, stopped at the first basket, graded in the q3 columns next to an upgraded CSV header')
 
 # 5. the per-number rule in both places
 js = open(os.path.join(ROOT, 'app', 'lib', 'desk.js')).read()
