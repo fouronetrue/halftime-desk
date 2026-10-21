@@ -1,5 +1,15 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "watchPatterns": [
+      "**/*.py",
+      "requirements.txt",
+      ".python-version",
+      "railway.json",
+      "config.json",
+      "model.json"
+    ]
+  },
   "deploy": {
     "startCommand": "python -u worker.py",
     "restartPolicyType": "ALWAYS"
