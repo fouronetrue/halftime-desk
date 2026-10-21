@@ -37,16 +37,25 @@ function bets(sug) {
   return { single, mid, pairs };
 }
 
+// How long a cleared line has held: the watcher stamps each cleared line with when it first cleared this half.
+// A line that just appeared is usually one thin ask about to be taken; one that has held a few minutes is a
+// price the market is willing to keep offering. Every one of these is graded at the final (Record, "came and went").
+function clearFor(since) {
+  if (!since) return null;
+  const s = Math.max(0, Math.round((Date.now() - new Date(since).getTime()) / 1000));
+  return s < 20 ? 'just now' : s < 90 ? `clear ${s}s` : `clear ${Math.round(s / 60)} min`;
+}
+
 function BetLines({ sug }) {
   const { single, mid, pairs } = bets(sug);
   if (!single && !mid) return <p className="betline none"><b>BET:</b> None. Nothing clears the 3c edge.</p>;
   return (
     <div className="bets">
       {single && (
-        <p className="betline"><b>BET:</b> Single - {single.kind === 'over' ? 'Over' : 'Under'} {Number(single.line)} ({single.contracts} shares, {single.price_c}c)</p>
+        <p className="betline"><b>BET:</b> Single - {single.kind === 'over' ? 'Over' : 'Under'} {Number(single.line)} ({single.contracts} shares, {single.price_c}c){single.since ? <span className={`clearfor ${clearFor(single.since) === 'just now' ? 'new' : ''}`}>{clearFor(single.since)}</span> : null}</p>
       )}
       {mid && pairs > 0 && (
-        <p className="betline"><b>BET:</b> Middle - O{Number(mid.a.line)} ({pairs} shares, {mid.a.price_c}c), U{Number(mid.b.line)} ({pairs} shares, {mid.b.price_c}c)</p>
+        <p className="betline"><b>BET:</b> Middle - O{Number(mid.a.line)} ({pairs} shares, {mid.a.price_c}c), U{Number(mid.b.line)} ({pairs} shares, {mid.b.price_c}c){mid.since ? <span className={`clearfor ${clearFor(mid.since) === 'just now' ? 'new' : ''}`}>{clearFor(mid.since)}</span> : null}</p>
       )}
       {single && mid && pairs > 0 && <p className="betnote">One or the other, not both.</p>}
     </div>

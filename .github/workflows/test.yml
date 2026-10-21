@@ -18,4 +18,5 @@ jobs:
       - run: python tests/nba.py
       - run: python tests/grading.py
       - run: python tests/reverse.py
+      - run: python tests/flickers.py
       - run: cp state.json /tmp/state.bak && python watch.py --fixtures tests/fixtures && cp /tmp/state.bak state.json

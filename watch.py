@@ -432,6 +432,20 @@ class Desk:
             text = ('\n'.join(held_lines) + '\n\n' + text) if (not plays and held_act) else (text + '\n\n' + '\n'.join(held_lines))
         ts = now_iso()
         rec.setdefault('half_at', ts)
+        # Every cleared line gets stamped with when it first cleared this half, so Today can say "clear for 2 min"
+        # and a one-look flicker reads differently from a line that has held. The full history (every priced row)
+        # is in the suggestions table; settle() grades all of it, pushed or not.
+        clear = rec.setdefault('clear', {})
+        for x in sug['singles']:
+            if x.get('ok'):
+                e = clear.setdefault(f"single {x['kind']} {x['line']}", dict(first=ts, n=0))
+                e['last'], e['n'] = ts, e['n'] + 1
+                x['since'] = e['first']
+        for x in sug['mids']:
+            if x.get('ok'):
+                e = clear.setdefault(f"mid {x['a']['line']} {x['b']['line']}", dict(first=ts, n=0))
+                e['last'], e['n'] = ts, e['n'] + 1
+                x['since'] = e['first']
         self.log_row(g, rec, m, total, spread, quotes, sug, ev, ts)
         self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=held_rows)
         sheet = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec)
@@ -564,6 +578,15 @@ class Desk:
                     return sh
         return rec.get('play_sheet') or rec.get('sheet')
 
+    def flickers(self, game_id, T, pushed=None):
+        """Everything that cleared the edge at any moment of this half, graded. Read from the suggestions table
+        (every priced row, from both watchers), so both grade the same set; [] when it cannot be reached."""
+        if not store.enabled():
+            return []
+        rows = store.read('suggestions', {'select': 'taken_at,phase,singles,mids,revs', 'game_id': f'eq.{game_id}',
+                                          'phase': 'in.(half,early3)', 'order': 'taken_at', 'limit': 2000})
+        return flickers_from_rows(rows, T, pushed)
+
     def sheet_from_suggestion(self, game_id, taken_at):
         """A sheet for a push that was sent before sheets were kept: the plays the push named, from the
         suggestions row it came from (the first three cleared singles, one per line, and the best cleared middle)."""
@@ -594,6 +617,7 @@ class Desk:
             return
         T = g['away']['score'] + g['home']['score']
         gr = grade_sheet(sh, T)
+        fl = self.flickers(g['id'], T, sh)
         fair, mkt = sh.get('fair'), sh.get('mkt')
         row = [now_iso(), g['sport'], g['short'], g['date_et'], f"{sh['h1a']}-{sh['h1h']}", sh['total'], sh['spread'], fair, mkt,
                f"{g['away']['abbr']} {g['away']['score']}, {g['home']['abbr']} {g['home']['score']}", T,
@@ -611,7 +635,7 @@ class Desk:
         if store.enabled():
             # same row, same column names (settled_utc becomes settled_at), blanks become nulls, plus the graded sheet
             db = {('settled_at' if k == 'settled_utc' else 'date_et' if k == 'date' else k): (None if v == '' else v) for k, v in zip(RESULTS_COLUMNS, row)}
-            db['game_id'], db['sheet'] = g['id'], sh
+            db['game_id'], db['sheet'], db['flickers'] = g['id'], sh, fl
             store.write('results', [db], on_conflict='game_id')
         print(f"settled {g['short']}: final {T}, fair {fair}, market {mkt}, play {gr['pnl']:+.0f}, middle {gr['mid_pnl'] or 0:+.0f}")
 
@@ -678,6 +702,71 @@ def grade_sheet(sh, T):
                 rev_pnl=rev_pnl, rev_hole=rev_hole,
                 rest_pnl=rest_pnl, rest_hit=rest_hit, n_plays=len(singles) + (1 if m else 0) + (1 if rv else 0), detail='; '.join(detail),
                 rest_text=f"over {rm['a_line']:g}@{rm['a_price']} / under {rm['b_line']:g}@{rm['b_price']} x{rm['pairs']}" if rm else '')
+
+
+def flickers_from_rows(rows, T, pushed=None):
+    """Every line that cleared the edge in any priced row of a half, graded against the final total T. One entry
+    per distinct single (side and line), middle (both lines) or reverse middle, with when it first and last
+    cleared, how many priced rows it cleared in, the best price and edge it showed and the size at that moment,
+    whether it was in the push that was graded as the record, and what it would have done. These are what Today
+    showed between the pushes: the answer to "the bets that came and went, did they hit"."""
+    seen = {}
+    pushed = pushed or {}
+    was = set()
+    for x in pushed.get('singles') or []:
+        was.add(('single', x['kind'], float(x['line'])))
+    if pushed.get('mid'):
+        was.add(('mid', float(pushed['mid']['a_line']), float(pushed['mid']['b_line'])))
+    if pushed.get('rev'):
+        was.add(('rev', float(pushed['rev']['a_line']), float(pushed['rev']['b_line'])))
+    n_rows = 0
+    for r in sorted(rows or [], key=lambda r: r.get('taken_at') or ''):
+        n_rows += 1
+        ts = r.get('taken_at')
+        for x in r.get('singles') or []:
+            if not x.get('ok'):
+                continue
+            key = ('single', x['kind'], float(x['line']))
+            e = seen.setdefault(key, dict(kind='single', side=x['kind'], line=float(x['line']), first=ts, last=ts, n=0, best_edge_c=-999))
+            e['last'], e['n'] = ts, e['n'] + 1
+            if 100 * x['edge'] > e['best_edge_c']:
+                e.update(best_edge_c=round(100 * x['edge'], 1), price_c=x['price_c'], contracts=x['contracts'], cost=x['cost'], at=ts)
+        for x in r.get('mids') or []:
+            if not x.get('ok'):
+                continue
+            key = ('mid', float(x['a']['line']), float(x['b']['line']))
+            e = seen.setdefault(key, dict(kind='mid', a_line=float(x['a']['line']), b_line=float(x['b']['line']), first=ts, last=ts, n=0, best_edge_c=-999))
+            e['last'], e['n'] = ts, e['n'] + 1
+            if 100 * x['ev'] > e['best_edge_c']:
+                e.update(best_edge_c=round(100 * x['ev'], 1), a_price=x['a']['price_c'], b_price=x['b']['price_c'], pairs=x['pairs'], cost=x['cost'], at=ts)
+        for x in r.get('revs') or []:
+            if not x.get('ok'):
+                continue
+            key = ('rev', float(x['a']['line']), float(x['b']['line']))
+            e = seen.setdefault(key, dict(kind='rev', a_line=float(x['a']['line']), b_line=float(x['b']['line']), first=ts, last=ts, n=0, best_edge_c=-999))
+            e['last'], e['n'] = ts, e['n'] + 1
+            if 100 * x['ev'] > e['best_edge_c']:
+                e.update(best_edge_c=round(100 * x['ev'], 1), a_price=x['a']['price_c'], b_price=x['b']['price_c'], pairs=x['pairs'], cost=x['cost'], at=ts)
+    out = []
+    for key, e in seen.items():
+        e['rows'] = n_rows
+        e['pushed'] = key in was
+        try:
+            e['secs'] = max(0, int((dt.datetime.fromisoformat(e['last'].replace('Z', '+00:00')) - dt.datetime.fromisoformat(e['first'].replace('Z', '+00:00'))).total_seconds()))
+        except Exception:
+            e['secs'] = None
+        if e['kind'] == 'single':
+            e['win'] = T > e['line'] if e['side'] == 'over' else T < e['line']
+            e['pnl'] = round((e['contracts'] - e['cost']) if e['win'] else -e['cost'], 2)
+        elif e['kind'] == 'mid':
+            e['win'] = e['a_line'] < T < e['b_line']
+            e['pnl'] = round((2 * e['pairs'] - e['cost']) if e['win'] else (e['pairs'] - e['cost']), 2)
+        else:
+            e['win'] = not (e['a_line'] < T < e['b_line'])
+            e['pnl'] = round((e['pairs'] - e['cost']) if e['win'] else -e['cost'], 2)
+        out.append(e)
+    out.sort(key=lambda e: e['first'] or '')
+    return out
 
 
 def results_rows(path=RESULTS_PATH):

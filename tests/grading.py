@@ -55,8 +55,12 @@ def fake_read(table, params):
         gid = params['game_id'].split('.', 1)[1]
         return sorted([r for (g_, _), r in db['alerts'].items() if g_ == gid], key=lambda r: r['sent_at'])
     if table == 'suggestions':
-        gid, at = params['game_id'].split('.', 1)[1], params['taken_at'].split('.', 1)[1]
-        return [r for r in db['suggestions'] if r['game_id'] == gid and r['taken_at'] == at][:1]
+        gid = params['game_id'].split('.', 1)[1]
+        rows = [r for r in db['suggestions'] if r['game_id'] == gid]
+        if 'taken_at' in params:                       # the one row a push came from
+            at = params['taken_at'].split('.', 1)[1]
+            return [r for r in rows if r['taken_at'] == at][:1]
+        return sorted(rows, key=lambda r: r['taken_at'])   # every priced row, for the flickers
     return []
 store.enabled, store.claim, store.write, store.read = (lambda: True), fake_claim, fake_write, fake_read
 

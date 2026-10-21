@@ -253,6 +253,16 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .betline b { color: var(--win); font-weight: 700; letter-spacing: 0.4px; margin-right: 4px; }
 .betline.none, .betline.none b { color: var(--dim); }
 .betnote { margin: 0; font-size: 13px; color: var(--dim); }
+.clearfor { margin-left: 8px; font: 600 12px var(--body); color: var(--dim); padding: 1px 6px; border-radius: 5px; background: var(--field); }
+.clearfor.new { color: var(--amber); }
+.flick { background: var(--field); border-radius: 12px; padding: 12px 14px; margin: 14px 0 6px; }
+.flick h3 { font: 700 20px var(--cond); margin: 0 0 4px; }
+.flick .mstats dd { font-size: 18px; }
+.flick .sub { margin: 0 0 8px; }
+.flickline b { font: 700 11px/1.5 var(--cond); letter-spacing: 0.5px; padding: 0 5px; border-radius: 4px; text-transform: uppercase; margin-right: 4px; border: 1px solid var(--line); }
+.flickline.win b { color: var(--win); border-color: var(--win); }
+.flickline.loss b { color: var(--loss); border-color: var(--loss); }
+.recmore .chalk { color: var(--chalk); font-family: var(--cond); font-size: 15px; }
 
 /* Live pregame Kalshi market on Today */
 .mktline { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 14px; color: var(--dim); font-variant-numeric: tabular-nums; }

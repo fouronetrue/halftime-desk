@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { gradeSheet, money } from '@/lib/desk';
+import { etTime, gradeSheet, money } from '@/lib/desk';
 
 // Record: every halftime the desk graded, newest first, and how the P&L got where it is. Plays are graded at
 // the sizes the push suggested (the first single is the play, the rest are backups; a middle is graded on its
@@ -78,6 +78,13 @@ export default function Record() {
   const midPnl = mids.reduce((s, { g }) => s + (g.mid.pnl || 0), 0);
   const both = inSport.filter(({ g }) => g.closer);
   const closer = both.filter(({ g }) => g.closer === 'model').length;
+  // The bets that came and went: every line that cleared the edge in any priced row of the half but was not the
+  // push, graded at its best moment. Split by how long it held, since a one-look flicker is usually a thin ask.
+  const extra = inSport.flatMap(({ r }) => (r.flickers || []).filter((f) => !f.pushed).map((f) => ({ ...f, game: r.game })));
+  const held = extra.filter((f) => (f.secs || 0) >= 60), quick = extra.filter((f) => (f.secs || 0) < 60);
+  const rec = (xs) => ({ n: xs.length, w: xs.filter((f) => f.win).length, pnl: xs.reduce((s, f) => s + Number(f.pnl || 0), 0), cost: xs.reduce((s, f) => s + Number(f.cost || 0), 0) });
+  const fx = { all: rec(extra), held: rec(held), quick: rec(quick) };
+  const withFlickers = inSport.filter(({ r }) => Array.isArray(r.flickers)).length;
   const rests = inSport.filter(({ g }) => g.rest && g.rest.pnl !== null);
   const restPnl = rests.reduce((s, { g }) => s + g.rest.pnl, 0);
   const restHits = rests.filter(({ g }) => g.rest.hit).length;
@@ -113,6 +120,18 @@ export default function Record() {
             Resting middles, what-if: {rests.length} games, {restHits} finals inside the window, {signed(restPnl)} if every one had filled both sides.
             {youCount ? ` Your Kalshi totals on these games, after fees: ${signed(youTotal)} across ${youCount}.` : ''}
           </p>
+          {withFlickers > 0 && (
+            <div className="flick">
+              <h3>Came and went</h3>
+              <p className="sub">Lines that cleared the edge at some moment of the half but were not the push ({withFlickers} games tracked). Graded at the best price each showed, at the size the engine gave it then.</p>
+              <dl className="mstats">
+                <div><dt>All of them</dt><dd className={fx.all.pnl >= 0 ? 'pos' : 'neg'}>{fx.all.n ? `${fx.all.w}-${fx.all.n - fx.all.w}, ${signed(fx.all.pnl)}` : 'none'}</dd></div>
+                <div><dt>Held a minute or more</dt><dd className={fx.held.pnl >= 0 ? 'pos' : 'neg'}>{fx.held.n ? `${fx.held.w}-${fx.held.n - fx.held.w}, ${signed(fx.held.pnl)}` : 'none'}</dd></div>
+                <div><dt>Under a minute</dt><dd className={fx.quick.pnl >= 0 ? 'pos' : 'neg'}>{fx.quick.n ? `${fx.quick.w}-${fx.quick.n - fx.quick.w}, ${signed(fx.quick.pnl)}` : 'none'}</dd></div>
+              </dl>
+              {fx.all.cost > 0 && <p className="sub">{signed(fx.all.pnl)} on {money(fx.all.cost)} if every one had been taken, {((100 * fx.all.pnl) / fx.all.cost).toFixed(1)}%. The pushes above are the record; this is the question, not the answer, until the count is in the dozens.</p>}
+            </div>
+          )}
         </>
       )}
 
@@ -173,6 +192,17 @@ export default function Record() {
                     {r.sheet?.rebuilt && <p className="alt">Graded from the prices the push was priced at (sent before sheets were kept).</p>}
                     {g.rest && <p className="alt">Resting middle O{Number(g.rest.a_line)} at {g.rest.a_price}c + U{Number(g.rest.b_line)} at {g.rest.b_price}c, {g.rest.pairs} pairs: {g.rest.hit ? 'final inside the window' : 'missed'}, {signed(g.rest.pnl || 0)} if both sides had filled.</p>}
                     {yours !== undefined && <p className="alt">You on this total, after fees: <b className={yours >= 0 ? 'pos' : 'neg'}>{signed(yours)}</b>.</p>}
+                    {(r.flickers || []).filter((f) => !f.pushed).length > 0 && (
+                      <>
+                        <p className="alt"><b className="chalk">Came and went</b> (cleared at some moment, not the push):</p>
+                        {(r.flickers || []).filter((f) => !f.pushed).map((f, i) => (
+                          <p key={`f${i}`} className={`alt flickline ${f.win ? 'win' : 'loss'}`}>
+                            <b>{f.win ? (f.kind === 'single' ? 'would have won' : 'would have hit') : (f.kind === 'single' ? 'would have lost' : 'would have missed')}</b>{' '}
+                            {f.kind === 'single' ? `${f.side === 'over' ? 'Over' : 'Under'} ${f.line} at ${f.price_c}c, ${f.contracts} shares` : f.kind === 'mid' ? `Middle O${f.a_line} at ${f.a_price}c + U${f.b_line} at ${f.b_price}c, ${f.pairs} pairs` : `Reverse U${f.a_line} at ${f.a_price}c + O${f.b_line} at ${f.b_price}c, ${f.pairs} pairs`}: {signed(f.pnl)}. Clear {f.secs >= 60 ? `${Math.round(f.secs / 60)} min` : f.n > 1 ? `${f.secs}s` : 'one look'}{f.n > 1 ? ` (${f.n} looks)` : ''}, best edge {f.best_edge_c}c, first {etTime(f.first)}.
+                          </p>
+                        ))}
+                      </>
+                    )}
                     <Link className="link" href={`/desk/?g=${r.game_id}`}>Open the desk as it was</Link>
                   </div>
                 )}

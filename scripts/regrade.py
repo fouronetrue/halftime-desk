@@ -37,16 +37,19 @@ def main(dry_run=False):
         sh.setdefault('kind', pick.get('kind')); sh.setdefault('slot', pick.get('slot'))
         T = int(g['final_away']) + int(g['final_home'])
         gr = watch.grade_sheet(sh, T)
+        fl = desk.flickers(g['id'], T, sh)
         fair, mkt = sh.get('fair'), sh.get('mkt')
         row = dict(settled_at=watch.now_iso(), sport=g['sport'], game=g['short'], date_et=g['date_et'], half=f"{sh.get('h1a')}-{sh.get('h1h')}",
                    total=sh.get('total'), home_spread=sh.get('spread'), fair=fair, mkt=mkt,
                    final=f"{g['away_abbr']} {g['final_away']}, {g['home_abbr']} {g['final_home']}", final_total=T,
                    model_err=round(abs(T - float(fair)), 1) if fair is not None else None, mkt_err=round(abs(T - float(mkt)), 1) if mkt is not None else None,
                    n_plays=gr['n_plays'], plays_cost=gr['cost'], plays_pnl=gr['pnl'], mid_pnl=gr['mid_pnl'], plays=gr['detail'],
-                   rest_mid=gr['rest_text'] or None, rest_mid_pnl=gr['rest_pnl'], game_id=g['id'], sheet=sh)
+                   rest_mid=gr['rest_text'] or None, rest_mid_pnl=gr['rest_pnl'], game_id=g['id'], sheet=sh, flickers=fl)
         rows.append(row)
         changed += 1
-        print(f"{g['date_et']} {g['short']}: {pick['kind']} at the {pick['slot']}, final {T}, play {gr['pnl']:+.0f} on ${gr['cost']:.0f}, middle {gr['mid_pnl'] if gr['mid_pnl'] is not None else 'none'}{' (rebuilt)' if sh.get('rebuilt') else ''}")
+        extra = [f for f in fl if not f['pushed']]
+        print(f"{g['date_et']} {g['short']}: {pick['kind']} at the {pick['slot']}, final {T}, play {gr['pnl']:+.0f} on ${gr['cost']:.0f}, middle {gr['mid_pnl'] if gr['mid_pnl'] is not None else 'none'}{' (rebuilt)' if sh.get('rebuilt') else ''}; "
+              f"cleared and not pushed: {len(extra)} ({sum(1 for f in extra if f['win'])} would have won, {sum(f['pnl'] for f in extra):+.0f})")
     if dry_run:
         print(f'dry run: {changed} rows would be written')
         return

@@ -47,7 +47,12 @@ how many shares or pairs, and the resting limits for every strike near fair.
    is what the push led with: the first single (the rest are backups, one or the other, never a stack), the
    middle when the push led with one, or the reverse middle when it was all that cleared. Both watchers grade that same push, so a watcher that saw the game
    late never overwrites the record with an empty sheet. `scripts/regrade.py` (the `regrade` input on the
-   portfolio sync workflow) rebuilds every settled game from its pushes. `python watch.py --scorecard` prints the season to date;
+   portfolio sync workflow) rebuilds every settled game from its pushes. The push is a snapshot; between the
+   pushes the ladder keeps moving and a line can clear the edge for a while and go away again (that is what the
+   Today screen shows and the push did not). At the final the watcher also grades every line that cleared in any
+   priced row of the half, pushed or not, at the best price it showed (`results.flickers`; the Record screen
+   calls them "came and went"), so whether those are worth chasing is answered by the count, not by memory.
+   Today tags each live BET line with how long it has held. `python watch.py --scorecard` prints the season to date;
    every run prints it too. Both files and `state.json` are committed back to the repo by
    `scripts/save_run.py`, which appends the run's CSV rows to whatever is on main and takes `state.json`
    whole, so a run can never commit a merge conflict into the log.
@@ -89,7 +94,7 @@ how many shares or pairs, and the resting limits for every strike near fair.
 
 ## Supabase (optional, 10 minutes)
 1. Create a free project at supabase.com. In the SQL Editor paste `supabase/schema.sql` and run it, then
-   `002_week2.sql`, `003_live_score.sql` and `004_alert_sheet.sql` in order (all safe to run again). Every table has row level
+   `002_week2.sql` through `006_flickers.sql` in order (all safe to run again). Every table has row level
    security on; the app reads as a signed-in user and only the secret key can write.
 2. Settings > API Keys: copy the project URL and the **secret** key (`sb_secret_...`). Add two repository secrets:
    `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. The publishable key is for the app later, not for the worker.

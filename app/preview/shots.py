@@ -82,8 +82,8 @@ for gid, (fa, fh) in {'g8': (18, 16), 'g6': (34, 38), 'g9': (24, 24), 'g7': (38,
 g1_sug = dict(taken_at=ago(0), game_id='g1', sport='nfl', game='BUF @ LAR', date_et=today, event_ticker='KXNFLTOTAL-26OCT20BUFLAR', phase='half', total=55.5, home_spread=-3.5,
               half_away=13, half_home=7, away_score=13, home_score=7, mu=27.4, sd=10.2, fair_line=47.5, market_line=45.5,
               best_single='over 42.5 @59', best_single_edge_c=4.6, best_mid='Y42.5@59+N48.5@45', best_mid_edge_c=3.4, n_plays=2,
-              singles=[single('over', 42.5, 59, 121, 0.046), single('under', 51.5, 66, 82, 0.012, ok=False), single('over', 45.5, 47, 150, 0.004, ok=False)],
-              mids=[mid(42.5, 59, 48.5, 45, 118, 0.034), mid(42.5, 59, 51.5, 34, 96, 0.021, ok=False, p_mid=0.31), mid(45.5, 47, 48.5, 45, 70, 0.011, ok=False, p_mid=0.12)],
+              singles=[dict(single('over', 42.5, 59, 121, 0.046), since=ago(2)), single('under', 51.5, 66, 82, 0.012, ok=False), single('over', 45.5, 47, 150, 0.004, ok=False)],
+              mids=[dict(mid(42.5, 59, 48.5, 45, 118, 0.034), since=ago(0)), mid(42.5, 59, 51.5, 34, 96, 0.021, ok=False, p_mid=0.31), mid(45.5, 47, 48.5, 45, 70, 0.011, ok=False, p_mid=0.12)],
               bankroll=3590, max_risk=89.75, max_cost=269.25)
 g2_sug = dict(g1_sug, taken_at=ago(6), game_id='g2', sport='cfb', game='UTAH @ COLO', event_ticker='KXNCAAFTOTAL-26OCT20UTAHCOLO', phase='early3', total=45.5, home_spread=3.0,
               half_away=13, half_home=0, away_score=13, home_score=0, mu=22.1, sd=11.4, fair_line=35.5, market_line=38.5, best_single='under 35.5 @27', best_single_edge_c=10.7,
@@ -135,12 +135,20 @@ def result(gid, sport, gm, date, half, total, spread, fair, mkt, final, ft, sing
     if rest:
         hit = rest['a_line'] < ft < rest['b_line']
         rp = round((2 * rest['pairs'] - rest['cost']) if hit else (rest['pairs'] - rest['cost']), 2)
-    return dict(settled_at=ago(settled_min), sport=sport, game=gm, date_et=date, half=half, total=total, home_spread=spread, fair=fair, mkt=mkt, final=final, final_total=ft,
+    return dict(settled_at=ago(settled_min), sport=sport, game=gm, date_et=date, half=half, total=total, home_spread=spread, fair=fair, mkt=mkt, final=final, final_total=ft, flickers=FL.get(gid),
                 model_err=abs(ft - fair), mkt_err=abs(ft - mkt) if mkt is not None else None, n_plays=len(singles) + (1 if m else 0),
                 plays_cost=round(first['cost'], 2) if first else 0, plays_pnl=round(pnl, 2), mid_pnl=mp, plays='', rest_mid='', rest_mid_pnl=rp, game_id=gid, sheet=sh)
 
 
 S = lambda kind, line, c, n: dict(kind=kind, line=line, price_c=c, contracts=n, cost=round(n * c / 100 + 0.07 * n * c / 100 * (1 - c / 100), 2))
+FL = {
+    'g5': [dict(kind='single', side='under', line=40.5, first=ago(190), last=ago(188), n=3, rows=40, secs=95, best_edge_c=5.2, price_c=31, contracts=118, cost=38.8, at=ago(189), pushed=False, win=True, pnl=79.2),
+           dict(kind='single', side='under', line=43.5, first=ago(192), last=ago(185), n=38, rows=40, secs=420, best_edge_c=6.1, price_c=44, contracts=147, cost=68.4, at=ago(190), pushed=True, win=True, pnl=78.6),
+           dict(kind='mid', a_line=37.5, b_line=43.5, first=ago(187), last=ago(187), n=1, rows=40, secs=0, best_edge_c=3.2, a_price=62, b_price=44, pairs=60, cost=65.6, at=ago(187), pushed=False, win=False, pnl=-5.6)],
+    'g6': [dict(kind='single', side='over', line=27.5, first=ago(1905), last=ago(1904), n=1, rows=22, secs=0, best_edge_c=3.4, price_c=22, contracts=160, cost=36.0, at=ago(1905), pushed=False, win=True, pnl=124.0),
+           dict(kind='single', side='over', line=24.5, first=ago(1920), last=ago(1900), n=22, rows=22, secs=1200, best_edge_c=7.0, price_c=55, contracts=230, cost=130.6, at=ago(1910), pushed=True, win=True, pnl=99.4)],
+    'g7': [dict(kind='single', side='under', line=68.5, first=ago(2095), last=ago(2093), n=2, rows=18, secs=40, best_edge_c=3.1, price_c=60, contracts=90, cost=55.3, at=ago(2095), pushed=False, win=True, pnl=34.7)],
+}
 T['results'] = [
     result('g5', 'nfl', 'DAL @ GB', yday, '0-17', 47.5, -6.5, 42.5, 45.0, 'DAL 13, GB 23', 36, [S('under', 43.5, 44, 147), S('under', 40.5, 33, 110)],
            rest=dict(a_line=40.5, a_price=52, b_line=43.5, b_price=52, pairs=129, cost=134.16), settled_min=180),
