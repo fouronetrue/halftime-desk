@@ -67,6 +67,19 @@ assert sh['mid'] and sh['rest_mid'] is None, 'a cleared middle is graded as the 
 assert rec['slots'] == {'half': 'play'}
 assert rec['pace'] and rec['pace']['poss'] == round(((49 - 7 + 7 + 0.44 * 9) + (47 - 5 + 8 + 0.44 * 10)) / 2, 2) and rec['pace']['home']['fouls'] == 10, rec.get('pace')
 assert sh['pace']['poss'] == rec['pace']['poss'], 'the sheet should carry the first-half box'
+spm = rec['spread_half']
+assert spm['half_home_margin'] == 3 and spm['pregame_home_spread'] == -1.5 and spm['mkt_home_spread'] is not None and spm['event_ticker'] == 'KXNBASPREAD-26OCT20BOSDET', spm
+mm, nv = engine.expected_margin('nba', -1.5, 61, 58)
+assert (spm['model_home_margin'], spm['naive_home_margin']) == (mm, nv) and abs(nv - 3.75) < 1e-9 and abs(mm - (3 + (-0.52 + 0.614 * 1.5 - 0.268 * 3))) < 0.01, spm
+assert -4 <= spm['mkt_home_spread'] <= -2, spm   # the fixture ladder has Detroit by about 2.8
+assert sh['spread_half'] == spm
+# the shrink, both ways: a favorite down 15 wins the second half by about 7, a favorite up 20 loses it by about 1.5
+m_down, _ = engine.expected_margin('nba', -5.0, 40, 55); m_up, _ = engine.expected_margin('nba', -5.0, 60, 40)
+assert abs((m_down + 15) - (-0.52 + 0.614 * 5 + 0.268 * 15)) < 0.01 and 6 < m_down + 15 < 8, m_down
+assert -3.5 < m_up - 20 < -0.5, m_up
+m_big, _ = engine.expected_margin('nba', -5.0, 70, 40)
+assert m_big - 30 == m_up - 20 + (22 - 20) * -0.268 + 0 or abs((m_big - 30) - (-0.52 + 0.614 * 5 - 0.268 * 22)) < 0.01, m_big
+assert engine.expected_margin('nfl', -3.5, 7, 13) == (None, None)
 assert feeds.parse_box_stats({}) is None and feeds.parse_box_stats({'boxscore': {'teams': [{'homeAway': 'home', 'statistics': []}]}}) is None
 pre = d.state['games']['502']
 assert pre['pre'].get('total') == 231.5 and pre['pre'].get('home_spread') == -5.5 and pre.get('kalshi_total_event') == 'KXNBATOTAL-26OCT20PHINYK', pre
@@ -94,7 +107,7 @@ sh = d.state['games']['501']['sheet']
 assert sh['rest_mid']['b_line'] - sh['rest_mid']['a_line'] < 6 <= sh['rest_mid_wide']['b_line'] - sh['rest_mid_wide']['a_line'], (sh['rest_mid'], sh['rest_mid_wide'])
 assert f"Buy OVER {sh['rest_mid']['a_line']:.1f} at {sh['rest_mid']['a_price']}c ({sh['rest_mid']['pairs']} shares" in body, 'the graded resting middle must be the one the push posted first'
 print('middles: PLAY leads with the middle, UPDATE carries the closest middle and a tight and a wide resting middle')
-print('fixtures: halftime game priced off the games-table line, centered on the ladder, one PLAY, first-half box kept; pregame game captured (NY matched NYK)')
+print('fixtures: halftime game priced off the games-table line, centered on the ladder, one PLAY, first-half box and spread ladder kept; pregame game captured (NY matched NYK)')
 
 # 5. the per-number rule in both places
 js = open(os.path.join(ROOT, 'app', 'lib', 'desk.js')).read()

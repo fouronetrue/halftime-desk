@@ -1,0 +1,180 @@
+{
+ "events": [
+  {
+   "event_ticker": "KXNBASPREAD-26OCT20BOSDET",
+   "series_ticker": "KXNBASPREAD",
+   "title": "Boston vs Detroit: Spread",
+   "sub_title": "BOS vs DET (Oct 20)",
+   "markets": [
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-DET1",
+     "title": "Detroit wins by over 0.5 points",
+     "yes_sub_title": "Detroit wins by over 0.5 points",
+     "floor_strike": 0.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.5600",
+     "yes_ask_dollars": "0.6000",
+     "no_bid_dollars": "0.4000",
+     "no_ask_dollars": "0.4400"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-DET3",
+     "title": "Detroit wins by over 2.5 points",
+     "yes_sub_title": "Detroit wins by over 2.5 points",
+     "floor_strike": 2.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.4900",
+     "yes_ask_dollars": "0.5300",
+     "no_bid_dollars": "0.4700",
+     "no_ask_dollars": "0.5100"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-DET5",
+     "title": "Detroit wins by over 4.5 points",
+     "yes_sub_title": "Detroit wins by over 4.5 points",
+     "floor_strike": 4.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.4200",
+     "yes_ask_dollars": "0.4600",
+     "no_bid_dollars": "0.5400",
+     "no_ask_dollars": "0.5800"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-DET7",
+     "title": "Detroit wins by over 6.5 points",
+     "yes_sub_title": "Detroit wins by over 6.5 points",
+     "floor_strike": 6.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.3500",
+     "yes_ask_dollars": "0.3900",
+     "no_bid_dollars": "0.6100",
+     "no_ask_dollars": "0.6500"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-DET9",
+     "title": "Detroit wins by over 8.5 points",
+     "yes_sub_title": "Detroit wins by over 8.5 points",
+     "floor_strike": 8.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.2800",
+     "yes_ask_dollars": "0.3200",
+     "no_bid_dollars": "0.6800",
+     "no_ask_dollars": "0.7200"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-DET11",
+     "title": "Detroit wins by over 10.5 points",
+     "yes_sub_title": "Detroit wins by over 10.5 points",
+     "floor_strike": 10.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.2200",
+     "yes_ask_dollars": "0.2600",
+     "no_bid_dollars": "0.7400",
+     "no_ask_dollars": "0.7800"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-DET13",
+     "title": "Detroit wins by over 12.5 points",
+     "yes_sub_title": "Detroit wins by over 12.5 points",
+     "floor_strike": 12.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.1700",
+     "yes_ask_dollars": "0.2100",
+     "no_bid_dollars": "0.7900",
+     "no_ask_dollars": "0.8300"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-DET15",
+     "title": "Detroit wins by over 14.5 points",
+     "yes_sub_title": "Detroit wins by over 14.5 points",
+     "floor_strike": 14.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.1200",
+     "yes_ask_dollars": "0.1600",
+     "no_bid_dollars": "0.8400",
+     "no_ask_dollars": "0.8800"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-BOS1",
+     "title": "Boston wins by over 0.5 points",
+     "yes_sub_title": "Boston wins by over 0.5 points",
+     "floor_strike": 0.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.3600",
+     "yes_ask_dollars": "0.4000",
+     "no_bid_dollars": "0.6000",
+     "no_ask_dollars": "0.6400"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-BOS3",
+     "title": "Boston wins by over 2.5 points",
+     "yes_sub_title": "Boston wins by over 2.5 points",
+     "floor_strike": 2.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.2900",
+     "yes_ask_dollars": "0.3300",
+     "no_bid_dollars": "0.6700",
+     "no_ask_dollars": "0.7100"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-BOS5",
+     "title": "Boston wins by over 4.5 points",
+     "yes_sub_title": "Boston wins by over 4.5 points",
+     "floor_strike": 4.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.2300",
+     "yes_ask_dollars": "0.2700",
+     "no_bid_dollars": "0.7300",
+     "no_ask_dollars": "0.7700"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-BOS7",
+     "title": "Boston wins by over 6.5 points",
+     "yes_sub_title": "Boston wins by over 6.5 points",
+     "floor_strike": 6.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.1800",
+     "yes_ask_dollars": "0.2200",
+     "no_bid_dollars": "0.7800",
+     "no_ask_dollars": "0.8200"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-BOS9",
+     "title": "Boston wins by over 8.5 points",
+     "yes_sub_title": "Boston wins by over 8.5 points",
+     "floor_strike": 8.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.1300",
+     "yes_ask_dollars": "0.1700",
+     "no_bid_dollars": "0.8300",
+     "no_ask_dollars": "0.8700"
+    },
+    {
+     "ticker": "KXNBASPREAD-26OCT20BOSDET-BOS11",
+     "title": "Boston wins by over 10.5 points",
+     "yes_sub_title": "Boston wins by over 10.5 points",
+     "floor_strike": 10.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.0900",
+     "yes_ask_dollars": "0.1300",
+     "no_bid_dollars": "0.8700",
+     "no_ask_dollars": "0.9100"
+    }
+   ]
+  }
+ ]
+}

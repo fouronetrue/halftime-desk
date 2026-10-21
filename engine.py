@@ -102,6 +102,31 @@ class HalfModel:
         return 'no strong lean'
 
 
+# Second-half margin for the pregame favorite, NBA: the halftime lead shrinks. Fit on 14,691 games 2008-09 through
+# 2019-20 with the market's sided 2H spread (claude/nba-halftime.md, section 13): a favorite down 15 at the half wins
+# the second half by 7, a favorite up 15 loses it by 1. Ties the market's own 2H spread out of sample (MAE 7.88 vs
+# 7.89); the naive line (half the spread, no shrink) is 3+ points off in 44 percent of games and loses 66 percent of
+# them. Logged against Kalshi's spread ladder at the half; nothing prices off it until that log is graded.
+MARGIN_2H = {'nba': (-0.52, 0.614, -0.268)}
+
+
+def expected_margin(sport, home_spread, h1h, h1a):
+    """(model_home_margin, naive_home_margin) expected at the final, from the half. Home margin: plus = home wins
+    by that much. The naive number is the half margin plus half the pregame spread, the shrink left out."""
+    c = MARGIN_2H.get(sport)
+    if c is None:
+        return None, None
+    home_fav_by = -(home_spread or 0)
+    fav_by = abs(home_fav_by)
+    m1 = h1h - h1a
+    favm = m1 if home_fav_by >= 0 else -m1
+    fav2 = c[0] + c[1] * fav_by + c[2] * max(-22.0, min(22.0, favm))   # past 22 the shrink flattens (n 303: actual -1.5, linear -3.0)
+    fav_final = favm + fav2
+    naive_fav = favm + fav_by / 2
+    sign = 1 if home_fav_by >= 0 else -1
+    return round(sign * fav_final, 2), round(sign * naive_fav, 2)
+
+
 def price_lines(model, lines, mode='fg', margin=0.03):
     """Fair over/under probability and max prices for each total line.
     mode 'fg' prices full-game lines (line - first-half points); '2h' prices second-half lines."""

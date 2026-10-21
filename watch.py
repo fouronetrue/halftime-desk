@@ -363,6 +363,28 @@ class Desk:
             rec['pace'] = dict(box, at=now_iso(), half=f"{g['away']['score']}-{g['home']['score']}")
             print(f"{g['short']}: first-half box read, {box['poss']} possessions a side")
 
+    def spread_at_half(self, g, rec, spread, home_pts, away_pts):
+        """NBA only, once per game at the half: Kalshi's spread ladder (KXNBASPREAD, 'X wins by over k') read as
+        an implied full-game home spread, next to the margin model's number and the naive one. Logged on the
+        record and the graded sheet; no pricing, no push. After 150 graded halftimes the question is whether
+        Kalshi's ladder shrinks the lead the way the sharp 2H spread does (then there is nothing here) or quotes
+        the naive line (then the leader's side of the ladder is 3+ points dear in 44 percent of games)."""
+        if g['sport'] not in engine.MARGIN_2H or rec.get('spread_half') or rec.get('spread_asked'):
+            return
+        rec['spread_asked'] = True
+        model_m, naive_m = engine.expected_margin(g['sport'], spread, home_pts, away_pts)
+        row = dict(at=now_iso(), half_home_margin=home_pts - away_pts, pregame_home_spread=spread, model_home_margin=model_m, naive_home_margin=naive_m, mkt_home_spread=None)
+        try:
+            sev = feeds.match_event(g, self.events(g['sport'], 'spread'))
+            if sev:
+                row['event_ticker'] = sev.get('event_ticker')
+                row['mkt_home_spread'] = feeds.kalshi_spread_line(sev, g)
+        except Exception as e:
+            print(f"spread ladder {g.get('short')} failed: {e}")
+        rec['spread_half'] = row
+        if row['mkt_home_spread'] is not None:
+            print(f"{g['short']}: spread ladder at the half: Kalshi home {row['mkt_home_spread']:+.1f}, model home margin {model_m:+.1f}, naive {naive_m:+.1f}")
+
     def evaluate(self, g, rec):
         hs = feeds.half_score(g)
         if hs is None:
@@ -407,6 +429,7 @@ class Desk:
             return
         center, center_w = self.market_center(g, ev, away_pts + home_pts)
         self.first_half_box(g, rec)
+        self.spread_at_half(g, rec, spread, home_pts, away_pts)
         m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w)
         rows = engine.price_lines(m, list(quotes), 'fg', self.cfg['margin_c'] / 100)
         bank = float(self.cfg['bankroll'])
@@ -535,7 +558,7 @@ class Desk:
         lead = 'mid' if (mid and (focus or not singles)) else 'single' if singles else 'rev' if rev else 'rest'
         out = dict(at=now_iso(), lead=lead, total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2),
                    mu_model=round(m.mu_model, 2), center=None if m.center is None else round(m.center, 2), center_w=m.center_w,
-                   pace=(rec or {}).get('pace'),
+                   pace=(rec or {}).get('pace'), spread_half=(rec or {}).get('spread_half'),
                    fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev),
                    singles=[dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost']) for s in singles],
                    mid=None, rest_mid=None)
