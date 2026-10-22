@@ -1,7 +1,7 @@
 # Halftime Desk
 
 Watches NFL, college football and NBA games, and at the half prices every Kalshi full-game total strike with a
-second-half points model fit on 2,290 NFL, 6,506 FBS and 12,849 NBA games. When a single leg or a middle (Yes on
+second-half points model fit on 2,290 NFL, 10,488 FBS and 12,849 NBA games. When a single leg or a middle (Yes on
 a lower total plus No on a higher one) clears the edge, it sends a push notification with the play, the price,
 how many shares or pairs, and the resting limits for every strike near fair.
 
@@ -144,6 +144,18 @@ in a close game and 0.3 percent at 18+), centered on the ladder the same way, an
 3rd, NBA"). Resting middles there say "cancel what has not filled by the first timeout of the 4th". The final
 grades it on the game's results row in the q3_ columns (`supabase/007_q3.sql`); `log/results.csv` upgrades its
 own header the first time. `python scripts/fit_nba_q3.py` reprints the fit and its calibration.
+
+## College football
+The `cfb` block is fit on 10,488 FBS games, 2006-2022 (`data/cfb_games.csv`: halftime scores off the cfbfastR
+play by play, finals checked against the schedules, Pinnacle closing lines). It carries one term the NFL block
+does not: the running clock, minus 0.22 second-half points for every point of halftime margin past 14. A team
+up four scores sits on the ball, and the six-term shape priced that second half as if both sides kept
+throwing: at the rungs the desk prices it said OVER 56 percent in 36+ point blowouts where overs hit 43, a
+phantom 10-cent OVER edge on exactly the games that kneel. With the term the same bucket reads 44.6 vs 43.1,
+and every other slice (by total, spread, season, trailing favorite) sits within 0.3 points of zero out of
+sample. The oft-repeated "60+ first-half points means a 20-point second half" is not in the data (115 games,
+29.6 actual, 30.9 model). `python scripts/fit_cfb.py data/cfb_games.csv` reprints the study (`--write` refits
+the block); `scripts/build_cfb_games.py` rebuilds the table. The study is in `claude/cfb-blowout-refit.md`.
 
 ## Manual use
 ```
