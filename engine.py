@@ -45,6 +45,10 @@ class HalfModel:
         self.h1 = h1h + h1a
         c = m['coef']
         mu = c[0] + c[1] * total + c[2] * self.h1 + c[3] * abs(self.favm) + c[4] * self.favm + c[5] * (self.fav_by if self.favm < 0 else 0)
+        if len(c) > 6:
+            # the running clock: past the knee (two scores) each point of halftime margin takes points off the
+            # second half, over and above the linear margin terms (the CFB refit, scripts/fit_cfb.py)
+            mu += c[6] * max(0.0, abs(self.favm) - m.get('knee', 14))
         self.mu_model = max(8.0, mu)
         self.center = center
         self.center_w = 1.0 if center is None else max(0.0, min(1.0, center_w))

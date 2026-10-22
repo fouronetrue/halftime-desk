@@ -167,9 +167,9 @@ halftime score); without it the model prices on its own center.
 
 ## Files
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
-state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
+state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (10,491 games, 2006-2022, halftime scores from play by play), how it is built, and the second-half fit with the blowout study. `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
 read-only Kalshi sync. `held.py` open-position watch. `cli.py` manual desk. `model.json` fitted coefficients and
 residual quantiles. `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
 without ever committing a conflict. `tests/` parity check against the ledger artifact, the read-only proof, the
 mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), the NBA path (`nba.py`, on
-`fixtures_nba/`), reverse middles and held positions at the half (`reverse.py`), and an offline run on fixtures.
+`fixtures_nba/`), reverse middles and held positions at the half (`reverse.py`), the CFB model block and game table (`cfb_model.py`), and an offline run on fixtures.
