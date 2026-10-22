@@ -24,5 +24,10 @@
   "mid_loss_cap": 15,
   "center_model_pct": {
     "nba": 25
+  },
+  "sharp_model_pct": {
+    "nfl": 50,
+    "cfb": 50,
+    "nba": 25
   }
 }

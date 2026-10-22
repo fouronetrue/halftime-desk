@@ -392,7 +392,8 @@ def describe(model, inp, rows, sug, mode='fg', top=3, tickers=None, sizing=None)
     def mk(line):
         t = tk.get(line)
         return f" ({t.split('-')[-1]})" if t else ''
-    lines = [f"{away} {inp['h1a']}, {home} {inp['h1h']} at the half. Fair {what} {fl:.1f}. 2H expected {model.mu:.1f} points. {model.spot().capitalize()}."]
+    sharp = f" Sharp 2H {inp['sharp']:.1f}." if inp.get('sharp') is not None else ''
+    lines = [f"{away} {inp['h1a']}, {home} {inp['h1h']} at the half. Fair {what} {fl:.1f}. 2H expected {model.mu:.1f} points.{sharp} {model.spot().capitalize()}."]
     n = 0
     mids = [m for m in sug['mids'] if m['ok']][:top]
     used = set()
@@ -656,7 +657,7 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
     home = inp.get('home_name') or inp.get('home', 'Home')
     score = f"{away} {inp['h1a']}, {home} {inp['h1h']}"
     fl = fair_line(model, mode)
-    ctx = f"Fair total {fl:.1f}. {model.spot().capitalize()}."
+    ctx = f"Fair total {fl:.1f}." + (f" Sharp 2H {inp['sharp']:.1f}." if inp.get('sharp') is not None else '') + f" {model.spot().capitalize()}."
     singles, mid = chosen(sug, top)
     rev = chosen_rev(sug)
     if focus == 'middles':

@@ -33,8 +33,13 @@ DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct
                 # Per sport, the weight the model's own second-half number keeps against the market's center (Kalshi's
                 # implied total at the half minus the first-half points). Football keeps its own center (100). The NBA
                 # model's center never beats the market, so it keeps 25 and the ladder is shaped around the market's number.
-                center_model_pct={'nba': 25})
-CENTER_2H_RANGE = {'nba': (70, 160)}   # a market center outside this (per sport, second-half points) is a bad read and is ignored
+                center_model_pct={'nba': 25},
+                # Per sport, the weight the model keeps when a sharp second-half line is in hand at the half (The Odds
+                # API, Pinnacle else the median of the books, one credit a game). On 944 NFL halftimes the model and
+                # DraftKings' 2H line are a dead heat and agree within a point in 99 percent of games, so 50 halves the
+                # model's own misses and keeps the view; the NBA keeps the market's number as before.
+                sharp_model_pct={'nfl': 50, 'cfb': 50, 'nba': 25})
+CENTER_2H_RANGE = {'nba': (70, 160), 'nfl': (6, 60), 'cfb': (8, 90)}   # a center outside this (per sport, second-half points) is a bad read and is ignored
 CENTER_Q4_RANGE = {'nba': (30, 95)}    # the same for the points left at the end of the third (a 4th quarter plus the overtime chance)
 
 
@@ -285,6 +290,9 @@ class Desk:
             phase=rec.get('phase'), total=total, home_spread=spread, half_away=score['away'], half_home=score['home'],
             away_score=g['away']['score'], home_score=g['home']['score'],   # the live score when priced: equal to the half by construction
             mu=round(m.mu, 2), sd=round(m.sd, 2), fair_line=engine.fair_line(m), market_line=feeds.kalshi_total_line(ev),
+            # the center the ladder was shaped around and the sharp 2H line when one was read (supabase/009_sharp.sql)
+            mu_model=round(m.mu_model, 2), center=None if m.center is None else round(m.center, 2), center_src=rec.get('center_src'),
+            sharp_2h=(rec.get('h2') or {}).get('line'),
             best_single=f"{best_single['kind']} {best_single['line']} @{best_single['price_c']}" if best_single else None,
             best_single_edge_c=round(100 * best_single['edge'], 1) if best_single else None,
             best_mid=f"Y{best_mid['a']['line']}@{best_mid['a']['price_c']}+N{best_mid['b']['line']}@{best_mid['b']['price_c']}" if best_mid else None,
@@ -331,6 +339,7 @@ class Desk:
             # beside it, and every book's, so the gap between the two is on record for the line study.
             pre.update(total=row['total'], home_spread=row['home_spread'], source='odds:' + row['source'], at=now_iso())
             pre['books'] = {k: list(v) for k, v in row['books'].items()}
+            pre['odds_event'] = row.get('id')   # the Odds API event, for the sharp second-half line at the half
             pre.pop('spread_source', None)
             if total:
                 pre['espn'] = [spread, total]
@@ -398,23 +407,68 @@ class Desk:
                                         strike=k, phase='pre', yes_bid=q[k]['yb'], yes_ask=q[k]['y'], no_bid=q[k]['nb'], no_ask=q[k]['n'],
                                         p_over=None, p_push=None, over_take=None, over_rest=None, under_take=None, under_rest=None))
 
-    def market_center(self, g, ev, h1, stage='half'):
-        """(expected points left from the market, weight the model keeps) for sports that center on the market;
-        (None, 1.0) for the rest. The market center is Kalshi's implied full-game line at the break (the 50-50
-        crossing of the ladder's bid-ask midpoints) minus the points so far. A line the ladder cannot give, or one
-        outside the sport's plausible range for the stage, leaves the model on its own center."""
+    def sharp_2h(self, g, rec):
+        """The sharp second-half total on this game at the half, read once from The Odds API (one credit) and
+        kept on the record; read again once if the first look was more than four minutes ago (the line moves as
+        the break goes on). Needs the key, the game's Odds API event (matched before kickoff, or against the
+        cached list now), and at least ten credits left. Off on fixtures. None when there is nothing."""
+        key = (os.environ.get('ODDS_API_KEY') or '').strip()
+        if not key or self.fixtures or g['sport'] not in feeds.ODDS_SPORT:
+            return None
+        h2 = rec.get('h2')
+        now = time.time()
+        if h2 and (h2.get('line') is None or now - float(h2.get('at_s') or 0) < 240 or int(h2.get('calls') or 0) >= 2):
+            return h2 if h2.get('line') is not None else None
+        remaining = (self.state.get('odds_api') or {}).get('remaining')
+        if remaining is not None and remaining < 10:
+            return h2 if h2 and h2.get('line') is not None else None
+        event = (rec.get('pre') or {}).get('odds_event')
+        if not event:
+            row = feeds.match_odds(g, self._odds_rows.get(g['sport']) or [])
+            event = row.get('id') if row else None
+            if event:
+                rec.setdefault('pre', {})['odds_event'] = event
+        if not event:
+            return None
+        try:
+            books, usage = feeds.odds_api_h2(g['sport'], event, key)
+        except Exception as e:
+            print(f"{g['short']}: sharp 2H line failed ({e})")
+            rec['h2'] = dict(h2 or {}, at_s=now, calls=int((h2 or {}).get('calls') or 0) + 1)
+            return h2 if h2 and h2.get('line') is not None else None
+        if usage:
+            self.state.setdefault('odds_api', {}).update(remaining=usage.get('remaining'), used=usage.get('used'), usage_at=now_iso())
+        line, source, n = feeds.sharp_h2(books)
+        rec['h2'] = dict(line=line, source=source, n=n, books=books, at=now_iso(), at_s=now, calls=int((h2 or {}).get('calls') or 0) + 1)
+        if line is None:
+            print(f"{g['short']}: no sharp 2H line posted yet")
+            return None
+        print(f"{g['short']}: sharp 2H {line} ({source}, {n} books)")
+        return rec['h2']
+
+    def market_center(self, g, ev, h1, stage='half', rec=None):
+        """(expected points left, weight the model keeps, source) for the center of the ladder; (None, 1.0, None)
+        when the model is on its own. At the half the sharp second-half line comes first when one is in hand
+        (sharp_model_pct per sport). Otherwise, for sports that center on the market (center_model_pct), the
+        market center is Kalshi's implied full-game line at the break (the 50-50 crossing of the ladder's bid-ask
+        midpoints) minus the points so far. A line outside the sport's plausible range for the stage is ignored."""
+        lo, hi = (CENTER_Q4_RANGE if stage == 'q3' else CENTER_2H_RANGE).get(g['sport'], (0, 10**6))
+        if stage == 'half' and rec is not None:
+            spct = (self.cfg.get('sharp_model_pct') or {}).get(g['sport'])
+            h2 = self.sharp_2h(g, rec) if spct is not None and spct < 100 else None
+            if h2 and lo <= h2['line'] <= hi:
+                return h2['line'], spct / 100, 'sharp'
         cmp = self.cfg.get('center_model_pct') or {}
         pct = cmp.get(g['sport']) if isinstance(cmp, dict) else None
         if pct is None or pct >= 100:
-            return None, 1.0
+            return None, 1.0, None
         line = feeds.kalshi_total_line(ev)
         if line is None:
-            return None, 1.0
+            return None, 1.0, None
         c = line - h1
-        lo, hi = (CENTER_Q4_RANGE if stage == 'q3' else CENTER_2H_RANGE).get(g['sport'], (0, 10**6))
         if not lo <= c <= hi:
-            return None, 1.0
-        return c, pct / 100
+            return None, 1.0, None
+        return c, pct / 100, 'kalshi'
 
     def first_half_box(self, g, rec):
         """NBA only: the first-half box score (shots, free throws, offensive rebounds, turnovers, fouls, and the
@@ -513,7 +567,8 @@ class Desk:
         quotes = feeds.total_quotes(ev)
         if not quotes:
             return
-        center, center_w = self.market_center(g, ev, away_pts + home_pts, stage)
+        center, center_w, center_src = self.market_center(g, ev, away_pts + home_pts, stage, rec)
+        rec['center_src'] = center_src
         if q3:
             m = engine.LateModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w)
         else:
@@ -530,7 +585,8 @@ class Desk:
         max_cost = min(bank * self.cfg['cost_pct'] / 100, remaining)
         sug = engine.suggest(rows, quotes, self.cfg['order'], self.cfg['margin_c'] / 100, self.cfg['trust_pct'] / 100,
                              bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']), self.cfg.get('mid_loss_cap'))
-        inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'], h1a=away_pts, h1h=home_pts)
+        inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'], h1a=away_pts, h1h=home_pts,
+                   sharp=(rec.get('h2') or {}).get('line') if center_src == 'sharp' else None)
         sizing = dict(bankroll=bank, max_risk=max_risk, max_cost=max_cost, margin=self.cfg['margin_c'] / 100, mid_loss=self.cfg.get('mid_loss_cap'),
                       near_pts=(self.cfg.get('rest_near_pts') or {}).get(g['sport'], 3.5))
         focus = 'middles' if g['sport'] in (self.cfg.get('middle_focus') or []) else None
@@ -649,6 +705,7 @@ class Desk:
         lead = 'mid' if (mid and (focus or not singles)) else 'single' if singles else 'rev' if rev else 'rest'
         out = dict(at=now_iso(), lead=lead, total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2),
                    mu_model=round(m.mu_model, 2), center=None if m.center is None else round(m.center, 2), center_w=m.center_w,
+                   center_src=(rec or {}).get('center_src'), sharp=((rec or {}).get('h2') or {}).get('line'), sharp_books=((rec or {}).get('h2') or {}).get('books'),
                    pace=(rec or {}).get('pace'), spread_half=(rec or {}).get('spread_half'),
                    fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev),
                    singles=[dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost']) for s in singles],

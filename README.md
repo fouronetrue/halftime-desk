@@ -91,6 +91,7 @@ how many shares or pairs, and the resting limits for every strike near fair.
 | min_price_c, max_price_c | ignore legs priced outside this band (model tails are not trusted) | 15, 85 |
 | day_cost_pct | most to suggest across all plays in one day, % of bankroll | 20 |
 | poll_seconds, max_poll_minutes | in-run polling during a halftime | 60, 22 |
+| sharp_model_pct | per sport, the weight the model keeps when the sharp second-half line is in hand at the half (needs ODDS_API_KEY) | nfl 50, cfb 50, nba 25 |
 
 ## The Odds API (optional, 5 minutes): the sharp pregame line
 Without it the pregame total and spread come from ESPN's consensus, then ESPN's odds endpoint, then Kalshi's
@@ -106,7 +107,18 @@ spent once; it inherits the worker's lines through the games table.
 2. Railway > the halftime-desk project > the worker service > Variables > New Variable: name `ODDS_API_KEY`,
    value the key. Railway redeploys the worker on its own; the log then shows lines like
    `odds api nfl: 14 games (14 with Pinnacle), closing read, 468 credits left this month`.
-3. Supabase SQL Editor: run `supabase/008_pre_books.sql` once.
+3. Supabase SQL Editor: run `supabase/008_pre_books.sql` and `supabase/009_sharp.sql` once.
+
+With the key the desk also reads the sharp second-half total at the half (Pinnacle's 2H line, else the median
+of the books), one credit a game, read once and once more after four minutes, and centers the ladder between
+the model and that line: `sharp_model_pct` in config.json is the weight the model keeps (nfl 50, cfb 50, nba
+25). On 944 NFL halftimes 2023-2026 the model and DraftKings' 2H line were a dead heat (7.54 vs 7.53 points
+of miss) and within a point of each other in 99 percent of games, so the blend halves the model's own misses
+without giving up its view; the 5-point gaps the live desk had seen were Kalshi's thin ladder sitting off the
+sharp line, which is the edge, not the model being off. The push says `Sharp 2H 24.5.` when a line was in
+hand; the sheet and the suggestions row carry the center, where it came from and the sharp line, so the
+model-versus-market study keeps running on every half (`python scripts/trust_study.py nfl`). The GitHub backup
+carries the key too, so both watchers price the same way.
 
 On a paid plan the history is there too: the market's second-half total at halftime for every game since May
 2023, five-minute snapshots, 10 credits a game. `data/half_times_nfl.csv` (scripts/build_half_times.py, off
@@ -116,7 +128,7 @@ credits you allow. That table is what the model-versus-market trust study runs o
 
 ## Supabase (optional, 10 minutes)
 1. Create a free project at supabase.com. In the SQL Editor paste `supabase/schema.sql` and run it, then
-   `002_week2.sql` through `008_pre_books.sql` in order (all safe to run again). Every table has row level
+   `002_week2.sql` through `009_sharp.sql` in order (all safe to run again). Every table has row level
    security on; the app reads as a signed-in user and only the secret key can write.
 2. Settings > API Keys: copy the project URL and the **secret** key (`sb_secret_...`). Add two repository secrets:
    `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. The publishable key is for the app later, not for the worker.

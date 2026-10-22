@@ -24,26 +24,7 @@ HIST = 'https://api.the-odds-api.com/v4/historical/sports/{key}'
 FIELDS = ['game_id', 'date', 'away', 'home', 'event_id', 'req_utc', 'snap_utc', 'n_books', 'line_med', 'pinnacle_line', 'books', 'tries']
 
 
-def parse_h2(data):
-    """An event snapshot -> {book: [line, over_price, under_price]} for the totals_h2 market."""
-    books = {}
-    for bk in (data or {}).get('bookmakers') or []:
-        for mk in bk.get('markets') or []:
-            if mk.get('key') != 'totals_h2':
-                continue
-            line = over = under = None
-            for o in mk.get('outcomes') or []:
-                nm = str(o.get('name', '')).lower()
-                if o.get('point') is None:
-                    continue
-                if nm == 'over':
-                    line, over = float(o['point']), o.get('price')
-                elif nm == 'under':
-                    under = o.get('price')
-                    line = float(o['point']) if line is None else line
-            if line is not None:
-                books[bk.get('key')] = [line, over, under]
-    return books
+parse_h2 = feeds.parse_h2      # one parser for the live read and the history pull
 
 
 def match_event(game, events, window_s=2 * 3600):

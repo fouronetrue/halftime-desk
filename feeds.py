@@ -242,6 +242,54 @@ def odds_api_lines(sport, key, timeout=20):
     return parse_odds_api(r.json()), usage
 
 
+def parse_h2(data):
+    """An Odds API event (live or a historical snapshot) -> {book: [line, over_price, under_price]} for the
+    second-half total (market totals_h2)."""
+    books = {}
+    for bk in (data or {}).get('bookmakers') or []:
+        for mk in bk.get('markets') or []:
+            if mk.get('key') != 'totals_h2':
+                continue
+            line = over = under = None
+            for o in mk.get('outcomes') or []:
+                nm = str(o.get('name', '')).lower()
+                if o.get('point') is None:
+                    continue
+                if nm == 'over':
+                    line, over = float(o['point']), o.get('price')
+                elif nm == 'under':
+                    under = o.get('price')
+                    line = float(o['point']) if line is None else line
+            if line is not None:
+                books[bk.get('key')] = [line, over, under]
+    return books
+
+
+def sharp_h2(books):
+    """The second-half line to center on: Pinnacle's when it has one, else the median across the books.
+    (line, source, n_books), or (None, None, 0)."""
+    if not books:
+        return None, None, 0
+    if 'pinnacle' in books:
+        return books['pinnacle'][0], 'pinnacle', len(books)
+    lines = sorted(v[0] for v in books.values())
+    return lines[len(lines) // 2], f'median{len(lines)}', len(lines)
+
+
+def odds_api_h2(sport, event_id, key, timeout=15):
+    """The live second-half total on one game, one credit: {book: [line, over, under]} and the quota headers."""
+    if sport not in ODDS_SPORT or not key or not event_id:
+        return {}, {}
+    r = requests.get(f'https://api.the-odds-api.com/v4/sports/{ODDS_SPORT[sport]}/events/{event_id}/odds', timeout=timeout,
+                     headers={'User-Agent': 'halftime-desk/1.0'},
+                     params=dict(apiKey=key, bookmakers=','.join(ODDS_BOOKS), markets='totals_h2', oddsFormat='american', dateFormat='iso'))
+    usage = {k: int(v) for k, v in [('remaining', r.headers.get('x-requests-remaining')), ('used', r.headers.get('x-requests-used')),
+                                     ('last', r.headers.get('x-requests-last'))] if v not in (None, '')}
+    if r.status_code != 200:
+        raise RuntimeError(f'odds api h2 {sport} {event_id}: HTTP {r.status_code} {r.text[:120]}')
+    return parse_h2(r.json()), usage
+
+
 def match_odds(game, rows, window_s=5400):
     """The Odds API row for an ESPN game: start within 90 minutes and both team names agree (ESPN's display name
     is 'Pittsburgh Steelers', 'Ohio State Buckeyes'; the Odds API uses the same form). None when nothing fits."""

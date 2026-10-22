@@ -9,7 +9,7 @@
 import sys, os, time, datetime as dt
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-import feeds, watch
+import feeds, watch, engine
 
 # 1. parsing
 events = [
@@ -152,4 +152,68 @@ assert not api.allowed(10), 'the reserve for the live desk'
 api.remaining = 60
 assert api.allowed(10)
 print('history: snapshot parsed per book, event matched by full names and start, budget and reserve hold')
+# 6. the sharp second-half line at the half: read once, centered with sharp_model_pct, on the sheet and in the text;
+#    the NBA keeps the market's weight; a bad read or no credits leaves the ladder where it was
+h2_calls = []
+def fake_h2(sport, event_id, key):
+    h2_calls.append((sport, event_id))
+    return {'draftkings': [24.5, -110, -110], 'fanduel': [25.0, -112, -108], 'pinnacle': [24.5, -106, -106]}, dict(remaining=fake_h2.remaining)
+fake_h2.remaining = 9000
+feeds.odds_api_h2 = fake_h2
+os.environ['ODDS_API_KEY'] = 'test-key'
+cfg = watch.load_json(watch.CONFIG_PATH, {})
+d2 = watch.Desk(cfg, {}, None)
+g2 = pre_game(0, gid='7')
+rec = dict(pre=dict(total=46.0, home_spread=-3.0, source='espn', odds_event='ev-7'))
+c, w, src = d2.market_center(g2, {}, 24, 'half', rec)
+assert (c, w, src) == (24.5, 0.5, 'sharp'), (c, w, src)                 # Pinnacle's line, the model keeps 50
+assert rec['h2']['source'] == 'pinnacle' and rec['h2']['n'] == 3 and h2_calls == [('nfl', 'ev-7')]
+c, w, src = d2.market_center(g2, {}, 24, 'half', rec)
+assert h2_calls == [('nfl', 'ev-7')], 'a second look inside four minutes is the cached one'
+rec['h2']['at_s'] -= 300
+d2.market_center(g2, {}, 24, 'half', rec)
+assert len(h2_calls) == 2, 'one more read after four minutes'
+rec['h2']['at_s'] -= 300
+d2.market_center(g2, {}, 24, 'half', rec)
+assert len(h2_calls) == 2, 'and never a third'
+m = engine.HalfModel('nfl', 46.0, -3.0, 14, 10, center=c, center_w=w)
+assert abs(m.mu - (0.5 * m.mu_model + 0.5 * 24.5)) < 1e-9
+assert 'Sharp 2H 24.5.' in engine.describe(m, dict(away='GB', home='PIT', h1a=10, h1h=14, sharp=24.5), engine.price_lines(m, [44.5, 47.5], 'fg', 0.03), dict(singles=[], mids=[], revs=[]))
+assert 'Sharp 2H' not in engine.describe(m, dict(away='GB', home='PIT', h1a=10, h1h=14), engine.price_lines(m, [44.5, 47.5], 'fg', 0.03), dict(singles=[], mids=[], revs=[]))
+# the event id found at the half when the pregame line came from ESPN
+rec3 = dict(pre=dict(total=46.0, home_spread=-3.0, source='espn'))
+d2._odds_rows['nfl'] = rows
+pit['start_utc'] = g2['start_utc']
+assert d2.market_center(g2, {}, 24, 'half', rec3)[2] == 'sharp' and rec3['pre']['odds_event'] == 'e1'
+# no event anywhere: the football ladder keeps the model's own center
+rec4 = dict(pre=dict(total=46.0, home_spread=-3.0, source='espn'))
+d2._odds_rows['nfl'] = []
+assert d2.market_center(g2, {}, 24, 'half', rec4) == (None, 1.0, None)
+# the NBA: the sharp line at the market's weight; without it, Kalshi's center as before
+gn = dict(g2, sport='nba')
+recn = dict(pre=dict(total=224.5, home_spread=-3.0, odds_event='ev-n'))
+fake_h2_nba = lambda sport, event_id, key: ({'draftkings': [112.5, -110, -110]}, dict(remaining=9000))
+feeds.odds_api_h2 = fake_h2_nba
+assert d2.market_center(gn, {}, 110, 'half', recn) == (112.5, 0.25, 'sharp')
+feeds.odds_api_h2 = fake_h2
+# an empty read (no 2H line posted) falls through to Kalshi for the NBA and to the model for football
+feeds.odds_api_h2 = lambda sport, event_id, key: ({}, dict(remaining=9000))
+rec5 = dict(pre=dict(total=46.0, home_spread=-3.0, odds_event='ev-5'))
+assert d2.market_center(g2, {}, 24, 'half', rec5) == (None, 1.0, None) and rec5['h2']['line'] is None
+# a sharp line outside the plausible range is ignored
+feeds.odds_api_h2 = lambda sport, event_id, key: ({'draftkings': [3.5, -110, -110]}, dict(remaining=9000))
+rec6 = dict(pre=dict(total=46.0, home_spread=-3.0, odds_event='ev-6'))
+assert d2.market_center(g2, {}, 24, 'half', rec6) == (None, 1.0, None)
+# under ten credits nothing is read
+feeds.odds_api_h2 = fake_h2
+d2.state['odds_api'] = dict(remaining=5)
+rec7 = dict(pre=dict(total=46.0, home_spread=-3.0, odds_event='ev-7b'))
+assert d2.market_center(g2, {}, 24, 'half', rec7) == (None, 1.0, None) and 'h2' not in rec7
+# the end of the third never asks
+d2.state['odds_api'] = dict(remaining=9000)
+rec8 = dict(pre=dict(total=224.5, home_spread=-3.0, odds_event='ev-8'))
+before = len(h2_calls)
+d2.market_center(gn, {}, 170, 'q3', rec8)
+assert len(h2_calls) == before and 'h2' not in rec8
+print('sharp: read once at the half, centered at the sport weight, on the text; NBA at the market weight; bad reads ignored')
 print('odds: ok')
