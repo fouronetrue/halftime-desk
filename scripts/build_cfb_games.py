@@ -132,6 +132,8 @@ def main(lines_path, pbp_dir, sched_dir, dst):
             if not g['half_agrees']:
                 half_off += 1                          # the two halftime reads disagree
                 continue
+            if s.home_division != 'fbs' and s.away_division != 'fbs':
+                continue                               # an FCS pairing with a line (a bowl); the desk watches FBS
             total, sp = L.get(g['game_id'], (None, None))
             hs = home_spread(sp, g['home_abbr'], g['away_abbr']) if total is not None else None
             if hs is None:

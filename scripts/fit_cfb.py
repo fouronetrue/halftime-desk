@@ -208,7 +208,7 @@ def main():
     for name, row in [('62 first-half points, favorite up 14', ex), ('a 45-10 half, favorite up 35', dict(total=55.5, h1h=45, h1a=10, home_spread=-7)),
                       ('a 14-10 half', dict(total=55.5, h1h=14, h1a=10, home_spread=-7))]:
         Xe = features(pd.DataFrame([row]), knee)
-        old = mu_of(np.array(m['coef']), features(pd.DataFrame([row])))[0]
+        old = mu_of(np.array(m['coef']), features(pd.DataFrame([row]), m.get('knee', 14) if len(m['coef']) > 6 else None))[0]
         print(f'  {name}: model today {old:.1f}, refit {mu_of(coef, Xe)[0]:.1f} second-half points')
 
     if a.write:

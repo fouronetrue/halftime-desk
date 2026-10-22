@@ -1,7 +1,7 @@
 # Halftime Desk
 
 Watches NFL, college football and NBA games, and at the half prices every Kalshi full-game total strike with a
-second-half points model fit on 2,290 NFL, 10,488 FBS and 12,849 NBA games. When a single leg or a middle (Yes on
+second-half points model fit on 2,290 NFL, 13,124 FBS and 12,849 NBA games. When a single leg or a middle (Yes on
 a lower total plus No on a higher one) clears the edge, it sends a push notification with the play, the price,
 how many shares or pairs, and the resting limits for every strike near fair.
 
@@ -175,9 +175,9 @@ at zero, so it stays as it is. The one lean is big spreads (10.5+), 2.3 cents ho
 margin; a spread-size term is the candidate if the live scorecard ever shows those overs bleeding.
 `python scripts/fit_nfl.py data/nfl_games.csv` reprints the check.
 
-The `cfb` block is fit on 10,488 FBS games, 2006-2022 (`data/cfb_games.csv`: halftime scores off the cfbfastR
+The `cfb` block is fit on 13,124 FBS games, 2006-2025 (`data/cfb_games.csv`: halftime scores off the cfbfastR
 play by play, finals checked against the schedules, Pinnacle closing lines). It carries one term the NFL block
-does not: the running clock, minus 0.22 second-half points for every point of halftime margin past 14. A team
+does not: the running clock, minus 0.20 second-half points for every point of halftime margin past 14. A team
 up four scores sits on the ball, and the six-term shape priced that second half as if both sides kept
 throwing: at the rungs the desk prices it said OVER 56 percent in 36+ point blowouts where overs hit 43, a
 phantom 10-cent OVER edge on exactly the games that kneel. With the term the same bucket reads 44.6 vs 43.1,
@@ -208,7 +208,7 @@ halftime score); without it the model prices on its own center.
 
 ## Files
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
-state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (10,491 games, 2006-2022, halftime scores from play by play), how it is built, and the second-half fit with the blowout study; `data/nfl_games.csv`, `scripts/build_nfl_games.py` and `scripts/fit_nfl.py` the same for the NFL (7,058 games, 2000-2026). `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
+state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (13,127 games, 2006-2025, halftime scores from play by play), how it is built, and the second-half fit with the blowout study; `data/nfl_games.csv`, `scripts/build_nfl_games.py` and `scripts/fit_nfl.py` the same for the NFL (7,058 games, 2000-2026). `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
 read-only Kalshi sync. `held.py` open-position watch. `cli.py` manual desk. `model.json` fitted coefficients and
 residual quantiles. `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
 without ever committing a conflict. `tests/` parity check against the ledger artifact, the read-only proof, the
