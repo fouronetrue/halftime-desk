@@ -91,7 +91,7 @@ how many shares or pairs, and the resting limits for every strike near fair.
 | min_price_c, max_price_c | ignore legs priced outside this band (model tails are not trusted) | 15, 85 |
 | day_cost_pct | most to suggest across all plays in one day, % of bankroll | 20 |
 | poll_seconds, max_poll_minutes | in-run polling during a halftime | 60, 22 |
-| sharp_model_pct | per sport, the weight the model keeps when the sharp second-half line is in hand at the half (needs ODDS_API_KEY) | nfl 50, cfb 80, nba 25 |
+| sharp_model_pct | per sport, the weight the model keeps when the sharp second-half line is in hand at the half (needs ODDS_API_KEY) | nfl 50, cfb 80, nba 0 |
 
 ## The Odds API (optional, 5 minutes): the sharp pregame line
 Without it the pregame total and spread come from ESPN's consensus, then ESPN's odds endpoint, then Kalshi's
@@ -112,12 +112,18 @@ spent once; it inherits the worker's lines through the games table.
 With the key the desk also reads the sharp second-half total at the half (Pinnacle's 2H line, else the median
 of the books), one credit a game, read once and once more after four minutes, and centers the ladder between
 the model and that line: `sharp_model_pct` in config.json is the weight the model keeps (nfl 50, cfb 80, nba
-25). On 944 NFL halftimes 2023-2026 the model and DraftKings' 2H line were a dead heat (7.54 vs 7.53 points
+0). A market line is a median, and the engine turns it into the mean that puts the block's own median on the
+line before blending (every block's residual median sits below its mean; taking the line as the mean had
+shifted a market-centered ladder down by half a point to a point, 2 to 3 cents of under-saying the over at
+every strike). On 944 NFL halftimes 2023-2026 the model and DraftKings' 2H line were a dead heat (7.54 vs 7.53 points
 of miss) and within a point of each other in 99 percent of games, so the blend halves the model's own misses
 without giving up its view; the 5-point gaps the live desk had seen were Kalshi's thin ladder sitting off the
 sharp line, which is the edge, not the model being off. On 873 college halftimes 2024-2025 the model beat the
 book's 2H line out of sample (closer in 472 games to 401, 8.28 vs 8.40 points of miss, best blend 0.9 on
-the model), so college keeps 80. `claude/trust-study.md` has the tables. The push says `Sharp 2H 24.5.` when a line was in
+the model), so college keeps 80. On 3,579 NBA halftimes 2023-24 to 2025-26 the book's line beat the model at every
+weight (closer in 2,028 games to 1,551, best blend 0.0, the model's leans wrong-signed), so the NBA keeps 0 and
+the model only shapes the ladder, which it does to within a cent of actual at the rungs. `claude/trust-study.md`
+has the tables. The push says `Sharp 2H 24.5.` when a line was in
 hand; the sheet and the suggestions row carry the center, where it came from and the sharp line, so the
 model-versus-market study keeps running on every half (`python scripts/trust_study.py nfl`). The GitHub backup
 carries the key too, so both watchers price the same way.

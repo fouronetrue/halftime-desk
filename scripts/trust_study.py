@@ -94,7 +94,7 @@ def load(sport, loso=False):
             m = engine.HalfModel(sport, float(g['total']), float(g['home_spread']), int(g['h1h']), int(g['h1a']))
         y = (int(g['fh']) + int(g['fa'])) - (int(g['h1h']) + int(g['h1a']))
         rows.append(dict(game=r['game_id'], date=r['date'], season=int(g['season']), mkt=line, p_mkt=pm, model=m, fair=m.median, y=y,
-                         p_model=m.p_over_2h(line), push=float(y) == line, h1=int(g['h1h']) + int(g['h1a']), margin=abs(int(g['h1h']) - int(g['h1a']))))
+                         p_model=m.p_over_2h(line), push=float(y) == line, h1=int(g['h1h']) + int(g['h1a']), margin=abs(int(g['h1h']) - int(g['h1a'])), raw=g))
     return rows
 
 
@@ -170,6 +170,23 @@ def main():
         hit = (np.sign(edge[m]) == np.sign(over[m] - 0.5))
         roi = (hit.mean() * (100 / 110) - (1 - hit.mean()))
         print(f'   {f"{100 * lo:.0f}-{100 * hi:.0f}c" if hi < 1 else f"{100 * lo:.0f}c+":>8} {m.sum():>5} {100 * hit.mean():>5.1f}%  {100 * roi:>+10.1f}%')
+    # 5. the ladder around the sharp line: the model's shape recentered on the market's line at a given weight,
+    # said vs actual at the line and at -4, -2, +2, +4 (the rungs the desk prices), for the config weight and 0
+    spct = (cfg.get('sharp_model_pct') or {}).get(a.sport)
+    print(f'\n5. the ladder recentered on the sharp line: said vs actual over at the line -4, -2, 0, +2, +4 (pushes out)')
+    for w in sorted({0.0, (spct if spct is not None else 100) / 100}):
+        said = hit = n = br = 0
+        for r in rows:
+            g = r['raw']
+            mm = engine.HalfModel(a.sport, float(g['total']), float(g['home_spread']), int(g['h1h']), int(g['h1a']), center=r['mkt'], center_w=w)
+            for off in (-4, -2, 0, 2, 4):
+                t = r['mkt'] + off
+                if r['y'] == t:
+                    continue
+                p = mm.p_over_2h(t); o = float(r['y'] > t)
+                said += p; hit += o; n += 1; br += (p - o) ** 2
+        print(f'   model weight {w:.2f}: n {n}  said {said / n:.3f}  actual {hit / n:.3f}  brier {br / n:.4f}' + ('   <- config' if spct is not None and abs(w - spct / 100) < 1e-9 else ''))
+
     m = dec & (np.abs(edge) >= margin)
     if not m.sum():
         print('   no calls at this margin')

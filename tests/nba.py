@@ -27,11 +27,16 @@ assert (round(nfl.mu, 2), round(nfl.sd, 2)) == (round(engine.HalfModel('nfl', 55
 print(f"model: mu {m.mu:.1f}, sd {m.sd:.1f}, P(over fair+10) {100*m.p_over_2h(math.floor(m.mu) + 10.5):.0f}%")
 
 # 2. the center blend
+# the center is the market's median: at weight 0 the ladder's median is the line (P(over the line) is 50-50),
+# and the blend runs between the model's mean and the mean that puts the median there
+c0 = engine.HalfModel('nba', 230.0, -5.5, 60, 55, center=111.5, center_w=0.0)
+assert abs(c0.median - 111.5) < 1e-6 and abs(c0.p_over_2h(111.5) - 0.5) < 0.003 and c0.mu > 111.5, (c0.mu, c0.median)
 c = engine.HalfModel('nba', 230.0, -5.5, 60, 55, center=111.5, center_w=0.25)
-assert abs(c.mu - (0.25 * c.mu_model + 0.75 * 111.5)) < 1e-9 and c.center == 111.5 and c.center_w == 0.25
-assert engine.HalfModel('nba', 230.0, -5.5, 60, 55, center=111.5, center_w=0.0).mu == 111.5
+assert abs(c.mu - (0.25 * c.mu_model + 0.75 * c0.mu)) < 1e-9 and c.center == 111.5 and c.center_w == 0.25
 assert engine.HalfModel('nba', 230.0, -5.5, 60, 55, center=111.5, center_w=1.0).mu == c.mu_model
-print('center: 25 percent model, 75 percent market')
+l0 = engine.LateModel('nba', 230.0, -5.5, 88, 85, center=56.5, center_w=0.0)
+assert abs(l0.median - 56.5) < 1e-3 and abs(l0.p_over_2h(56.5) - 0.5) < 0.003 and l0.mu > 56.5, (l0.mu, l0.median)
+print('center: the market line is the ladder median; 25 percent model, 75 percent market')
 
 # 3. feeds
 for s, want in [('7:34', 454), ('7:34.0', 454), ('0:00', 0), ('45.3', 45), (':45.3', 45), ('0.0', 0), ('', None), ('end', None)]:
@@ -63,8 +68,9 @@ rec = d.state['games']['501']
 assert rec['pre'] == dict(rec['pre'], total=221.5, home_spread=-1.5) and rec['pre'].get('restored'), 'line not restored from the games table'
 assert rec['kalshi_total_event'] == 'KXNBATOTAL-26OCT20BOSDET' and rec['half'] == {'away': 58, 'home': 61}
 sh = rec['sheet']
-assert sh['center'] == 111.5 and sh['center_w'] == 0.25 and abs(sh['mu'] - (0.25 * sh['mu_model'] + 0.75 * 111.5)) < 0.02, sh
-assert sh['mkt'] == 230.5 and sh['fair'] == 229.5, sh
+c0 = engine.HalfModel('nba', sh['total'], sh['spread'], sh['h1h'], sh['h1a'], center=111.5, center_w=0.0)
+assert sh['center'] == 111.5 and sh['center_w'] == 0.25 and abs(sh['mu'] - (0.25 * sh['mu_model'] + 0.75 * c0.mu)) < 0.02, (sh['mu'], sh['mu_model'], c0.mu)
+assert sh['mkt'] == 230.5 and sh['fair'] == 230.5, sh     # the market's median is the ladder's median: fair sits on Kalshi's line (was 229.5 when the line was taken as the mean)
 halfp = [p for p in pushes if '(half' in p[0]]
 assert len(halfp) == 1 and halfp[0][0] == 'PLAY: Celtics 58, Pistons 61 (half, NBA)' and halfp[0][2] == 'high', pushes
 body = halfp[0][1]
@@ -128,7 +134,8 @@ assert len(p3) == 1 and p3[0][0] == 'PLAY: Thunder 82, Spurs 85 (end of 3rd, NBA
 assert 'Buy OVER 230.5 at 15c' in p3[0][1] and 'overtime 9%' in p3[0][1] and 'RESTING MIDDLE' in p3[0][1], p3[0][1]
 sh3 = rec3['sheet_q3']
 assert sh3['stage'] == 'q3' and sh3['h1a'] == 82 and sh3['h1h'] == 85 and sh3['fair'] and sh3['mkt'] == 223.5 and sh3['center'] == 223.5 - 167, sh3
-assert abs(sh3['mu'] - (0.25 * sh3['mu_model'] + 0.75 * sh3['center'])) < 0.02
+l0 = engine.LateModel('nba', sh3['total'], sh3['spread'], sh3['h1h'], sh3['h1a'], center=sh3['center'], center_w=0.0)
+assert abs(l0.median - sh3['center']) < 1e-3 and abs(sh3['mu'] - (0.25 * sh3['mu_model'] + 0.75 * l0.mu)) < 0.02, (sh3['mu'], sh3['mu_model'], l0.mu)
 m3 = engine.LateModel('nba', 229.5, -1.5, 85, 82)
 assert m3.p_ot == 0.089 and 'close game' in m3.spot() and abs(m3.mu_model - (m3.mu_reg_model + 0.089 * 24.3)) < 1e-9
 assert 0.17 < m3.p_over_2h(math.floor(m3.median) + 10.5) < 0.21 and m3.sd > engine.LateModel('nba', 229.5, -1.5, 105, 72).sd + 1.5, 'the overtime tail widens a close game'

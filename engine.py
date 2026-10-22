@@ -52,9 +52,19 @@ class HalfModel:
         self.mu_model = max(8.0, mu)
         self.center = center
         self.center_w = 1.0 if center is None else max(0.0, min(1.0, center_w))
-        self.mu = self.mu_model if center is None else max(8.0, self.center_w * self.mu_model + (1 - self.center_w) * center)
-        self.sd = m['k'] * math.sqrt(self.mu)
         self.q = m['z']
+        if center is None:
+            self.mu = self.mu_model
+        else:
+            # A market line is where the market puts 50-50: its median. The block's residual median sits below its
+            # mean (q[100] is negative in every block), so the center is first turned into the mean that puts this
+            # block's median on the line, then blended. Taking the line as the mean shifted every ladder down by
+            # half a point to a point and under-said the over by 2 to 3 cents at every strike (trust study, Oct 22).
+            cm = center
+            for _ in range(5):
+                cm = center - m['k'] * math.sqrt(max(8.0, cm)) * self.q[100]
+            self.mu = max(8.0, self.center_w * self.mu_model + (1 - self.center_w) * cm)
+        self.sd = m['k'] * math.sqrt(self.mu)
         self.n = m['n']
         self.state = 'trail' if self.favm < 0 else ('lead' if self.favm > 0 else 'tied')
         fb = self.fav_by
@@ -135,17 +145,36 @@ class LateModel:
         self.mu_model = self.mu_reg_model + self.p_ot * self.ot_pts
         self.center = center
         self.center_w = 1.0 if center is None else max(0.0, min(1.0, center_w))
-        self.mu = self.mu_model if center is None else max(6.0, self.center_w * self.mu_model + (1 - self.center_w) * center)
-        self.mu_reg = max(6.0, self.mu - self.p_ot * self.ot_pts)
-        self.sd_reg = m['k'] * math.sqrt(self.mu_reg)
         self.q = m['z']
         self.n = m['n']
-        var = (1 - self.p_ot) * self.sd_reg ** 2 + self.p_ot * self.sd_reg ** 2 + self.p_ot * (1 - self.p_ot) * self.ot_pts ** 2
-        self.sd = math.sqrt(var)
+        self.k = m['k']
+        if center is None:
+            self.mu = self.mu_model
+        else:
+            # the center is the market's median of the points left (see HalfModel): find the mean whose mixture
+            # median lands on it, then blend
+            cm = center
+            for _ in range(4):
+                cm += center - self._median_for(cm)
+            self.mu = max(6.0, self.center_w * self.mu_model + (1 - self.center_w) * cm)
+        self._set_shape(self.mu)
         self.state = 'trail' if self.favm < 0 else ('lead' if self.favm > 0 else 'tied')
         self.bucket = 'q3'
         self.ref = None
         self.median = self._median()
+
+    def _set_shape(self, mu):
+        """The regulation and mixture spread for a mean of mu (points left, overtime chance included)."""
+        self.mu = mu
+        self.mu_reg = max(6.0, mu - self.p_ot * self.ot_pts)
+        self.sd_reg = self.k * math.sqrt(self.mu_reg)
+        var = (1 - self.p_ot) * self.sd_reg ** 2 + self.p_ot * self.sd_reg ** 2 + self.p_ot * (1 - self.p_ot) * self.ot_pts ** 2
+        self.sd = math.sqrt(var)
+
+    def _median_for(self, mu):
+        """The mixture's median when its mean is mu."""
+        self._set_shape(max(6.0, mu))
+        return self._median()
 
     def _cdf_reg(self, z):
         q = self.q

@@ -183,7 +183,8 @@ rec['h2']['at_s'] -= 300
 d2.market_center(g2, {}, 24, 'half', rec)
 assert len(h2_calls) == 2, 'and never a third'
 m = engine.HalfModel('nfl', 46.0, -3.0, 14, 10, center=c, center_w=w)
-assert abs(m.mu - (0.5 * m.mu_model + 0.5 * 24.5)) < 1e-9
+m0 = engine.HalfModel('nfl', 46.0, -3.0, 14, 10, center=c, center_w=0.0)
+assert abs(m0.median - 24.5) < 1e-4 and abs(m.mu - (0.5 * m.mu_model + 0.5 * m0.mu)) < 1e-9     # the line is the median, the blend halfway
 assert 'Sharp 2H 24.5.' in engine.describe(m, dict(away='GB', home='PIT', h1a=10, h1h=14, sharp=24.5), engine.price_lines(m, [44.5, 47.5], 'fg', 0.03), dict(singles=[], mids=[], revs=[]))
 assert 'Sharp 2H' not in engine.describe(m, dict(away='GB', home='PIT', h1a=10, h1h=14), engine.price_lines(m, [44.5, 47.5], 'fg', 0.03), dict(singles=[], mids=[], revs=[]))
 # the event id found at the half when the pregame line came from ESPN
@@ -200,7 +201,7 @@ gn = dict(g2, sport='nba')
 recn = dict(pre=dict(total=224.5, home_spread=-3.0, odds_event='ev-n'))
 fake_h2_nba = lambda sport, event_id, key: ({'draftkings': [112.5, -110, -110]}, dict(remaining=9000))
 feeds.odds_api_h2 = fake_h2_nba
-assert d2.market_center(gn, {}, 110, 'half', recn) == (112.5, 0.25, 'sharp')
+assert d2.market_center(gn, {}, 110, 'half', recn) == (112.5, 0.0, 'sharp')     # the NBA: the sharp line is the center, the model only the shape
 feeds.odds_api_h2 = fake_h2
 # an empty read (no 2H line posted) falls through to Kalshi for the NBA and to the model for football
 feeds.odds_api_h2 = lambda sport, event_id, key: ({}, dict(remaining=9000))
@@ -221,5 +222,5 @@ rec8 = dict(pre=dict(total=224.5, home_spread=-3.0, odds_event='ev-8'))
 before = len(h2_calls)
 d2.market_center(gn, {}, 170, 'q3', rec8)
 assert len(h2_calls) == before and 'h2' not in rec8
-print('sharp: read once at the half, centered at the sport weight, on the text; NBA at the market weight; bad reads ignored')
+print('sharp: read once at the half, centered at the sport weight, on the text; NBA centered on the line itself; bad reads ignored')
 print('odds: ok')
