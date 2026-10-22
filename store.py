@@ -70,6 +70,9 @@ def write(table, rows, on_conflict=None, ignore_duplicates=False):
         params['on_conflict'] = on_conflict
         prefer += ',resolution=' + ('ignore-duplicates' if ignore_duplicates else 'merge-duplicates')
     rows = clean(rows)
+    known = {m[1] for m in _missing if isinstance(m, tuple) and m[0] == table}
+    if known:   # columns the schema has already said it lacks: leave them out up front, no wasted request
+        rows = [{k: v for k, v in row.items() if k not in known} for row in rows]
     err, tries = 'unknown', 0
     while tries < 3:
         tries += 1

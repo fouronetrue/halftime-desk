@@ -181,6 +181,88 @@ def espn_odds_endpoint(sport, game_id):
     return spread, total
 
 
+# ---------- The Odds API (pregame closing lines; needs ODDS_API_KEY) ----------
+ODDS_API = 'https://api.the-odds-api.com/v4/sports/{key}/odds'
+ODDS_SPORT = {'nfl': 'americanfootball_nfl', 'cfb': 'americanfootball_ncaaf', 'nba': 'basketball_nba'}
+# Up to ten bookmakers count as one region, so this list with two markets costs 2 credits a call (500 free a month).
+# Pinnacle first (the sharp line, from its public site), then the US books for a median when Pinnacle is quiet.
+ODDS_BOOKS = ['pinnacle', 'draftkings', 'fanduel', 'betmgm', 'betonlineag', 'lowvig', 'bovada', 'betrivers']
+
+
+def parse_odds_api(events):
+    """Odds API events -> one row per game: home, away, start_utc, books {key: (home_spread, total)}, and the line
+    the desk should use: Pinnacle's when it has both numbers, else the median across the books that do.
+    home_spread is minus when the home team is favored, as everywhere in the desk."""
+    rows = []
+    for ev in events or []:
+        home, away = ev.get('home_team') or '', ev.get('away_team') or ''
+        books = {}
+        for bk in ev.get('bookmakers') or []:
+            spread = total = None
+            for mk in bk.get('markets') or []:
+                outs = mk.get('outcomes') or []
+                if mk.get('key') == 'spreads':
+                    for o in outs:
+                        if o.get('name') == home and o.get('point') is not None:
+                            spread = float(o['point'])
+                elif mk.get('key') == 'totals':
+                    for o in outs:
+                        if str(o.get('name', '')).lower() == 'over' and o.get('point') is not None:
+                            total = float(o['point'])
+            if spread is not None or total is not None:
+                books[bk.get('key')] = (spread, total)
+        if not books:
+            continue
+        p = books.get('pinnacle')
+        if p and p[0] is not None and p[1] is not None:
+            spread, total, source = p[0], p[1], 'pinnacle'
+        else:
+            spreads = sorted(v[0] for v in books.values() if v[0] is not None)
+            totals = sorted(v[1] for v in books.values() if v[1] is not None)
+            if not spreads or not totals:
+                continue
+            spread, total = spreads[len(spreads) // 2], totals[len(totals) // 2]
+            source = f'median{len(totals)}'
+        rows.append(dict(id=ev.get('id'), home=home, away=away, start_utc=ev.get('commence_time'), books=books,
+                         home_spread=spread, total=total, source=source))
+    return rows
+
+
+def odds_api_lines(sport, key, timeout=20):
+    """One call: every upcoming game of the sport with its closing-side lines, plus the quota from the response
+    headers (remaining, used, last). Raises on a failed call so the caller can back off."""
+    if sport not in ODDS_SPORT or not key:
+        return [], {}
+    r = requests.get(ODDS_API.format(key=ODDS_SPORT[sport]), timeout=timeout, headers={'User-Agent': 'halftime-desk/1.0'},
+                     params=dict(apiKey=key, bookmakers=','.join(ODDS_BOOKS), markets='spreads,totals', oddsFormat='american', dateFormat='iso'))
+    usage = {k: int(v) for k, v in [('remaining', r.headers.get('x-requests-remaining')), ('used', r.headers.get('x-requests-used')),
+                                     ('last', r.headers.get('x-requests-last'))] if v not in (None, '')}
+    if r.status_code != 200:
+        raise RuntimeError(f'odds api {sport}: HTTP {r.status_code} {r.text[:120]}')
+    return parse_odds_api(r.json()), usage
+
+
+def match_odds(game, rows, window_s=5400):
+    """The Odds API row for an ESPN game: start within 90 minutes and both team names agree (ESPN's display name
+    is 'Pittsburgh Steelers', 'Ohio State Buckeyes'; the Odds API uses the same form). None when nothing fits."""
+    try:
+        start = dt.datetime.fromisoformat(str(game.get('start_utc')).replace('Z', '+00:00')).timestamp()
+    except Exception:
+        return None
+    best, best_s = None, 0.0
+    for row in rows:
+        try:
+            t = dt.datetime.fromisoformat(str(row.get('start_utc')).replace('Z', '+00:00')).timestamp()
+        except Exception:
+            continue
+        if abs(t - start) > window_s:
+            continue
+        s = min(sim(game['home']['name'], row['home']), sim(game['away']['name'], row['away']))
+        if s >= 2.0 and s > best_s:
+            best, best_s = row, s
+    return best
+
+
 def parse_box_stats(data, sport='nba'):
     """Per-team box score from ESPN's summary endpoint (cumulative at the moment it is read, so at the half it is
     the first-half box): field goal and free throw attempts, offensive rebounds, turnovers, fouls, and the

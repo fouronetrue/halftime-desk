@@ -92,9 +92,25 @@ how many shares or pairs, and the resting limits for every strike near fair.
 | day_cost_pct | most to suggest across all plays in one day, % of bankroll | 20 |
 | poll_seconds, max_poll_minutes | in-run polling during a halftime | 60, 22 |
 
+## The Odds API (optional, 5 minutes): the sharp pregame line
+Without it the pregame total and spread come from ESPN's consensus, then ESPN's odds endpoint, then Kalshi's
+50-50 strike. With a key the worker reads The Odds API instead: Pinnacle's close when Pinnacle has both
+numbers, else the median across DraftKings, FanDuel, BetMGM, BetOnline, LowVig, Bovada and BetRivers. ESPN's
+number and every book's are kept beside it in the games row (`pre_books`, `supabase/008_pre_books.sql`), so
+the ESPN-vs-sharp gap and closing line value are on record. One call covers every upcoming game of a sport
+and costs 2 of the 500 free credits a month: the worker calls once when a kickoff is within three hours and
+once more inside the last 25 minutes (the closing read), at most 12 calls a day per sport, only the closing
+read under 40 credits left and nothing under 10. The GitHub backup never carries the key, so the quota is
+spent once; it inherits the worker's lines through the games table.
+1. the-odds-api.com > Get API key (free plan). The key arrives by email.
+2. Railway > the halftime-desk project > the worker service > Variables > New Variable: name `ODDS_API_KEY`,
+   value the key. Railway redeploys the worker on its own; the log then shows lines like
+   `odds api nfl: 14 games (14 with Pinnacle), closing read, 468 credits left this month`.
+3. Supabase SQL Editor: run `supabase/008_pre_books.sql` once.
+
 ## Supabase (optional, 10 minutes)
 1. Create a free project at supabase.com. In the SQL Editor paste `supabase/schema.sql` and run it, then
-   `002_week2.sql` through `006_flickers.sql` in order (all safe to run again). Every table has row level
+   `002_week2.sql` through `008_pre_books.sql` in order (all safe to run again). Every table has row level
    security on; the app reads as a signed-in user and only the secret key can write.
 2. Settings > API Keys: copy the project URL and the **secret** key (`sb_secret_...`). Add two repository secrets:
    `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. The publishable key is for the app later, not for the worker.

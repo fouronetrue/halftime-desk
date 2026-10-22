@@ -69,6 +69,7 @@ class Desk:
         self._db_evals = {}   # game id -> (quote key, time written): skip identical priced rows inside 30 s
         self._db_games = {}   # game id -> (row hash, time sent), so Supabase only hears about games that changed
         self.holdings = {}   # event ticker -> open positions on that total (held.holdings rows), refreshed by the worker once a minute
+        self._odds_rows = {}   # sport -> the Odds API's upcoming games (feeds.parse_odds_api rows), refreshed by odds_lines()
 
     # ---- feeds (fixture-aware) ----
     def games(self, sport):
@@ -90,6 +91,54 @@ class Desk:
                     self._events[key] = []
         return self._events[key]
 
+    def odds_lines(self, sport, games):
+        """Refresh the Odds API's lines for a sport when a kickoff is near, inside the free quota. One call returns
+        every upcoming game of the sport, so the question is only how often: once when a game is within three
+        hours (and the last call is older than 150 minutes) and once more inside the last 25 minutes before a
+        kickoff (last call older than 20 minutes), the closing read. Two credits a call, 500 free a month; under
+        40 left only the closing read runs, under 10 nothing does, and a sport gets at most 12 calls a day.
+        Off without ODDS_API_KEY (the GitHub backup never carries it, so the quota is spent once) and on fixtures."""
+        key = (os.environ.get('ODDS_API_KEY') or '').strip()
+        if not key or self.fixtures or sport not in feeds.ODDS_SPORT:
+            return
+        now = time.time()
+        soon = close = False
+        for g in games:
+            if feeds.phase(g) != 'pre' or not g.get('start_utc'):
+                continue
+            try:
+                left = dt.datetime.fromisoformat(g['start_utc'].replace('Z', '+00:00')).timestamp() - now
+            except Exception:
+                continue
+            soon = soon or 0 <= left <= 3 * 3600
+            close = close or 0 <= left <= 25 * 60
+        if not soon:
+            return
+        st = self.state.setdefault('odds_api', {})
+        rec = st.setdefault(sport, {})
+        last, day = float(rec.get('at') or 0), dt.datetime.now(feeds.ET).strftime('%Y-%m-%d')
+        if rec.get('day') != day:
+            rec.update(day=day, calls=0)
+        remaining = st.get('remaining')
+        want = (close and now - last > 20 * 60) or (now - last > 150 * 60)
+        if not want or rec.get('calls', 0) >= 12 or now - float(rec.get('failed_at') or 0) < 20 * 60:
+            return
+        if remaining is not None and (remaining < 10 or (remaining < 40 and not close)):
+            return
+        try:
+            rows, usage = feeds.odds_api_lines(sport, key)
+        except Exception as e:
+            rec['failed_at'] = now
+            print(f'odds api {sport}: {e}')
+            return
+        self._odds_rows[sport] = rows
+        rec.update(at=now, calls=rec.get('calls', 0) + 1, games=len(rows))
+        if usage:
+            st.update(remaining=usage.get('remaining'), used=usage.get('used'), usage_at=now_iso())
+        pin = sum(1 for r in rows if r['source'] == 'pinnacle')
+        print(f"odds api {sport}: {len(rows)} games ({pin} with Pinnacle), {'closing read' if close else 'early read'}, "
+              f"{usage.get('remaining', '?')} credits left this month")
+
     # ---- one pass over both sports ----
     def run_pass(self):
         active = False
@@ -105,6 +154,10 @@ class Desk:
             for g in games:
                 self.state['games'].setdefault(g['id'], dict(sport=sport, name=g['name'], date=g['date_et'], first_seen=now_iso()))
             self.restore_pregame([g for g in games if feeds.phase(g) not in ('pre', 'post')])
+            try:
+                self.odds_lines(sport, games)
+            except Exception as e:   # a sharp line is a bonus, never a reason to miss a pass
+                print(f'odds api {sport} failed: {e}')
             for g in games:
                 ph = feeds.phase(g)
                 rec = self.state['games'][g['id']]
@@ -154,6 +207,8 @@ class Desk:
                        away_score=g['away']['score'], home_score=g['home']['score'], period=g['period'], clock=g['clock'], detail=g['detail'])
             if pre.get('total'):
                 row.update(pre_total=pre.get('total'), pre_home_spread=pre.get('home_spread'), pre_source=pre.get('source'), pre_at=pre.get('at'))
+                if pre.get('books'):   # every book's close and ESPN's number beside the line used (supabase/008_pre_books.sql)
+                    row['pre_books'] = dict(pre['books'], espn=pre.get('espn'))
             h = hash(json.dumps(row, sort_keys=True, default=str))
             prev = self._db_games.get(g['id'])
             if prev and prev[0] == h and now - prev[1] < 600:
@@ -270,7 +325,16 @@ class Desk:
         shows the live line, and nothing read then may be stored as the pregame line (see restore_pregame)."""
         pre = rec.setdefault('pre', {})
         spread, total = feeds.espn_lines(g)
-        if total:
+        row = feeds.match_odds(g, self._odds_rows.get(g['sport']) or [])
+        if row:
+            # the sharp line wins: Pinnacle's close, or the median across the US books. ESPN's number is kept
+            # beside it, and every book's, so the gap between the two is on record for the line study.
+            pre.update(total=row['total'], home_spread=row['home_spread'], source='odds:' + row['source'], at=now_iso())
+            pre['books'] = {k: list(v) for k, v in row['books'].items()}
+            pre.pop('spread_source', None)
+            if total:
+                pre['espn'] = [spread, total]
+        elif total:
             pre.update(total=total, source='espn', at=now_iso())
             if spread is not None:
                 pre['home_spread'] = spread
