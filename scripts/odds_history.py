@@ -102,7 +102,8 @@ def main():
     games = list(csv.DictReader(open(a.timetable)))
     done = set()
     if os.path.exists(a.dst):
-        done = {r['game_id'] for r in csv.DictReader(open(a.dst))}
+        # a row with an event but no snapshot (a run that ran out of credits mid-game) is not done
+        done = {r['game_id'] for r in csv.DictReader(open(a.dst)) if not r['event_id'] or int(r['tries'] or 0) > 0}
     todo = [g for g in games if g['game_id'] not in done]
     print(f'{len(games)} games in the timetable, {len(done)} already pulled, {len(todo)} to go; up to {a.max_credits} credits this run')
     api = Api(key, a.sport, a.max_credits, a.reserve)
@@ -137,8 +138,10 @@ def main():
             out.flush()
             continue
         books, snap, tries, req = {}, '', 0, ''
+        stopped = False
         for extra in (0, 4):
             if not api.allowed(10):
+                stopped = True
                 break
             req = iso_plus(g['half_utc'], a.offset_min + extra)
             try:
@@ -152,6 +155,9 @@ def main():
             time.sleep(0.25)
             if books:
                 break
+        if stopped and tries == 0:
+            print('credit budget reached before the snapshot, stopping here (resumable)')
+            break
         lines = sorted(v[0] for v in books.values())
         med = lines[len(lines) // 2] if lines else ''
         pin = books.get('pinnacle', [''])[0]
