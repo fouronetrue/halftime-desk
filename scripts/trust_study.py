@@ -34,7 +34,8 @@ def vig_free(over_price, under_price):
 
 class LosoModel:
     """HalfModel's interface on a block fit without the game's own season (leave one season out on the sport's
-    game table), so a season the live block was fit on is scored honestly. Football only."""
+    game table), so a season the live block was fit on is scored honestly. The engine's shape is the same for
+    every sport (fit_cfb.features), so this serves the NBA too; the NBA table is kept to the block's own era."""
     blocks = {}
 
     @classmethod
@@ -44,7 +45,10 @@ class LosoModel:
             sys.path.insert(0, os.path.join(ROOT, 'scripts'))
             import fit_cfb
             d = pd.read_csv(os.path.join(ROOT, 'data', f'{sport}_games.csv'))
-            d = d[(d.total > 20) & (d.total < 100) & (d.home_spread.abs() < 60) & (d.season != season)].reset_index(drop=True)
+            lo, hi, sp = (150, 320, 30) if sport == 'nba' else (20, 100, 60)
+            d = d[(d.total > lo) & (d.total < hi) & (d.home_spread.abs() < sp) & (d.season != season)].reset_index(drop=True)
+            if sport == 'nba':
+                d = d[d.season >= 2018].reset_index(drop=True)      # the live block's own era (2017-18 on)
             y = ((d.fh + d.fa) - (d.h1h + d.h1a)).values.astype(float)
             live = engine.MODEL[sport]
             knee = live.get('knee', 14) if len(live['coef']) > 6 else None

@@ -1,6 +1,6 @@
 """Data feeds: ESPN scoreboards (scores, status, pregame odds) and Kalshi public market data.
 No API keys needed. Every function returns plain dicts so the rest of the desk can run on fixtures."""
-import re, json, time, datetime as dt
+import re, json, time, unicodedata, datetime as dt
 from zoneinfo import ZoneInfo
 
 try:
@@ -393,10 +393,25 @@ def ticker_date(event_ticker):
     return f'20{y}-{MONTHS[mon]:02d}-{int(d):02d}', teams
 
 
+# Team name forms that differ between the play-by-play, ESPN and the books, applied before matching.
+TEAM_ALIASES = {'massachusetts': 'umass', 'app state': 'appalachian state', 'se louisiana': 'southeastern louisiana',
+                'long island university': 'liu', 'hawaii rainbow warriors': 'hawaii', 'ole miss': 'mississippi', 'pitt': 'pittsburgh',
+                'miami oh': 'miami ohio', 'miami (oh)': 'miami ohio', 'uconn': 'connecticut', 'utep': 'utep', 'la clippers': 'los angeles clippers'}
+
+
 def norm(s):
-    s = re.sub(r"[^a-z0-9 ]", '', str(s or '').lower())
+    s = unicodedata.normalize('NFKD', str(s or '')).encode('ascii', 'ignore').decode().lower()   # Jose for Jose, Hawai'i for Hawaii
+    s = re.sub(r"[^a-z0-9 ()]", '', s)
+    s = TEAM_ALIASES.get(s.strip(), s)
+    s = re.sub(r"[()]", '', s)
+    s = re.sub(r"\bmiami oh\b", 'miami ohio', s)
     s = s.replace(' state', ' st').replace('saint ', 'st ')
     return ' '.join(s.split())
+
+
+# a school name followed by one of these is a different school (Texas and Texas State, Miami and Miami Ohio)
+SCHOOL_MODIFIERS = {'st', 'tech', 'am', 'southern', 'northern', 'eastern', 'western', 'central', 'atlantic', 'international',
+                    'christian', 'ohio', 'pacific', 'wesleyan', 'baptist', 'commonwealth', 'city'}
 
 
 def sim(a, b):
@@ -405,8 +420,11 @@ def sim(a, b):
         return 0.0
     if a == b:
         return 3.0
-    if a in b or b in a:
-        return 2.0
+    for short, long in ((a, b), (b, a)):
+        m = re.search(r'(?:^|\s)' + re.escape(short) + r'(?:\s|$)', long)
+        if m:
+            rest = long[m.end():].split()
+            return 1.0 if rest and rest[0] in SCHOOL_MODIFIERS else 2.0
     ta, tb = set(a.split()), set(b.split())
     common = (ta & tb) - {'st', 'the', 'of', 'university'}
     return 1.0 + len(common) / max(1, min(len(ta), len(tb))) if common else 0.0

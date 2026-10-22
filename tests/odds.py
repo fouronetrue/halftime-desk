@@ -49,7 +49,13 @@ assert feeds.match_odds(game('Pittsburgh Steelers', 'Green Bay Packers', '2026-1
 assert feeds.match_odds(game('Denver Broncos', 'Green Bay Packers', '2026-10-25T17:00:00Z'), rows) is None        # wrong pair
 assert feeds.match_odds(game('Ohio State Buckeyes', 'Penn State Nittany Lions', '2026-10-25T17:00:00Z'), rows) is None
 assert feeds.match_odds(game('Pittsburgh Steelers', 'Green Bay Packers', None), rows) is None
-print('match: same pair within 90 minutes, nothing else')
+# name forms: accents, the book's short names, and a school followed by a modifier is a different school
+for a, b, want in [('San José State', 'San Jose State Spartans', 2), ('Massachusetts', 'UMass Minutemen', 2), ('App State', 'Appalachian State Mountaineers', 2),
+                   ("Hawai'i", 'Hawaii Rainbow Warriors', 3), ('Miami (OH)', 'Miami (OH) RedHawks', 2), ('Miami', 'Miami (OH) RedHawks', 1),
+                   ('Texas', 'Texas State Bobcats', 1), ('Texas', 'Texas Longhorns', 2), ('Louisiana', 'Louisiana Tech Bulldogs', 1),
+                   ('Los Angeles Clippers', 'LA Clippers', 3), ('Oklahoma City Thunder', 'Oklahoma City Thunder', 3)]:
+    assert abs(feeds.sim(a, b) - want) < 0.01, (a, b, feeds.sim(a, b))
+print('match: same pair within 90 minutes, nothing else; accents and short names read, Texas is not Texas State')
 
 # 3. the refresh policy
 calls = []
