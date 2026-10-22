@@ -5,15 +5,16 @@ The old step rebased the run's uncommitted files onto main with `git pull --reba
 main had moved under a file the run also changed, the autostash came back with conflict markers inside the
 file and the next two lines committed them (30 marker lines in halftime_log.csv after Oct 17, and a state.json
 with the pregame lines gone). This script never merges text:
-  - the two CSVs are append-only, so the rows this run added (everything past the version it checked out)
-    are appended to main's copy of the file;
+  - the two CSVs are append-only, so the rows this run added (the rows main does not have, by content) are
+    appended to main's copy of the file, once each, and a header upgrade widens main's copy instead of
+    appending the widened rows again (the Oct 22 results.csv had 50 duplicate rows and two headers in it);
   - state.json is this run's whole snapshot, and a watch run is the only writer of it (one run at a time);
   - a marker line that somehow still turns up is dropped, never committed.
 If the push is rejected because main moved again, it starts over from the new main, three times at most.
 
 Usage: python scripts/save_run.py BASE_SHA    (BASE_SHA is the commit the run checked out: github.sha)
 """
-import os, re, sys, subprocess, datetime as dt
+import os, re, csv, sys, subprocess, datetime as dt
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SNAPSHOT = ['state.json']
@@ -59,20 +60,56 @@ def added_rows(base, ours):
     return b''.join(l for l in lines(ours) if l not in seen)
 
 
+def key(line):
+    """A CSV line as the tuple of its fields with trailing blanks dropped, so a row padded to a wider header is the
+    same row. Parsed with the csv module, so a quoted comma inside a field does not split it."""
+    text = line.decode('utf-8', errors='replace').rstrip('\r\n')
+    try:
+        fields = next(csv.reader([text]))
+    except (csv.Error, StopIteration):
+        fields = text.split(',')
+    while fields and fields[-1] == '':
+        fields.pop()
+    return tuple(fields)
+
+
+def pad(line, n):
+    """A CSV line with n empty fields added before its line ending."""
+    body = line.rstrip(b'\r\n')
+    return body + b',' * n + line[len(body):]
+
+
 def merge_append(main, base, ours):
-    """main's copy of an append-only CSV plus the rows this run added. A file created this run keeps its header
-    only when main has none."""
-    new = added_rows(base, ours)
+    """main's copy of an append-only CSV plus the rows this run added: the rows of ours that neither base nor main
+    has, by content, so a row is never on the file twice and a header never lands among the rows. When ours was
+    written under a wider header (the results file grew q3 columns), main's header and rows are widened to match,
+    the way upgrade_results_csv does it. A file created this run keeps its header only when main has none."""
     if not main:
         return ours
+    if not ours or ours == base:
+        return main
+    ml, ol = lines(main), lines(ours)
+    head_m, head_o = key(ml[0]), key(ol[0])
+    first = head_m[0] if head_m else None
+    have = {key(l) for l in ml} | {key(l) for l in lines(base)}
+    have.add(head_o)
+    new = []
+    for l in ol[1:]:
+        k = key(l)
+        if not k or k in have or (first is not None and k[0] == first):
+            continue
+        have.add(k)
+        new.append(l)
     if not new:
         return main
-    head = lines(ours)[0] if ours else b''
-    if head and new.startswith(head) and main.startswith(head):
-        new = new[len(head):]
+    extra = len(head_o) - len(head_m)
+    if extra > 0:
+        eol = b'\r\n' if ml[0].endswith(b'\r\n') else b'\n'
+        ml = [ol[0].rstrip(b'\r\n') + eol] + [pad(l, extra) for l in ml[1:]]
+        main = b''.join(ml)
     if not main.endswith(b'\n'):
         main += b'\r\n' if b'\r\n' in main else b'\n'
-    return main + new
+    return main + b''.join(new)
 
 
 def strip_markers(path, data):

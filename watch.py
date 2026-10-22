@@ -874,7 +874,8 @@ def results_rows(path=RESULTS_PATH):
         if rows:
             return rows
     try:
-        return list(csv.DictReader(open(path, newline='')))
+        # a header line that landed among the rows (a bad merge) is not a game
+        return [r for r in csv.DictReader(open(path, newline='')) if r.get('settled_utc') != 'settled_utc']
     except FileNotFoundError:
         return []
 

@@ -97,8 +97,16 @@ main = base + b'3,x\r\n'                                            # main moved
 assert save_run.merge_append(main, base, ours) == main + b'3,c\r\n4,d\r\n'
 assert save_run.merge_append(b'', base, ours) == ours                 # main has no file yet
 assert save_run.merge_append(main, base, base) == main                # this run added nothing
-assert save_run.merge_append(main, b'', ours) == main + ours[len(b'time,game\r\n'):]   # file created this run, header once
+assert save_run.merge_append(main, b'', ours) == main + b'3,c\r\n4,d\r\n'          # file created this run: header once, rows main has not again
 assert save_run.merge_append(base[:-2], base, ours) == base + b'3,c\r\n4,d\r\n'        # main lacks the final newline
+assert save_run.merge_append(main, base, ours + b'3,c\r\n') == main + b'3,c\r\n4,d\r\n'   # a row ours has twice lands once
+# the header upgrade: ours was rewritten under a wider header with the old rows padded, plus a new wide row and a
+# stray header among the rows (the Oct 22 results.csv). main is widened once; nothing lands twice.
+wide = b'time,game,q3\r\n1,a,\r\n2,b,\r\ntime,game,q3\r\n5,e,x\r\n'
+got = save_run.merge_append(main, base, wide)
+assert got == b'time,game,q3\r\n1,a,\r\n2,b,\r\n3,x,\r\n5,e,x\r\n', got
+assert save_run.merge_append(got, wide, wide) == got                                       # the same run saved twice adds nothing
+assert save_run.merge_append(got, b'', b'time,game,q3\r\n1,a,\r\n"6,f",g,\r\n') == got + b'"6,f",g,\r\n'   # a quoted comma is one field
 odd = b'3,c\r\n<<<<<<< Updated upstream\r\n=======\r\n4,d\r\n>>>>>>> Stashed changes\r\n'
 assert save_run.strip_markers('t', odd) == b'3,c\r\n4,d\r\n'
 assert save_run.added_rows(b'1\n2\n', b'0\n1\n2\n3\n') == b'0\n3\n'    # base not a prefix: the rows base lacks
