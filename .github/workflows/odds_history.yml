@@ -1,0 +1,50 @@
+# One-off, run by hand: pull the market's halftime second-half totals for past games from The Odds API
+# (scripts/odds_history.py) and commit the rows to data/odds_h2_SPORT.csv. Resumable: run it again and it
+# carries on from the last game pulled. Needs the ODDS_API_KEY repository secret and a paid plan.
+name: odds history
+on:
+  workflow_dispatch:
+    inputs:
+      sport:
+        description: 'Sport to pull'
+        type: choice
+        options: [nfl, cfb, nba]
+        default: nfl
+      max_credits:
+        description: 'Most credits to spend this run (10 a game)'
+        default: '9000'
+      reserve:
+        description: 'Credits to leave for the live desk'
+        default: '1500'
+      limit:
+        description: 'Games to pull this run (0 = as many as the credits allow)'
+        default: '0'
+concurrency:
+  group: odds-history
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q -r requirements.txt
+      - name: Pull
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: python scripts/odds_history.py ${{ inputs.sport }} data/half_times_${{ inputs.sport }}.csv data/odds_h2_${{ inputs.sport }}.csv --max-credits ${{ inputs.max_credits }} --reserve ${{ inputs.reserve }} --limit ${{ inputs.limit }}
+      - name: Commit
+        run: |
+          git config user.name "halftime-desk bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/odds_h2_${{ inputs.sport }}.csv
+          git diff --cached --quiet && echo "nothing new" && exit 0
+          n=$(($(wc -l < data/odds_h2_${{ inputs.sport }}.csv) - 1))
+          git commit -q -m "data: odds history ${{ inputs.sport }}, $n games"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          exit 1

@@ -122,4 +122,34 @@ d.capture_pregame(g, rec2)
 assert (rec2['pre']['total'], rec2['pre']['home_spread'], rec2['pre']['source']) == (46.0, -3.0, 'espn'), rec2['pre']
 assert 'books' not in rec2['pre']
 print('pregame: the sharp line wins with ESPN kept beside it; ESPN alone otherwise')
+
+# 5. the history pull: a historical snapshot parses to one 2H line per book; the event list matches on full names
+sys.path.insert(0, os.path.join(ROOT, 'scripts'))
+import odds_history as oh
+snap = dict(id='h1', commence_time='2023-09-10T17:00:00Z', home_team='Washington Commanders', away_team='Arizona Cardinals', bookmakers=[
+    dict(key='draftkings', markets=[dict(key='totals_h2', outcomes=[dict(name='Over', price=-110, point=20.5), dict(name='Under', price=-110, point=20.5)]),
+                                    dict(key='totals', outcomes=[dict(name='Over', price=-105, point=41.5), dict(name='Under', price=-115, point=41.5)])]),
+    dict(key='pinnacle', markets=[dict(key='totals_h2', outcomes=[dict(name='Over', price=-108, point=21.0), dict(name='Under', price=-104, point=21.0)])]),
+    dict(key='fanduel', markets=[dict(key='spreads_h2', outcomes=[dict(name='Washington Commanders', price=-110, point=-1.5)])]),
+])
+books = oh.parse_h2(snap)
+assert books == {'draftkings': [20.5, -110, -110], 'pinnacle': [21.0, -108, -104]}, books
+assert oh.parse_h2({}) == {} and oh.parse_h2(None) == {}
+row = dict(game_id='2023_01_ARI_WAS', kick_utc='2023-09-10T17:02:43.600Z', home_full='Washington Commanders', away_full='Arizona Cardinals')
+evs = [dict(id='x', commence_time='2023-09-10T17:00:00Z', home_team='Washington Commanders', away_team='Arizona Cardinals'),
+       dict(id='y', commence_time='2023-09-10T20:25:00Z', home_team='Washington Commanders', away_team='Arizona Cardinals'),
+       dict(id='z', commence_time='2023-09-10T17:00:00Z', home_team='Washington Commanders', away_team='Dallas Cowboys')]
+assert oh.match_event(row, evs)['id'] == 'x'
+assert oh.match_event(dict(row, kick_utc='2023-09-10T20:30:00Z'), evs)['id'] == 'y'
+assert oh.match_event(dict(row, away_full='Denver Broncos'), evs) is None
+assert oh.iso_plus('2023-09-10T18:34:13.857Z', 7) == '2023-09-10T18:41:13Z'
+api = oh.Api('k', 'nfl', max_credits=100, reserve=50)
+assert api.allowed(10)
+api.spent, api.remaining = 95, 1000
+assert not api.allowed(10), 'the run budget'
+api.spent, api.remaining = 0, 55
+assert not api.allowed(10), 'the reserve for the live desk'
+api.remaining = 60
+assert api.allowed(10)
+print('history: snapshot parsed per book, event matched by full names and start, budget and reserve hold')
 print('odds: ok')

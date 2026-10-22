@@ -108,6 +108,12 @@ spent once; it inherits the worker's lines through the games table.
    `odds api nfl: 14 games (14 with Pinnacle), closing read, 468 credits left this month`.
 3. Supabase SQL Editor: run `supabase/008_pre_books.sql` once.
 
+On a paid plan the history is there too: the market's second-half total at halftime for every game since May
+2023, five-minute snapshots, 10 credits a game. `data/half_times_nfl.csv` (scripts/build_half_times.py, off
+the nflverse play-by-play clock) says when each break started; Actions > odds history > Run workflow pulls
+`data/odds_h2_nfl.csv` with the key as a repository secret (`ODDS_API_KEY` there too), resumable, inside the
+credits you allow. That table is what the model-versus-market trust study runs on (Build Plan week 5).
+
 ## Supabase (optional, 10 minutes)
 1. Create a free project at supabase.com. In the SQL Editor paste `supabase/schema.sql` and run it, then
    `002_week2.sql` through `008_pre_books.sql` in order (all safe to run again). Every table has row level
