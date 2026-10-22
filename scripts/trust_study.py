@@ -32,7 +32,44 @@ def vig_free(over_price, under_price):
     return po / (po + pu)
 
 
-def load(sport):
+class LosoModel:
+    """HalfModel's interface on a block fit without the game's own season (leave one season out on the sport's
+    game table), so a season the live block was fit on is scored honestly. Football only."""
+    blocks = {}
+
+    @classmethod
+    def block(cls, sport, season):
+        if (sport, season) not in cls.blocks:
+            import numpy as np, pandas as pd
+            sys.path.insert(0, os.path.join(ROOT, 'scripts'))
+            import fit_cfb
+            d = pd.read_csv(os.path.join(ROOT, 'data', f'{sport}_games.csv'))
+            d = d[(d.total > 20) & (d.total < 100) & (d.home_spread.abs() < 60) & (d.season != season)].reset_index(drop=True)
+            y = ((d.fh + d.fa) - (d.h1h + d.h1a)).values.astype(float)
+            live = engine.MODEL[sport]
+            knee = live.get('knee', 14) if len(live['coef']) > 6 else None
+            X = fit_cfb.features(d, knee)
+            coef = fit_cfb.fit(X, y)
+            mu = fit_cfb.mu_of(coef, X)
+            k = float(np.sqrt(np.mean((y - mu) ** 2 / mu)))
+            z = np.quantile((y - mu) / (k * np.sqrt(mu)), np.linspace(0, 1, 201))
+            cls.blocks[(sport, season)] = dict(live, coef=[float(c) for c in coef], k=k, z=[float(v) for v in z], n=int(len(d)))
+        return cls.blocks[(sport, season)]
+
+    def __init__(self, sport, season, total, home_spread, h1h, h1a):
+        saved = engine.MODEL[sport]
+        engine.MODEL[sport] = self.block(sport, season)
+        try:
+            self.m = engine.HalfModel(sport, total, home_spread, h1h, h1a)
+        finally:
+            engine.MODEL[sport] = saved
+        self.median, self.mu, self.sd = self.m.median, self.m.mu, self.m.sd
+
+    def p_over_2h(self, t):
+        return self.m.p_over_2h(t)
+
+
+def load(sport, loso=False):
     tt = {r['game_id']: r for r in csv.DictReader(open(os.path.join(ROOT, 'data', f'half_times_{sport}.csv')))}
     rows = []
     for r in csv.DictReader(open(os.path.join(ROOT, 'data', f'odds_h2_{sport}.csv'))):
@@ -47,7 +84,10 @@ def load(sport):
             if ln == line and o is not None and u is not None:
                 pm = vig_free(o, u)
                 break
-        m = engine.HalfModel(sport, float(g['total']), float(g['home_spread']), int(g['h1h']), int(g['h1a']))
+        if loso:
+            m = LosoModel(sport, int(g['season']), float(g['total']), float(g['home_spread']), int(g['h1h']), int(g['h1a']))
+        else:
+            m = engine.HalfModel(sport, float(g['total']), float(g['home_spread']), int(g['h1h']), int(g['h1a']))
         y = (int(g['fh']) + int(g['fa'])) - (int(g['h1h']) + int(g['h1a']))
         rows.append(dict(game=r['game_id'], date=r['date'], season=int(g['season']), mkt=line, p_mkt=pm, model=m, fair=m.median, y=y,
                          p_model=m.p_over_2h(line), push=float(y) == line, h1=int(g['h1h']) + int(g['h1a']), margin=abs(int(g['h1h']) - int(g['h1a']))))
@@ -58,12 +98,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('sport')
     ap.add_argument('--trust', type=float, default=None, help='config trust_pct to score (default: config.json)')
+    ap.add_argument('--loso', action='store_true', help='score each season with a block fit without it (honest on seasons the live block was fit on)')
     a = ap.parse_args()
     cfg = json.load(open(os.path.join(ROOT, 'config.json')))
     trust = (a.trust if a.trust is not None else float(cfg.get('trust_pct', 50))) / 100
-    rows = load(a.sport)
+    rows = load(a.sport, a.loso)
     n = len(rows)
-    print(f'{a.sport}: {n} halftimes with a market 2H line, {min(r["season"] for r in rows)}-{max(r["season"] for r in rows)}; config trust_pct {trust * 100:.0f}')
+    print(f'{a.sport}: {n} halftimes with a market 2H line, {min(r["season"] for r in rows)}-{max(r["season"] for r in rows)}; config trust_pct {trust * 100:.0f}'
+          + ('; each season scored with a block fit without it' if a.loso else '; the live block (in sample on seasons it was fit on)'))
     y = np.array([r['y'] for r in rows], float)
     fair = np.array([r['fair'] for r in rows])
     mkt = np.array([r['mkt'] for r in rows])

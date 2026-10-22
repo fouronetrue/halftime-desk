@@ -37,8 +37,9 @@ DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct
                 # Per sport, the weight the model keeps when a sharp second-half line is in hand at the half (The Odds
                 # API, Pinnacle else the median of the books, one credit a game). On 944 NFL halftimes the model and
                 # DraftKings' 2H line are a dead heat and agree within a point in 99 percent of games, so 50 halves the
-                # model's own misses and keeps the view; the NBA keeps the market's number as before.
-                sharp_model_pct={'nfl': 50, 'cfb': 50, 'nba': 25})
+                # model's own misses and keeps the view. On 873 CFB halftimes the model beats the book's 2H line (closer
+                # 472 to 401, best blend 0.9), so it keeps 80. The NBA keeps the market's number as before.
+                sharp_model_pct={'nfl': 50, 'cfb': 80, 'nba': 25})
 CENTER_2H_RANGE = {'nba': (70, 160), 'nfl': (6, 60), 'cfb': (8, 90)}   # a center outside this (per sport, second-half points) is a bad read and is ignored
 CENTER_Q4_RANGE = {'nba': (30, 95)}    # the same for the points left at the end of the third (a 4th quarter plus the overtime chance)
 
