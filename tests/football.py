@@ -66,4 +66,24 @@ for r in rows:
     assert r['home_div'] == 'fbs' or r['away_div'] == 'fbs', r
     seasons.add(int(r['season']))
 assert min(seasons) == 2006 and max(seasons) >= 2022, seasons
-print('cfb_model ok:', len(rows), 'games', min(seasons), '-', max(seasons), '; engine coef terms', len(orig['coef']))
+print('cfb ok:', len(rows), 'games', min(seasons), '-', max(seasons), '; engine coef terms', len(orig['coef']))
+
+# 4. the NFL block by hand against the engine, and the NFL table (nflverse: home_spread is minus spread_line)
+nfl = engine.MODEL['nfl']
+for total, sp, h, a_ in [(47.5, -3, 17, 14), (41.5, 3, 7, 3), (47.5, -7, 3, 17), (52.5, -13.5, 31, 7)]:
+    assert abs(HalfModel('nfl', total, sp, h, a_).mu_model - mu_by_hand(nfl, total, sp, h, a_)) < 1e-9, (total, sp, h, a_)
+rows = list(csv.DictReader(open(os.path.join(ROOT, 'data', 'nfl_games.csv'))))
+assert len(rows) >= 6900, len(rows)
+ids = [r['game_id'] for r in rows]
+assert len(set(ids)) == len(ids), 'duplicate game'
+seasons = set()
+for r in rows:
+    h1h, h1a, fh, fa = int(r['h1h']), int(r['h1a']), int(r['fh']), int(r['fa'])
+    assert fh >= h1h and fa >= h1a, r
+    assert 25 < float(r['total']) < 70 and abs(float(r['home_spread'])) < 30, r
+    assert r['ot'] in ('0', '1') and (r['ot'] == '1' or fh != fa), r      # a regulation tie needs overtime first
+    seasons.add(int(r['season']))
+assert min(seasons) == 2000 and max(seasons) >= 2025, seasons
+g = next(r for r in rows if r['game_id'] == '2023_01_ARI_WAS')
+assert (g['h1a'], g['h1h'], g['fa'], g['fh'], g['total'], g['home_spread']) == ('13', '10', '16', '20', '38.0', '-7.0'), g   # WAS laid 7 and won 20-16
+print('nfl ok:', len(rows), 'games', min(seasons), '-', max(seasons), '; engine coef terms', len(nfl['coef']))
