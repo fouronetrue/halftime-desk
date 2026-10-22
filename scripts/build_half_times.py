@@ -77,6 +77,7 @@ def cfb_half_times(pbp_dir, since):
         t['period'] = pd.to_numeric(t.period, errors='coerce')
         t['ts'] = pd.to_datetime(t.wallclock, errors='coerce', utc=True)
         t = t[t.ts.notna()]
+        t = t[~((t.ts.dt.hour == 0) & (t.ts.dt.minute == 0) & (t.ts.dt.second == 0))]   # ESPN stamps a midnight placeholder on some plays
         kept = 0
         for gid, g in t.groupby('game_id'):
             first, third = g[g.period <= 2], g[g.period == 3]
@@ -117,6 +118,7 @@ def nba_half_times(pbp_dir, since):
         t = t[t.game_id.notna() & t.period_number.notna() & t.wallclock.notna()]
         t['ts'] = pd.to_datetime(t.wallclock, errors='coerce', utc=True)
         t = t[t.ts.notna()]
+        t = t[~((t.ts.dt.hour == 0) & (t.ts.dt.minute == 0) & (t.ts.dt.second == 0))]   # the same midnight placeholder
         kept = 0
         for gid, g in t.groupby('game_id'):
             first, third = g[g.period_number <= 2], g[g.period_number == 3]
