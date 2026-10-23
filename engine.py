@@ -325,6 +325,9 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
             if ok:
                 risk = max_risk if mid_loss is None else min(max_risk, mid_loss)
                 pairs = min(int(risk / loss + 1e-9), int(max_cost / c + 1e-9)) if loss > 0 else int(max_cost / c + 1e-9)
+                # a middle the loss cap cannot fit one pair of is not a play (the cap counts what you already
+                # hold on the total, so a built middle at the cap leaves no room for another)
+                ok = pairs >= 1
             pa, pb = a['price_c'] / 100, b['price_c'] / 100
             cost = round(pairs * (pa + pb) + order_fee(pairs, pa, order) + order_fee(pairs, pb, order), 2) if pairs else 0.0
             mids.append(dict(a=a, b=b, lo=a['line'] + 0.5, hi=b['line'] - 0.5, p_mid_model=p_mid_model, p_mid_mkt=p_mid_mkt, p_mid=p_mid,
@@ -421,7 +424,7 @@ def describe(model, inp, rows, sug, mode='fg', top=3, tickers=None, sizing=None)
     def mk(line):
         t = tk.get(line)
         return f" ({t.split('-')[-1]})" if t else ''
-    sharp = f" Sharp 2H {inp['sharp']:.1f}." if inp.get('sharp') is not None else ''
+    sharp = f" Book 2H {inp['sharp']:.1f}." if inp.get('sharp') is not None else ''
     lines = [f"{away} {inp['h1a']}, {home} {inp['h1h']} at the half. Fair {what} {fl:.1f}. 2H expected {model.mu:.1f} points.{sharp} {model.spot().capitalize()}."]
     n = 0
     mids = [m for m in sug['mids'] if m['ok']][:top]
@@ -470,126 +473,207 @@ def describe(model, inp, rows, sug, mode='fg', top=3, tickers=None, sizing=None)
     return '\n'.join(lines)
 
 
-def held_options(rows, quotes, h, margin=0.03, order='taker', price_band=(15, 85)):
-    """What to do at the half with a total you already own, priced off the same ladder the push used.
-    rows: price_lines() rows after suggest() (they carry used_over/used_under, the model-market blend).
-    quotes: feeds.total_quotes(). h: dict(side 'yes'|'no', strike, shares, paid_c, fee).
-    Returns dict(fair_c, sell, pair, layoff, free), each None when it does not apply:
-      sell    the bid now, what closing nets after the taker fee, what holding is worth at fair, and the verdict:
-              SELL when the bid net of fee pays at least the margin over fair, HOLD otherwise.
-      pair    the other side on a strike beyond yours that clears as a single (edge at least the margin), your
-              share count, so a final between the strikes pays both: the middle completion.
-      layoff  the other side on a strike short of yours that clears as a single: a final past your strike pays
-              your leg, a final short of the other pays that one, the numbers between lose both (the reverse).
-      free    the other side beyond yours at a size your leg pays for, so no final loses, when its ask allows
-              it; shown with the leg's own edge, which can be negative (that is the price of the insurance).
-    Every number is dollars after fees. Nothing here places an order."""
+def leg_basis(h):
+    """What a held leg cost all in: shares at the price paid, plus the fee paid."""
+    return int(h['shares']) * h['paid_c'] / 100 + float(h.get('fee') or 0)
+
+
+def pnl_regions(legs, extra_strikes=()):
+    """Dollars a set of legs on one total makes on every final, as regions between the strikes.
+    legs: dicts with side ('yes' is Over, 'no' is Under), strike (x.5), shares, paid_c, fee. Each entry:
+    lo, hi (the whole-number finals in the region, hi None above the top strike, lo None below the bottom one)
+    and pnl. extra_strikes adds boundaries so a new leg at one of them can be priced per region."""
+    strikes = sorted({float(h['strike']) for h in legs} | {float(k) for k in extra_strikes})
+    if not strikes:
+        return []
+    bounds = [None] + strikes + [None]
+    out = []
+    for a, b in zip(bounds, bounds[1:]):
+        probe = (b - 10) if a is None else (a + 10 if b is None else (a + b) / 2)   # a final inside the region
+        pnl = 0.0
+        for h in legs:
+            wins = probe > h['strike'] if h['side'] == 'yes' else probe < h['strike']
+            pnl += (int(h['shares']) - leg_basis(h)) if wins else -leg_basis(h)
+        out.append(dict(lo=None if a is None else a + 0.5, hi=None if b is None else b - 0.5, pnl=round(pnl, 2)))
+    return out
+
+
+def held_miss_loss(legs):
+    """What a middle you already hold on this total loses on a miss, which counts against the middle loss cap
+    before a new one is sized (Nick, Oct 22). The legs are a middle when an over sits on a lower strike than an
+    under; then the position's worst final is its miss. A lone leg, two overs, or a reverse is not a middle and
+    counts nothing: a single's downside is the single caps' business, not the middle cap's."""
+    overs = [float(h['strike']) for h in legs if h['side'] == 'yes']
+    unders = [float(h['strike']) for h in legs if h['side'] == 'no']
+    if not overs or not unders or min(overs) >= max(unders):
+        return 0.0
+    regs = pnl_regions(legs)
+    return round(max(0.0, -min(r['pnl'] for r in regs)), 2) if regs else 0.0
+
+
+def region_prob(rows, lo, hi):
+    """P(final in the region) from the ladder's blended fair (used_over per strike, set by suggest()); None when
+    a strike the region needs was not priced."""
     by_line = {r['line']: r for r in rows}
-    r0 = by_line.get(h['strike'])
-    if not r0:
+    def p_over(k):
+        r = by_line.get(k)
+        return None if r is None else r.get('used_over', r['p_over'])
+    lo_k = None if lo is None else lo - 0.5
+    hi_k = None if hi is None else hi + 0.5
+    a = 1.0 if lo_k is None else p_over(lo_k)
+    b = 0.0 if hi_k is None else p_over(hi_k)
+    if a is None or b is None:
         return None
-    yes = h['side'] == 'yes'
-    n, pa = int(h['shares']), h['paid_c'] / 100
-    paid_fee = float(h.get('fee') or 0)
-    fair = r0['used_over'] if yes else r0['used_under']
-    basis = n * pa + paid_fee
-    out = dict(fair_c=round(100 * fair, 1), sell=None, pair=None, layoff=None, free=None, hold_ev=round(n * fair - basis, 2))
-    q0 = quotes.get(h['strike']) or {}
-    bid = q0.get('yb') if yes else q0.get('nb')
-    if bid:
-        pb = bid / 100
-        net = n * pb - order_fee(n, pb, 'taker') - basis
-        out['sell'] = dict(bid_c=bid, pnl=round(net, 2), hold=out['hold_ev'],
-                           verdict='SELL' if pb - fee_per(pb, 'taker') >= fair + margin - 1e-9 else 'HOLD')
-    # the other side's legs, with their single edge at the asks (the model-market blend against the ask, fees in)
-    lo, hi = price_band
-    cands = []
+    return max(0.0, a - b)
+
+
+def no_lose_hedge(legs, rows, quotes, order='taker', price_band=(15, 85)):
+    """The cheapest leg that leaves no final losing once added to what you hold on this total: every strike on
+    the ladder, either side, at its ask. It covers the net downside of the whole position, not one leg: the old
+    FREE line sized the hedge to the held over's whole win and ignored the under held next to it (Patriots at
+    Bears, Oct 22: it put the only loss on the likeliest final). None when nothing loses now or no leg does it.
+    Returns dict(kind, strike, ask_c, shares, cost, edge_c, regions) with the dollars on each final after it."""
+    base = pnl_regions(legs)
+    if not base or min(r['pnl'] for r in base) >= -1e-9:
+        return None
+    by_line = {r['line']: r for r in rows}
+    lo_c, hi_c = price_band
+    mine = {float(h['strike']) for h in legs}
+    best = None
     for k, q in quotes.items():
-        if k == h['strike'] or k not in by_line:
+        r = by_line.get(k)
+        if not r or float(k) in mine:
+            continue   # the other side of a strike you hold is a partial sell; the sell verdict covers that
+        for side, ask in (('yes', q.get('y')), ('no', q.get('n'))):
+            if ask is None or not lo_c <= ask <= hi_c:
+                continue
+            p = ask / 100
+            fp = fee_per(p, order)
+            regs = pnl_regions(legs, [k])
+            m_min, m_max = 1, 10**7
+            feasible = True
+            for g in regs:
+                probe = (g['hi'] - 1) if g['lo'] is None else g['lo']
+                wins = probe > k if side == 'yes' else probe < k
+                if wins:
+                    if g['pnl'] < 0:
+                        m_min = max(m_min, math.ceil(-g['pnl'] / (1 - p - fp) - 1e-9))
+                elif g['pnl'] < 0:
+                    feasible = False
+                    break
+                else:
+                    m_max = min(m_max, int(g['pnl'] / (p + fp) + 1e-9))
+            if not feasible or m_min > m_max:
+                continue
+            new = dict(side=side, strike=k, shares=m_min, paid_c=ask, fee=0.0)
+            def table(m):
+                new['shares'], new['fee'] = m, order_fee(m, p, order)
+                return pnl_regions(legs + [new])
+            m = m_min
+            while m <= m_max and min(g['pnl'] for g in table(m)) < -1e-9:
+                m += 1   # fee rounding can leave a region a few cents short
+            if m > m_max:
+                continue
+            t = table(m)
+            cost = round(m * p + order_fee(m, p, order), 2)
+            fair_k = r.get('used_over', r['p_over']) if side == 'yes' else r.get('used_under', r['p_under'])
+            cand = dict(kind='over' if side == 'yes' else 'under', strike=k, ask_c=ask, shares=m, cost=cost,
+                        edge_c=round(100 * (fair_k - p - fp), 1), regions=t, floor=round(min(g['pnl'] for g in t), 2))
+            if best is None or (cand['cost'], -cand['edge_c']) < (best['cost'], -best['edge_c']):
+                best = cand
+    return best
+
+
+def held_position(rows, quotes, legs, margin=0.03, order='taker', price_band=(15, 85)):
+    """Everything you hold on one total, read as one position off the ladder the push used.
+    rows: price_lines() rows after suggest() (used_over is the model-market blend). quotes: feeds.total_quotes().
+    legs: dicts with side, strike, shares, paid_c, fee, ticker. Returns None when no leg sits on a priced strike.
+      legs     each leg with fair_c (what it is worth now), hold_ev, and sell: the bid, what closing nets after
+               the taker fee, and the verdict (SELL when the bid net of fee pays at least the margin over fair).
+      regions  dollars on every final, with the chance of each from the blended ladder.
+      miss_loss  the most the position loses on any final; window when the legs are one middle (an over on a
+               lower strike and an under on a higher one), the finals that pay both.
+      hedge    the cheapest leg that leaves no final losing, sized to the net downside (no_lose_hedge).
+    Nothing here places an order."""
+    by_line = {r['line']: r for r in rows}
+    kept = []
+    for h in legs:
+        r0 = by_line.get(h['strike'])
+        if not r0:
             continue
-        ask = q.get('n') if yes else q.get('y')
-        if ask is None or not lo <= ask <= hi:
-            continue
-        r = by_line[k]
-        p = ask / 100
-        eff = p + fee_per(p, order)
-        fair_k = r['used_under'] if yes else r['used_over']
-        cands.append(dict(strike=k, ask_c=ask, edge=fair_k - eff, p=p, beyond=(k > h['strike']) if yes else (k < h['strike'])))
-    def table(c, m):
-        """Dollars on each final once m shares of the other side are bought at c['ask_c']: your leg alone, the
-        other alone, both (a completion) or neither (a lay-off's hole)."""
-        p = c['p']
-        fee_b = order_fee(m, p, order)
-        new_cost = m * p + fee_b
-        mine = n - basis                      # your leg pays
-        other = m - new_cost                  # the other leg pays
-        return dict(shares=m, cost=round(new_cost, 2), mine_alone=round(mine - new_cost, 2), other_alone=round(other - basis, 2),
-                    both=round(mine + other, 2), neither=round(-basis - new_cost, 2))
-    def window(c):
-        a, b = sorted([h['strike'], c['strike']])
-        return a + 0.5, b - 0.5
-    best_pair = max((c for c in cands if c['beyond'] and c['edge'] >= margin - 1e-9), key=lambda c: c['edge'], default=None)
-    if best_pair:
-        t = table(best_pair, n)
-        w = window(best_pair)
-        out['pair'] = dict(kind='under' if yes else 'over', strike=best_pair['strike'], ask_c=best_pair['ask_c'], edge_c=round(100 * best_pair['edge'], 1),
-                           lo=w[0], hi=w[1], shares=n, cost=t['cost'], both=t['both'], mine_alone=t['mine_alone'], other_alone=t['other_alone'])
-    best_lay = max((c for c in cands if not c['beyond'] and c['edge'] >= margin - 1e-9), key=lambda c: c['edge'], default=None)
-    if best_lay:
-        t = table(best_lay, n)
-        w = window(best_lay)
-        out['layoff'] = dict(kind='under' if yes else 'over', strike=best_lay['strike'], ask_c=best_lay['ask_c'], edge_c=round(100 * best_lay['edge'], 1),
-                             lo=w[0], hi=w[1], shares=n, cost=t['cost'], mine_alone=t['mine_alone'], other_alone=t['other_alone'], neither=t['neither'])
-    # a free completion: the most shares of the other side your leg's win pays for, where the other side alone
-    # also nets zero or better; the closest strike beyond yours whose ask allows it
-    free = None
-    for c in sorted((c for c in cands if c['beyond']), key=lambda c: abs(c['strike'] - h['strike'])):
-        p = c['p']
-        win = n - basis
-        m = int(win / (p + fee_per(p, order)) + 1e-9)
-        while m > 0 and table(c, m)['mine_alone'] < -1e-9:
-            m -= 1
-        if m >= 1 and table(c, m)['other_alone'] >= -1e-9:
-            t = table(c, m)
-            w = window(c)
-            free = dict(kind='under' if yes else 'over', strike=c['strike'], ask_c=c['ask_c'], edge_c=round(100 * c['edge'], 1),
-                        lo=w[0], hi=w[1], shares=m, cost=t['cost'], both=t['both'], mine_alone=t['mine_alone'], other_alone=t['other_alone'])
-            break
-    out['free'] = free
+        yes = h['side'] == 'yes'
+        n = int(h['shares'])
+        fair = r0['used_over'] if yes else r0['used_under']
+        basis = leg_basis(h)
+        leg = dict(ticker=h.get('ticker'), side=h['side'], strike=h['strike'], shares=n, paid_c=h['paid_c'], fee=h.get('fee'),
+                   fair_c=round(100 * fair, 1), hold_ev=round(n * fair - basis, 2), sell=None)
+        q0 = quotes.get(h['strike']) or {}
+        bid = q0.get('yb') if yes else q0.get('nb')
+        if bid:
+            pb = bid / 100
+            leg['sell'] = dict(bid_c=bid, pnl=round(n * pb - order_fee(n, pb, 'taker') - basis, 2), hold=leg['hold_ev'],
+                               verdict='SELL' if pb - fee_per(pb, 'taker') >= fair + margin - 1e-9 else 'HOLD')
+        kept.append(leg)
+    if not kept:
+        return None
+    regs = pnl_regions(kept)
+    for g in regs:
+        g['p'] = region_prob(rows, g['lo'], g['hi'])
+    overs = [h for h in kept if h['side'] == 'yes']
+    unders = [h for h in kept if h['side'] == 'no']
+    window = None
+    if len(overs) == 1 and len(unders) == 1 and overs[0]['strike'] < unders[0]['strike']:
+        window = (overs[0]['strike'] + 0.5, unders[0]['strike'] - 0.5)
+    return dict(legs=kept, regions=regs, miss_loss=held_miss_loss(kept), window=window,
+                no_lose=min(g['pnl'] for g in regs) >= -1e-9,
+                hedge=no_lose_hedge(kept, rows, quotes, order, price_band))
+
+
+def finals_text(regions):
+    """A region list as words: '50 or less -$93 (17%), 51 to 57 +$186 (25%), 58 or more +$46'."""
+    parts = []
+    for g in regions:
+        if g['lo'] is None:
+            span = f"{g['hi']:.0f} or less"
+        elif g['hi'] is None:
+            span = f"{g['lo']:.0f} or more"
+        elif g['lo'] == g['hi']:
+            span = f"{g['lo']:.0f}"
+        else:
+            span = f"{g['lo']:.0f} to {g['hi']:.0f}"
+        p = g.get('p')
+        parts.append(f"{span} {signed(g['pnl'])}" + (f" ({100 * p:.0f}%)" if p is not None else ''))
+    return ', '.join(parts)
+
+
+def held_block(pos):
+    """The YOU HOLD lines of a push, one position per total: a line a leg with one verdict and one number, the
+    finals together when there is more than one leg, and the no-lose hedge when one exists."""
+    out = []
+    for h in pos['legs']:
+        side = 'Over' if h['side'] == 'yes' else 'Under'
+        s = h.get('sell')
+        if s and s['verdict'] == 'SELL':
+            verdict = f"Worth {h['fair_c']:.0f}c. Bid {s['bid_c']}c: SELL for {signed(s['pnl'])}."
+        else:
+            verdict = f"Worth {h['fair_c']:.0f}c. Hold."
+        out.append(f"YOU HOLD {side} {h['strike']:.1f}, {h['shares']} sh at {h['paid_c']:.0f}c. {verdict}")
+    if len(pos['legs']) > 1:
+        lead = f"Together it's a {pos['window'][0]:.0f} to {pos['window'][1]:.0f} middle: " if pos.get('window') else 'Together: '
+        out.append(lead + finals_text(pos['regions']) + '.' + (' No final loses.' if pos['no_lose'] else ''))
+    hd = pos.get('hedge')
+    if hd:
+        side = 'Over' if hd['kind'] == 'over' else 'Under'
+        e = hd['edge_c']
+        tail = f" The leg is {abs(e):.1f}c {'under' if e < 0 else 'over'} fair." if abs(e) >= 0.05 else ''
+        out.append(f"NO-LOSE HEDGE: buy {side} {hd['strike']:.1f} at {hd['ask_c']}c, {hd['shares']} sh (${hd['cost']:.0f}). "
+                   f"Then {finals_text(hd['regions'])}.{tail}")
     return out
 
 
 def signed(x):
     """Dollars with a sign for a table of finals: +$20, -$5, $0."""
     return '$0' if abs(x) < 0.5 else f"{'+' if x > 0 else '-'}${abs(x):.0f}"
-
-
-def held_lines(h, o):
-    """The YOU HOLD block of a push for one held leg, from held_options()."""
-    side = 'Over' if h['side'] == 'yes' else 'Under'
-    other = 'UNDER' if h['side'] == 'yes' else 'OVER'
-    out = [f"YOU HOLD {side} {h['strike']:.1f}, {int(h['shares'])} sh at {h['paid_c']:.0f}c. Fair now {o['fair_c']:.0f}c."]
-    s = o.get('sell')
-    if s:
-        out.append(f"Bid {s['bid_c']}c: {s['verdict']}. Sell now {signed(s['pnl'])}; holding is worth {signed(s['hold'])} at fair."
-                   if s['verdict'] == 'SELL' else f"Bid {s['bid_c']}c: HOLD. Sell now {signed(s['pnl'])}; holding is worth {signed(s['hold'])} at fair.")
-    p = o.get('pair')
-    if p:
-        out.append(f"PAIR IT: Buy {other} {p['strike']:.1f} at {p['ask_c']}c, {p['shares']} sh (${p['cost']:.0f}). Final {p['lo']:.0f} to {p['hi']:.0f} pays both ({signed(p['both'])}); "
-                   f"{side.lower()} alone {signed(p['mine_alone'])}; {other.lower()} alone {signed(p['other_alone'])}. Edge +{p['edge_c']:.1f}c a share.")
-    f = o.get('free')
-    if f and not (p and p['strike'] == f['strike'] and p['shares'] <= f['shares']):
-        out.append(f"FREE: Buy {other} {f['strike']:.1f} at {f['ask_c']}c, {f['shares']} sh (${f['cost']:.0f}): no final loses. Final {f['lo']:.0f} to {f['hi']:.0f} pays {signed(f['both'])}; "
-                   f"{side.lower()} alone {signed(f['mine_alone'])}; {other.lower()} alone {signed(f['other_alone'])}. That leg is {f['edge_c']:+.1f}c of fair.")
-    l = o.get('layoff')
-    if l:
-        mine_when = f"{h['strike'] + 0.5:.0f} or more" if h['side'] == 'yes' else f"{h['strike'] - 0.5:.0f} or less"
-        other_when = f"{l['strike'] - 0.5:.0f} or less" if h['side'] == 'yes' else f"{l['strike'] + 0.5:.0f} or more"
-        out.append(f"LAY OFF: Buy {other} {l['strike']:.1f} at {l['ask_c']}c, {l['shares']} sh (${l['cost']:.0f}). Final {mine_when} pays your {side.lower()} ({signed(l['mine_alone'])}); "
-                   f"{other_when} pays the {other.lower()} ({signed(l['other_alone'])}); {l['lo']:.0f} to {l['hi']:.0f} loses both ({signed(l['neither'])}). Edge +{l['edge_c']:.1f}c a share.")
-    if not (s or p or f or l):
-        out.append('No bid, and nothing on the other side clears. Hold.')
-    return out
 
 
 def american(c):
@@ -609,8 +693,8 @@ def money(x):
 
 
 def miss_text(x):
-    """The miss line of a middle: 'loses $5', or 'even (free roll)' / 'wins $3 (free roll)' when no final loses."""
-    return money(x) + ('' if x < 0 else ' (free roll)')
+    """The miss of a middle, in dollars: '-$5', or '+$2 (free roll)' when no final loses."""
+    return signed(x) + ('' if x < 0 else ' (free roll)')
 
 
 def chosen(sug, top=3):
@@ -647,22 +731,44 @@ def cancel_by(model):
     return 'by the first timeout of the 4th' if getattr(model, 'stage', None) == 'q3' else 'by the 4th'
 
 
-def rest_block(model, rows, sizing, mode='fg', head='POSSIBLE MIDDLE (post as limit orders):'):
-    """The resting-middle lines of a push: one middle for football, a tight one and a wide one for a sport that
-    sets near_pts wide enough to hold both. (lines, plan)"""
+def mid_lines(a_line, a_c, b_line, b_c, pairs, best, worst, p_mid, tail=''):
+    """A middle as three lines: both legs with shares and dollars, then the finals in dollars."""
+    return [f"Over {a_line:.1f} at {a_c}c, {pairs} sh (${pairs * a_c / 100:.0f})",
+            f"Under {b_line:.1f} at {b_c}c, {pairs} sh (${pairs * b_c / 100:.0f})",
+            f"{a_line + 0.5:.0f} to {b_line - 0.5:.0f} pays +${best:.0f} ({100 * p_mid:.0f}%). Any other final {miss_text(worst)}.{tail}"]
+
+
+def rest_block(model, rows, sizing, mode='fg', head='REST A MIDDLE:', both=False):
+    """The resting-middle lines of a push: the best resting middle for football, a tight one and a wide one
+    (both=True, the NBA) for a sport that sets near_pts wide enough to hold both. When what you already hold on
+    the total has used up the middle loss cap (sizing['held_miss'] against sizing['mid_loss_cap']), one line
+    says so instead. (lines, plan)"""
     rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0),
                    mid_loss=sizing.get('mid_loss'), near_pts=sizing.get('near_pts', 3.5))
     out = []
-    for i, m in enumerate(rp.get('middles') or []):
+    mids = (rp.get('middles') or []) if both else [m for m in [rp.get('middle')] if m]
+    for i, m in enumerate(mids):
         a, b = m['a'], m['b']
-        label = head if i == 0 else 'WIDER MIDDLE (place this OR the one above, not both):'
-        out += [label,
-                f"Buy OVER {a['line']:.1f} at {a['over_rest']}c ({m['pairs']} shares for ${m['pairs'] * a['over_rest'] / 100:.0f})",
-                f"Buy UNDER {b['line']:.1f} at {b['under_rest']}c ({m['pairs']} shares for ${m['pairs'] * b['under_rest'] / 100:.0f})",
-                f"Both filled: final {a['line'] + 0.5:.0f} to {b['line'] - 0.5:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {miss_text(m['worst'])}. One side alone is a fair single."]
-        if i == 0 and len(rp['middles']) > 1:
+        out.append(head if i == 0 else 'WIDER MIDDLE (this OR the one above, not both):')
+        out += mid_lines(a['line'], a['over_rest'], b['line'], b['under_rest'], m['pairs'], m['best'], m['worst'], m['p_mid'], ' One leg alone is a fair single.')
+        if i == 0 and len(mids) > 1:
             out.append('')
+    if not out:
+        note = cap_note(sizing)
+        if note:
+            out.append(note)
     return out, rp
+
+
+def cap_note(sizing):
+    """One line when the middle loss cap is already spent by what you hold on this total, else None."""
+    cap, held = sizing.get('mid_loss_cap'), sizing.get('held_miss') or 0
+    if cap is None or not held:
+        return None
+    room = max(0.0, cap - held)
+    if room >= 1:
+        return None
+    return f"Nothing new to post: what you hold already risks ${held:.0f} on a miss, the ${cap:.0f} middle cap."
 
 
 def closest_middle_line(sug, margin=0.03):
@@ -676,28 +782,28 @@ def closest_middle_line(sug, margin=0.03):
             f"= ${best['c']:.2f} a pair, hits {100*best['p_mid']:.0f}%, edge {100*best['ev']:+.1f}c (needs +{100*margin:.0f}).")
 
 
-def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, focus=None):
-    """The push text Nick asked for: PLAY when something clears, UPDATE otherwise.
-    Returns (kind, title, body): title is 'PLAY: Away 21, Home 45', body is the order lines.
-    Names come from inp['away_name'] / inp['home_name'] when given.
-    focus='middles' (the NBA): the middle leads the PLAY, singles follow, and every push ends with the resting
+def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, focus=None, held=None):
+    """The push text: PLAY when something clears, UPDATE otherwise. Returns (kind, title, body).
+    The order never changes (Nick, Oct 22): the score and fair against the book, then what to do (singles,
+    the middle, the reverse), then what you hold (held: the YOU HOLD lines from held_block), then the resting
+    middle. Names come from inp['away_name'] / inp['home_name'] when given.
+    focus='middles' (the NBA): the middle leads the PLAY, singles follow, every push ends with the resting
     middles (a tight one and a wide one) and, on an UPDATE, the closest middle at the asks."""
     away = inp.get('away_name') or inp.get('away', 'Away')
     home = inp.get('home_name') or inp.get('home', 'Home')
     score = f"{away} {inp['h1a']}, {home} {inp['h1h']}"
     fl = fair_line(model, mode)
-    ctx = f"Fair total {fl:.1f}." + (f" Sharp 2H {inp['sharp']:.1f}." if inp.get('sharp') is not None else '') + f" {model.spot().capitalize()}."
+    # the book's full-game number: the points so far plus the sharp second-half line, when one was read
+    book = None if inp.get('sharp') is None else (0 if mode == '2h' else inp['h1a'] + inp['h1h']) + inp['sharp']
+    ctx = f"Fair {fl:.1f}." + (f" Book {book:.1f}." if book is not None else '')
     singles, mid = chosen(sug, top)
     rev = chosen_rev(sug)
+    held = [l for l in (held or []) if l]
+    out = [ctx, '']
     if focus == 'middles':
-        out = [ctx, '']
         if mid:
             m = mid
-            a, b = m['a'], m['b']
-            out += ['MIDDLE (clears the edge at the asks):',
-                    f"Buy OVER {a['line']:.1f} at {a['price_c']}c ({m['pairs']} shares for ${m['pairs'] * a['price_c'] / 100:.0f})",
-                    f"Buy UNDER {b['line']:.1f} at {b['price_c']}c ({m['pairs']} shares for ${m['pairs'] * b['price_c'] / 100:.0f})",
-                    f"Final {m['lo']:.0f} to {m['hi']:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {miss_text(m['worst'])}.", '']
+            out += ['MIDDLE (clears at the asks):'] + mid_lines(m['a']['line'], m['a']['price_c'], m['b']['line'], m['b']['price_c'], m['pairs'], m['best'], m['worst'], m['p_mid']) + ['']
         if singles:
             out.append('SINGLE' + ('S' if len(singles) > 1 else '') + (' (instead of the middle, not on top of it):' if mid else ':'))
             for s in singles:
@@ -714,7 +820,9 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
             if cl:
                 out.append(cl)
             out.append('')
-        rest, rp = rest_block(model, rows, sizing, mode, head=f'RESTING MIDDLE (post as limit orders, cancel what has not filled {cancel_by(model)}):')
+        if held:
+            out += held + ['']
+        rest, rp = rest_block(model, rows, sizing, mode, head=f'REST A MIDDLE (cancel what has not filled {cancel_by(model)}):', both=True)
         if rest:
             out += rest
         elif not (mid or singles or rev):
@@ -723,7 +831,6 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
         kind = 'PLAY' if (mid or singles or rev) else 'UPDATE'
         return kind, f'{kind}: {score}', '\n'.join(out).rstrip()
     if mid or singles or rev:
-        out = [ctx, '']
         if singles:
             for s in singles:
                 side = 'OVER' if s['kind'] == 'over' else 'UNDER'
@@ -733,25 +840,18 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
             out.append('')
         if mid:
             m = mid
-            a, b = m['a'], m['b']
-            out += ['MIDDLE' + (' (instead of a single, not on top of one):' if singles else ':'),
-                    f"Buy OVER {a['line']:.1f} at {a['price_c']}c ({m['pairs']} shares for ${m['pairs'] * a['price_c'] / 100:.0f})",
-                    f"Buy UNDER {b['line']:.1f} at {b['price_c']}c ({m['pairs']} shares for ${m['pairs'] * b['price_c'] / 100:.0f})",
-                    f"Final {m['lo']:.0f} to {m['hi']:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {miss_text(m['worst'])}."]
+            out += ['MIDDLE' + (' (instead of a single, not on top of one):' if singles else ':')] + \
+                   mid_lines(m['a']['line'], m['a']['price_c'], m['b']['line'], m['b']['price_c'], m['pairs'], m['best'], m['worst'], m['p_mid']) + ['']
         if rev:
-            if mid:
-                out.append('')
-            out += rev_lines(rev, not (mid or singles))
+            out += rev_lines(rev, not (mid or singles)) + ['']
+        if held:
+            out += held + ['']
         return 'PLAY', f'PLAY: {score}', '\n'.join(out).rstrip()
-    out = [ctx, '']
-    rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0), mid_loss=sizing.get('mid_loss'), near_pts=sizing.get('near_pts', 3.5))
-    m = rp['middle']
-    if m:
-        a, b = m['a'], m['b']
-        out += ['POSSIBLE MIDDLE (post as limit orders):',
-                f"Buy OVER {a['line']:.1f} at {a['over_rest']}c ({m['pairs']} shares for ${m['pairs'] * a['over_rest'] / 100:.0f})",
-                f"Buy UNDER {b['line']:.1f} at {b['under_rest']}c ({m['pairs']} shares for ${m['pairs'] * b['under_rest'] / 100:.0f})",
-                f"Both filled: final {a['line'] + 0.5:.0f} to {b['line'] - 0.5:.0f} wins both (+${m['best']:.0f}, hits {100*m['p_mid']:.0f}%); any other final {miss_text(m['worst'])}. One side alone is a fair single."]
+    if held:
+        out += held + ['']
+    rest, rp = rest_block(model, rows, sizing, mode)
+    if rest:
+        out += rest
     else:
         near = sorted(rows, key=lambda r: abs(r['line'] - fl))[:2]
         out.append('No middle to post. Fair prices: ' + '; '.join(f"OVER {r['line']:.1f} {r['over_rest']}c / UNDER {r['line']:.1f} {r['under_rest']}c" for r in near) + '.')
