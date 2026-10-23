@@ -43,12 +43,23 @@ export default function Record() {
   const [sport, setSport] = useState('all');
   const [only, setOnly] = useState('plays');
   const [open, setOpen] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [control, setControl] = useState(null);
+  const [flipping, setFlipping] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from('results').select('*').order('settled_at', { ascending: false }).limit(400);
       const list = data || [];
       setRows(list);
+      // the auto orders (trade.py): shadow rows say what would have been posted and whether the ladder reached the
+      // price; live rows carry Kalshi's answer. The control row is the kill switch.
+      const [{ data: os }, { data: cs }] = await Promise.all([
+        supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(2000),
+        supabase.from('control').select('*').eq('id', 'trade'),
+      ]);
+      setOrders(os || []);
+      setControl(cs && cs.length ? cs[0] : null);
       const ids = list.map((r) => r.game_id);
       if (!ids.length) return;
       // your settled Kalshi positions on each game's total market, after fees
@@ -92,6 +103,35 @@ export default function Record() {
   const youCount = inSport.filter(({ r }) => you[r.game_id] !== undefined).length;
   const curve = [...plays].reverse().reduce((acc, { g }) => { acc.push((acc[acc.length - 1] || 0) + Number(g.play.pnl || 0)); return acc; }, []);
 
+  // Auto orders over the sport filter: planned, filled (shadow: the ladder reached the price; live: Kalshi filled),
+  // at the break vs in play, both legs of a middle, P&L of the graded fills.
+  const auto = useMemo(() => {
+    const os = orders.filter((o) => sport === 'all' || o.sport === sport);
+    const filled = os.filter((o) => ['touched', 'filled', 'partial'].includes(o.status));
+    const atBreak = filled.filter((o) => ['half', 'early3', 'q3end', 'early4'].includes(o.touch_phase || 'half'));
+    const graded = filled.filter((o) => o.pnl !== null && o.pnl !== undefined);
+    const pairs = {};
+    for (const o of os) if (o.pair) (pairs[`${o.game_id}|${o.stage}|${o.pair}|${o.reason}`] ||= []).push(o);
+    const both = Object.values(pairs).filter((v) => v.filter((o) => ['touched', 'filled', 'partial'].includes(o.status)).length >= 2).length;
+    const rests = os.filter((o) => o.kind === 'rest'), takes = os.filter((o) => o.kind === 'take');
+    const games = new Set(os.map((o) => o.game_id)).size;
+    const byGame = {};
+    for (const o of orders) (byGame[o.game_id] ||= []).push(o);
+    return { n: os.length, games, rests: rests.length, takes: takes.length, filled: filled.length, atBreak: atBreak.length, inPlay: filled.length - atBreak.length,
+             pairs: Object.keys(pairs).length, both, graded: graded.length, pnl: graded.reduce((s, o) => s + Number(o.pnl), 0), cost: graded.reduce((s, o) => s + Number(o.cost || 0), 0),
+             mode: os.length ? os[0].mode : null, byGame };
+  }, [orders, sport]);
+
+  async function flipKill() {
+    if (!control || flipping) return;
+    const next = !control.kill;
+    if (next && !window.confirm('Turn the kill switch ON? Every resting auto order is cancelled and nothing is sent until it is turned off.')) return;
+    setFlipping(true);
+    const { error } = await supabase.from('control').update({ kill: next, updated_at: new Date().toISOString(), note: next ? 'killed from the app' : 'cleared from the app' }).eq('id', 'trade');
+    setFlipping(false);
+    if (!error) setControl({ ...control, kill: next });
+  }
+
   if (rows === null) return <main />;
   let lastDate = null;
   return (
@@ -133,6 +173,28 @@ export default function Record() {
             </div>
           )}
         </>
+      )}
+
+      {(auto.n > 0 || control) && (
+        <div className="flick auto">
+          <h3>Auto orders{auto.mode ? ` (${auto.mode})` : ''}</h3>
+          <p className="sub">
+            {auto.mode === 'live' ? 'Orders the worker sent to Kalshi.' : 'What the worker would have posted at each break, nothing sent. A resting order counts as filled when the ladder reached its price.'}
+            {' '}{auto.n} orders on {auto.games} games: {auto.rests} resting, {auto.takes} at the ask.
+          </p>
+          <dl className="mstats">
+            <div><dt>Filled</dt><dd>{auto.filled} of {auto.n}</dd></div>
+            <div><dt>At the break / in play</dt><dd>{auto.atBreak} / {auto.inPlay}</dd></div>
+            <div><dt>Middles both legs</dt><dd>{auto.both} of {auto.pairs}</dd></div>
+          </dl>
+          {auto.graded > 0 && <p className="sub">Graded fills: {auto.graded}, <b className={auto.pnl >= 0 ? 'pos' : 'neg'}>{signed(auto.pnl)}</b> on {money(auto.cost)}.</p>}
+          {control && (
+            <p className="sub kill">
+              Kill switch: <b className={control.kill ? 'neg' : 'pos'}>{control.kill ? 'ON, nothing is sent' : 'off'}</b>.{' '}
+              <button className="killbtn" onClick={flipKill} disabled={flipping}>{control.kill ? 'Turn off' : 'Turn on'}</button>
+            </p>
+          )}
+        </div>
       )}
 
       <div className="seg" role="tablist" aria-label="Which games">
@@ -199,6 +261,18 @@ export default function Record() {
                           <p key={`f${i}`} className={`alt flickline ${f.win ? 'win' : 'loss'}`}>
                             <b>{f.win ? (f.kind === 'single' ? 'would have won' : 'would have hit') : (f.kind === 'single' ? 'would have lost' : 'would have missed')}</b>{' '}
                             {f.kind === 'single' ? `${f.side === 'over' ? 'Over' : 'Under'} ${f.line} at ${f.price_c}c, ${f.contracts} shares` : f.kind === 'mid' ? `Middle O${f.a_line} at ${f.a_price}c + U${f.b_line} at ${f.b_price}c, ${f.pairs} pairs` : `Reverse U${f.a_line} at ${f.a_price}c + O${f.b_line} at ${f.b_price}c, ${f.pairs} pairs`}: {signed(f.pnl)}. Clear {f.secs >= 60 ? `${Math.round(f.secs / 60)} min` : f.n > 1 ? `${f.secs}s` : 'one look'}{f.n > 1 ? ` (${f.n} looks)` : ''}, best edge {f.best_edge_c}c, first {etTime(f.first)}.
+                          </p>
+                        ))}
+                      </>
+                    )}
+                    {(auto.byGame[r.game_id] || []).length > 0 && (
+                      <>
+                        <p className="alt"><b className="chalk">Auto orders</b> ({auto.byGame[r.game_id][0].mode}):</p>
+                        {auto.byGame[r.game_id].map((o) => (
+                          <p key={o.client_order_id} className={`alt flickline ${['touched', 'filled', 'partial'].includes(o.status) ? (o.pnl === null || o.pnl === undefined ? '' : Number(o.pnl) >= 0 ? 'win' : 'loss') : ''}`}>
+                            <b>{o.status}</b> {o.side === 'yes' ? 'Over' : 'Under'} {Number(o.strike)} at {o.price_c}c, {o.count} sh ({o.kind === 'rest' ? 'resting' : 'at the ask'}, {o.reason}{o.stage === 'q3' ? ', end of 3rd' : ''})
+                            {o.touched_at ? `, reached ${o.touch_s !== null && o.touch_s !== undefined ? (o.touch_s < 60 ? `${o.touch_s}s` : `${Math.round(o.touch_s / 60)} min`) : ''} after the first look${['half', 'early3', 'q3end', 'early4'].includes(o.touch_phase) ? '' : ' (in play)'}` : ''}
+                            {o.pnl !== null && o.pnl !== undefined ? `: ${signed(Number(o.pnl))}` : ''}
                           </p>
                         ))}
                       </>
