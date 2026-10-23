@@ -13,6 +13,7 @@
   --amber-ink: #2A1C00;
   --win: #39C0A2;
   --loss: #EC5A52;
+  --loss-text: #F07069;   /* the loss red, lifted to read as small text on field (5.0:1; --loss is 4.3:1). Green reads as is (6.4:1) */
   --cond: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --body: 'Barlow', system-ui, sans-serif;
   --tab-h: 56px;
@@ -168,11 +169,15 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .alert.won { border-left: 3px solid var(--win); }
 .alert.lost { border-left: 3px solid var(--loss); }
 .gradelist { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); display: grid; gap: 6px; font-size: 14px; color: var(--chalk); }
-.gradelist li b { font: 700 12px/1.5 var(--cond); letter-spacing: 0.5px; padding: 0 6px; border-radius: 5px; background: var(--field-2); color: var(--dim); margin-right: 4px; text-transform: uppercase; }
+.gradelist li b { font: 700 12px/1.5 var(--cond); letter-spacing: 0.5px; padding: 0 6px; border-radius: 5px; border: 1px solid transparent; background: var(--field-2); color: var(--dim); margin-right: 4px; text-transform: uppercase; }
 .gradelist li.win b { background: var(--win); color: var(--sky); }
 .gradelist li.loss b { background: var(--loss); color: var(--chalk); }
 .gradelist li.alt { color: var(--dim); }
-.gradelist li.alt b { background: transparent; border: 1px solid var(--line); }
+/* A backup's grade is the same verdict outlined instead of filled: easy to read, and still quieter than the play's
+   filled chip. Its text color is set here, not inherited from the filled chip (that left navy text on the navy card). */
+.gradelist li.alt b { background: transparent; border-color: var(--line); color: var(--dim); }
+.gradelist li.alt.win b { border-color: var(--win); color: var(--win); }
+.gradelist li.alt.loss b { border-color: var(--loss); color: var(--loss-text); }
 .gradelist li.note { font-size: 12px; }
 .fills li { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; padding: 10px 0; border-top: 1px solid var(--line); }
 .fills .tk { font: 600 15px var(--cond); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -312,7 +317,7 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .flick .sub { margin: 0 0 8px; }
 .flickline b { font: 700 11px/1.5 var(--cond); letter-spacing: 0.5px; padding: 0 5px; border-radius: 4px; text-transform: uppercase; margin-right: 4px; border: 1px solid var(--line); }
 .flickline.win b { color: var(--win); border-color: var(--win); }
-.flickline.loss b { color: var(--loss); border-color: var(--loss); }
+.flickline.loss b { color: var(--loss-text); border-color: var(--loss); }
 .recmore .chalk { color: var(--chalk); font-family: var(--cond); font-size: 15px; }
 
 /* Live pregame Kalshi market on Today */
