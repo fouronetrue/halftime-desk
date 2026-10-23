@@ -185,8 +185,8 @@ assert len(h2_calls) == 2, 'and never a third'
 m = engine.HalfModel('nfl', 46.0, -3.0, 14, 10, center=c, center_w=w)
 m0 = engine.HalfModel('nfl', 46.0, -3.0, 14, 10, center=c, center_w=0.0)
 assert abs(m0.median - 24.5) < 1e-4 and abs(m.mu - (0.5 * m.mu_model + 0.5 * m0.mu)) < 1e-9     # the line is the median, the blend halfway
-assert 'Sharp 2H 24.5.' in engine.describe(m, dict(away='GB', home='PIT', h1a=10, h1h=14, sharp=24.5), engine.price_lines(m, [44.5, 47.5], 'fg', 0.03), dict(singles=[], mids=[], revs=[]))
-assert 'Sharp 2H' not in engine.describe(m, dict(away='GB', home='PIT', h1a=10, h1h=14), engine.price_lines(m, [44.5, 47.5], 'fg', 0.03), dict(singles=[], mids=[], revs=[]))
+assert 'Book 2H 24.5.' in engine.describe(m, dict(away='GB', home='PIT', h1a=10, h1h=14, sharp=24.5), engine.price_lines(m, [44.5, 47.5], 'fg', 0.03), dict(singles=[], mids=[], revs=[]))
+assert 'Book 2H' not in engine.describe(m, dict(away='GB', home='PIT', h1a=10, h1h=14), engine.price_lines(m, [44.5, 47.5], 'fg', 0.03), dict(singles=[], mids=[], revs=[]))
 # the event id found at the half when the pregame line came from ESPN
 rec3 = dict(pre=dict(total=46.0, home_spread=-3.0, source='espn'))
 d2._odds_rows['nfl'] = rows

@@ -21,4 +21,5 @@ jobs:
       - run: python tests/flickers.py
       - run: python tests/football.py
       - run: python tests/odds.py
+      - run: python tests/push.py
       - run: cp state.json /tmp/state.bak && python watch.py --fixtures tests/fixtures && cp /tmp/state.bak state.json

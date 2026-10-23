@@ -5,11 +5,12 @@
 2. order_sheet names it in a PLAY after the singles and the middle ("instead of, not on top"), leads with it
    when it is all that clears, and the sheet's lead is 'rev' only then; grade_sheet pays one leg outside the
    hole and loses the pair inside it.
-3. held_options prices a total you own off the same ladder: SELL when the bid net of fee pays the margin over
-   fair, HOLD otherwise; PAIR IT when the other side beyond your strike clears as a single; LAY OFF when the
-   other side short of it does; FREE when your leg pays for the completion outright.
-4. The fixtures run with a holding on the halftime game: the push carries the YOU HOLD block after its text,
-   the sheet and the suggestions row keep it; a read with a SELL verdict leads with the block at high priority."""
+3. held_position reads everything you own on a total as one position off the same ladder: SELL when the bid
+   net of fee pays the margin over fair, HOLD otherwise; the finals in dollars; the cheapest no-lose hedge,
+   sized to the net downside of the whole position (tests/push.py has the Oct 22 cases in full).
+4. The fixtures run with a holding on the halftime game: the push carries the YOU HOLD block between the plays
+   and the resting middle, the sheet and the suggestions row keep the position; a read with a SELL verdict
+   goes out at high priority."""
 import sys, os, json, copy, tempfile, shutil
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -52,7 +53,7 @@ assert body.index('Buy UNDER 45.5 for') < body.index('REVERSE MIDDLE'), 'the sin
 assert f"Buy UNDER 45.5 at 28c ({r['pairs']} shares for ${r['pairs'] * 0.28:.0f})" in body and f"Buy OVER 49.5 at 35c ({r['pairs']} shares" in body, body
 assert 'Final 45 or less, or 50 or more, pays one leg' in body and 'final 46 to 49 loses both' in body, body
 kind, head, body = engine.order_sheet(m, inp, rows, s2, dict(SIZING, near_pts=6.5), focus='middles')
-assert kind == 'PLAY' and 'REVERSE MIDDLE' in body and body.index('REVERSE MIDDLE') < body.index('RESTING MIDDLE'), body
+assert kind == 'PLAY' and 'REVERSE MIDDLE' in body and body.index('REVERSE MIDDLE') < body.index('REST A MIDDLE'), body
 only = copy.deepcopy(fair_q)
 only[45.5] = dict(y=75, n=32, yb=71, nb=28)
 only[49.5] = dict(y=35, n=68, yb=31, nb=64)
@@ -74,35 +75,28 @@ g = watch.grade_sheet(dict(sh, lead='single', singles=[dict(kind='under', line=4
 assert g['lead'] == 'single' and g['pnl'] == 67.0 and g['rev_pnl'] == round(rv['pairs'] - rv['cost'], 2) and g['n_plays'] == 2, 'a single leads; the reverse is graded on the side'
 print('push: the reverse follows the single and the middle, leads when alone; grade: one leg outside the hole, the pair inside it')
 
-# 3. held options
+# 3. the held position
 h = dict(side='yes', strike=44.5, shares=100, paid_c=48, fee=1.75)
 s = engine.suggest(rows, fair_q, 'taker', 0.03, 0.5, BANK, RISK, COST, (15, 85), 15)
-o = engine.held_options(rows, fair_q, h)
-assert o['sell']['verdict'] == 'HOLD' and o['sell']['bid_c'] == 58 and o['pair'] is None and o['layoff'] is None, o
-assert abs(o['hold_ev'] - (100 * rows[3]['used_over'] - 49.75)) < 0.01 and abs(o['sell']['pnl'] - (58 - 49.75 - engine.order_fee(100, 0.58))) < 0.01, o
-assert o['free'] and o['free']['strike'] == 45.5 and o['free']['mine_alone'] >= 0 and o['free']['other_alone'] >= 0 and o['free']['edge_c'] < 0, o['free']
+pos = engine.held_position(rows, fair_q, [h])
+leg = pos['legs'][0]
+assert leg['sell']['verdict'] == 'HOLD' and leg['sell']['bid_c'] == 58, leg
+assert abs(leg['hold_ev'] - (100 * rows[3]['used_over'] - 49.75)) < 0.01 and abs(leg['sell']['pnl'] - (58 - 49.75 - engine.order_fee(100, 0.58))) < 0.01, leg
+assert [(g['lo'], g['hi']) for g in pos['regions']] == [(None, 44.0), (45.0, None)] and pos['regions'][0]['pnl'] == -49.75 and pos['regions'][1]['pnl'] == 50.25, pos['regions']
+assert pos['miss_loss'] == 0 and pos['window'] is None and not pos['no_lose'], 'a lone leg loses on one side but is no middle, so it spends none of the middle cap'
+hd = pos['hedge']
+assert hd and hd['kind'] == 'under' and hd['strike'] != 44.5 and hd['floor'] >= 0, hd
+assert min(g['pnl'] for g in hd['regions']) >= 0, 'a no-lose hedge leaves every final at zero or better'
+lines = engine.held_block(pos)
+assert lines[0] == 'YOU HOLD Over 44.5, 100 sh at 48c. Worth 60c. Hold.' and lines[1].startswith('NO-LOSE HEDGE: buy Under') and len(lines) == 2, lines
 moved = copy.deepcopy(fair_q)
 moved[44.5] = dict(fair_q[44.5], yb=68)     # the bid runs past fair
-moved[47.5] = dict(fair_q[47.5], n=44)      # a cheap under beyond: the completion
-moved[42.5] = dict(fair_q[42.5], n=25)      # a cheap under short of it: the lay-off
 engine.suggest(rows, moved, 'taker', 0.03, 0.5, BANK, RISK, COST, (15, 85), 15)
-o = engine.held_options(rows, moved, h)
-assert o['sell']['verdict'] == 'SELL' and o['sell']['pnl'] > o['sell']['hold'], o['sell']
-assert o['pair'] and o['pair']['strike'] == 47.5 and o['pair']['shares'] == 100 and o['pair']['lo'] == 45 and o['pair']['hi'] == 47 and o['pair']['edge_c'] >= 3, o['pair']
-assert o['pair']['both'] > o['pair']['mine_alone'] and o['pair']['both'] > o['pair']['other_alone']
-assert o['layoff'] and o['layoff']['strike'] == 42.5 and o['layoff']['lo'] == 43 and o['layoff']['hi'] == 44 and o['layoff']['neither'] < 0 < o['layoff']['mine_alone'], o['layoff']
-lines = engine.held_lines(h, o)
-assert lines[0] == 'YOU HOLD Over 44.5, 100 sh at 48c. Fair now 60c.' and lines[1].startswith('Bid 68c: SELL.'), lines
-assert any(l.startswith('PAIR IT: Buy UNDER 47.5 at 44c, 100 sh') for l in lines) and any(l.startswith('LAY OFF: Buy UNDER 42.5 at 25c, 100 sh') for l in lines), lines
-assert 'Final 45 or more pays your over' in ''.join(lines) and '42 or less pays the under' in ''.join(lines) and '43 to 44 loses both' in ''.join(lines), lines
-h2 = dict(side='no', strike=49.5, shares=80, paid_c=55, fee=1.4)
-cheap_over = copy.deepcopy(fair_q)
-cheap_over[46.5] = dict(fair_q[46.5], y=40)
-engine.suggest(rows, cheap_over, 'taker', 0.03, 0.5, BANK, RISK, COST, (15, 85), 15)
-o = engine.held_options(rows, cheap_over, h2)
-assert o['pair'] and o['pair']['kind'] == 'over' and o['pair']['strike'] == 46.5 and o['pair']['lo'] == 47 and o['pair']['hi'] == 49, o['pair']
-assert engine.held_options(rows, fair_q, dict(h, strike=60.5)) is None, 'a strike the ladder did not price is skipped'
-print('held: HOLD at a bid under fair, SELL past it; PAIR IT beyond the strike, LAY OFF short of it, FREE when the leg pays for it')
+pos = engine.held_position(rows, moved, [h])
+assert pos['legs'][0]['sell']['verdict'] == 'SELL' and pos['legs'][0]['sell']['pnl'] > pos['legs'][0]['sell']['hold']
+assert engine.held_block(pos)[0] == f"YOU HOLD Over 44.5, 100 sh at 48c. Worth 60c. Bid 68c: SELL for {engine.signed(pos['legs'][0]['sell']['pnl'])}.", engine.held_block(pos)
+assert engine.held_position(rows, fair_q, [dict(h, strike=60.5)]) is None, 'a strike the ladder did not price is skipped'
+print('held: one verdict and one number a leg, HOLD at a bid under fair, SELL past it; a no-lose hedge sized to the downside')
 
 # 4. the fixtures run with a holding
 FIX = os.path.join(ROOT, 'tests', 'fixtures')
@@ -121,11 +115,12 @@ d.holdings = {EV: [dict(ticker=f'{EV}-46', event_ticker=EV, sport='nfl', side='y
 d.run_pass()
 assert len(pushes) == 1 and pushes[0][0].startswith('UPDATE:') and pushes[0][2] == 'default', pushes
 body = pushes[0][1]
-assert 'YOU HOLD Over 45.5, 60 sh at 44c.' in body and body.index('YOU HOLD') > body.index('POSSIBLE MIDDLE') and 'HOLD. Sell now' in body, 'with nothing to do the block follows the read and the priority stays'
+assert 'YOU HOLD Over 45.5, 60 sh at 44c.' in body and body.index('YOU HOLD') < body.index('REST A MIDDLE') and 'Hold.' in body, 'the position sits between the header and the resting middle'
 sh = d.state['games']['401']['sheet']
-assert sh.get('held') and sh['held'][0]['strike'] == 45.5 and sh['held'][0]['options']['sell'], sh.get('held')
+assert sh.get('held') and sh['held']['legs'][0]['strike'] == 45.5 and sh['held']['legs'][0]['sell'] and 'regions' in sh['held'], sh.get('held')
+assert sh['held_miss'] == 0 and sh['rest_mid'], 'a lone held leg is not a middle: it counts nothing against the middle cap and the resting middle still posts'
 sug_rows = [r for t, rs in written if t == 'suggestions' for r in rs]
-assert sug_rows and sug_rows[-1]['held'][0]['ticker'] == f'{EV}-46' and 'revs' in sug_rows[-1], 'the suggestions row carries held and revs'
+assert sug_rows and sug_rows[-1]['held']['legs'][0]['ticker'] == f'{EV}-46' and 'revs' in sug_rows[-1] and sug_rows[-1]['spot'], 'the suggestions row carries the position, revs and the spot label'
 # a read whose held leg should be sold: the halftime ladder at fair, the bid at 45.5 run up past it
 fix = json.load(open(os.path.join(FIX, 'kalshi_KXNFLTOTAL.json')))
 hm = engine.HalfModel('nfl', 55.5, -3.5, 7, 13)
@@ -146,10 +141,10 @@ d.holdings = {EV: [dict(ticker=f'{EV}-46', event_ticker=EV, sport='nfl', side='y
 d.run_pass()
 assert len(pushes) == 1 and pushes[0][0].startswith('UPDATE:') and pushes[0][2] == 'high', pushes
 body = pushes[0][1]
-assert body.startswith('YOU HOLD Over 45.5') and 'Bid 64c: SELL.' in body, body
+assert body.split('\n')[2].startswith('YOU HOLD Over 45.5') and 'Bid 64c: SELL for' in body, body
 pushes.clear()
 d = watch.Desk(dict(cfg, read_push={'nfl': 'min'}), {}, flat)
 d.run_pass()
 assert len(pushes) == 1 and pushes[0][2] == 'min' and 'YOU HOLD' not in pushes[0][1], 'with nothing held the read is the quiet read it was'
-print('fixtures: a read carries YOU HOLD after its text; a read with a SELL verdict leads with it at high priority')
+print('fixtures: a read carries the position before the resting middle; a SELL verdict lifts it to high priority')
 print('reverse: ok')

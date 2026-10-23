@@ -74,8 +74,8 @@ assert sh['mkt'] == 230.5 and sh['fair'] == 230.5, sh     # the market's median 
 halfp = [p for p in pushes if '(half' in p[0]]
 assert len(halfp) == 1 and halfp[0][0] == 'PLAY: Celtics 58, Pistons 61 (half, NBA)' and halfp[0][2] == 'high', pushes
 body = halfp[0][1]
-assert body.index('MIDDLE (clears') < body.index('SINGLE') and 'RESTING MIDDLE' in body and 'WIDER MIDDLE' in body, body
-assert 'Buy OVER 236.5' in body and 'No lean' in body, body
+assert body.index('MIDDLE (clears') < body.index('SINGLE') and 'REST A MIDDLE' in body and 'WIDER MIDDLE' in body, body
+assert 'Buy OVER 236.5' in body and 'lean' not in body, 'the spot label left the push text on Oct 22'
 assert sh['mid'] and sh['rest_mid'] is None, 'a cleared middle is graded as the play; the resting what-if belongs to an UPDATE'
 assert rec['slots'] == {'half': 'play'}
 assert rec['pace'] and rec['pace']['poss'] == round(((49 - 7 + 7 + 0.44 * 9) + (47 - 5 + 8 + 0.44 * 10)) / 2, 2) and rec['pace']['home']['fouls'] == 10, rec.get('pace')
@@ -115,11 +115,11 @@ d = watch.Desk(cfg, {}, clean); d.run_pass()
 halfp = [p for p in pushes if '(half' in p[0]]
 assert len(halfp) == 1 and halfp[0][0].startswith('UPDATE: Celtics 58, Pistons 61') and halfp[0][2] == 'default', pushes
 body = halfp[0][1]
-assert 'No single or middle clears' in body and 'Closest middle at the asks' in body and 'RESTING MIDDLE' in body and 'WIDER MIDDLE' in body, body
-assert ' shares for $' in body and body.count('Buy OVER') == 2 and body.count('Buy UNDER') == 2, body
+assert 'No single or middle clears' in body and 'Closest middle at the asks' in body and 'REST A MIDDLE' in body and 'WIDER MIDDLE' in body, body
+assert ' sh ($' in body and body.count('\nOver ') == 2 and body.count('\nUnder ') == 2, body
 sh = d.state['games']['501']['sheet']
 assert sh['rest_mid']['b_line'] - sh['rest_mid']['a_line'] < 6 <= sh['rest_mid_wide']['b_line'] - sh['rest_mid_wide']['a_line'], (sh['rest_mid'], sh['rest_mid_wide'])
-assert f"Buy OVER {sh['rest_mid']['a_line']:.1f} at {sh['rest_mid']['a_price']}c ({sh['rest_mid']['pairs']} shares" in body, 'the graded resting middle must be the one the push posted first'
+assert f"Over {sh['rest_mid']['a_line']:.1f} at {sh['rest_mid']['a_price']}c, {sh['rest_mid']['pairs']} sh" in body, 'the graded resting middle must be the one the push posted first'
 print('middles: PLAY leads with the middle, UPDATE carries the closest middle and a tight and a wide resting middle')
 print('fixtures: halftime game priced off the games-table line, centered on the ladder, one PLAY, first-half box and spread ladder kept; pregame game captured (NY matched NYK)')
 
@@ -131,7 +131,7 @@ rec3 = d.state['games']['503']
 assert rec3['third'] == {'away': 82, 'home': 85} and rec3.get('sheet_q3') and rec3['slots'].get('q3') == 'play', (rec3.get('third'), rec3.get('slots'))
 p3 = [p for p in pushes if 'end of 3rd' in p[0]]
 assert len(p3) == 1 and p3[0][0] == 'PLAY: Thunder 82, Spurs 85 (end of 3rd, NBA)' and p3[0][2] == 'high' and 'first timeout of the 4th' in p3[0][1], p3
-assert 'Buy OVER 230.5 at 15c' in p3[0][1] and 'overtime 9%' in p3[0][1] and 'RESTING MIDDLE' in p3[0][1], p3[0][1]
+assert 'Over 230.5 at 15c' in p3[0][1] and 'REST A MIDDLE' in p3[0][1], p3[0][1]
 sh3 = rec3['sheet_q3']
 assert sh3['stage'] == 'q3' and sh3['h1a'] == 82 and sh3['h1h'] == 85 and sh3['fair'] and sh3['mkt'] == 223.5 and sh3['center'] == 223.5 - 167, sh3
 l0 = engine.LateModel('nba', sh3['total'], sh3['spread'], sh3['h1h'], sh3['h1a'], center=sh3['center'], center_w=0.0)
