@@ -138,6 +138,17 @@ credits you allow. That table is what the model-versus-market trust study runs o
 2. Settings > API Keys: copy the project URL and the **secret** key (`sb_secret_...`). Add two repository secrets:
    `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. The publishable key is for the app later, not for the worker.
 
+### Nightly export to the repo
+`.github/workflows/export.yml` runs `scripts/export_desk.py` every morning at 10:40 UTC (after the slate closes
+at 05:00 ET) and commits the desk's own rows as `data/desk/TABLE/DATE.csv.gz`: games, suggestions, alerts,
+results, quote_snapshots and venue_quotes, one file per table per slate. It re-checks the last three slates, so
+a missed night heals itself; games, suggestions, alerts and results are rewritten when a day's rows changed (a
+final or a grade landing late), the quote files are written once. Run it by hand from the Actions tab with a
+date or `force`. The repo is public, so it never exports bets, positions, portfolio_snapshots, desk_state (the
+bankroll), control or orders, drops bankroll, max_risk, max_cost and held from suggestions, and strips the held
+block out of every JSON column; `tests/export.py` holds it to that. Once the files are in, old quote rows can be
+pruned from Supabase before the free tier fills (around March at the current rate).
+
 ## Kalshi portfolio sync (optional, 10 minutes)
 1. kalshi.com > profile > API Keys > Create New API Key. Ed25519 (the default) or RSA both work. Save the
    private key file; Kalshi shows it once.
@@ -282,6 +293,6 @@ halftime score); without it the model prices on its own center.
 state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (13,127 games, 2006-2025, halftime scores from play by play), how it is built, and the second-half fit with the blowout study; `data/nfl_games.csv`, `scripts/build_nfl_games.py` and `scripts/fit_nfl.py` the same for the NFL (7,058 games, 2000-2026). `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
 read-only Kalshi sync. `held.py` open-position watch. `trade.py` the order executor (shadow by default). `cli.py` manual desk. `model.json` fitted coefficients and
 residual quantiles. `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
-without ever committing a conflict. `tests/` parity check against the ledger artifact, the read-only proof, the
+without ever committing a conflict. `scripts/export_desk.py` the nightly Supabase export to `data/desk/`. `tests/` parity check against the ledger artifact, the read-only proof, the
 mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), the NBA path (`nba.py`, on
 `fixtures_nba/`), reverse middles and held positions at the half (`reverse.py`), the football model blocks and game tables (`football.py`), and an offline run on fixtures.

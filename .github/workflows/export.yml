@@ -1,0 +1,53 @@
+# Nightly: copy the desk's own Supabase rows (games, suggestions, alerts, results, quote_snapshots, venue_quotes)
+# into data/desk/TABLE/DATE.csv.gz, one file per table per slate (scripts/export_desk.py). Runs after the slate
+# closes at 05:00 ET and re-checks the last three slates, so a missed night heals itself. Never bets, positions,
+# the balance or orders: the repo is public.
+name: export
+on:
+  schedule:
+    - cron: '40 10 * * *'       # 06:40 EDT / 05:40 EST, after the 05:00 ET slate boundary either way
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Slates to check, ending with the last closed one'
+        default: '3'
+      date:
+        description: 'One slate instead, YYYY-MM-DD (leave blank for the last N)'
+        default: ''
+      force:
+        description: 'Rewrite files that already exist (true/false)'
+        default: 'false'
+concurrency:
+  group: halftime-export
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q -r requirements.txt
+      - name: Export
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          args="--days ${{ inputs.days || '3' }}"
+          if [ -n "${{ inputs.date }}" ]; then args="--date ${{ inputs.date }}"; fi
+          if [ "${{ inputs.force }}" = "true" ]; then args="$args --force"; fi
+          python scripts/export_desk.py $args
+      - name: Commit
+        run: |
+          git config user.name "halftime-desk bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/desk
+          git diff --cached --quiet && echo "nothing new" && exit 0
+          n=$(git diff --cached --name-only | wc -l)
+          git commit -q -m "data: desk export, $n file(s)"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          exit 1
