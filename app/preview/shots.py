@@ -8,7 +8,7 @@ the app, run it again. Needs Playwright with Chromium (pip install playwright; p
     python app/preview/shots.py            # every screen
     python app/preview/shots.py record     # one route
 """
-import json, os, re, subprocess, sys, time, datetime as dt
+import json, os, re, signal, subprocess, sys, time, datetime as dt
 from urllib.parse import urlparse, parse_qsl, unquote
 from playwright.sync_api import sync_playwright
 
@@ -269,7 +269,10 @@ ROUTES = {'today': '/', 'bets': '/bets/', 'alerts': '/alerts/', 'calc': '/calc/'
 def main(only=None):
     os.makedirs(OUT, exist_ok=True)
     env = dict(os.environ, NEXT_PUBLIC_SUPABASE_URL=FAKE, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY='sb_publishable_mock', NEXT_TELEMETRY_DISABLED='1', PORT=str(PORT))
-    dev = subprocess.Popen(['npx', 'next', 'dev', '-p', str(PORT)], cwd=APP, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    # its own process group, so the stop below takes next-server down with npx (stopping npx alone left it running on
+    # the port, and the next run's pages never loaded)
+    dev = subprocess.Popen(['npx', 'next', 'dev', '-p', str(PORT)], cwd=APP, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                           start_new_session=True)
     try:
         for _ in range(600):
             line = dev.stdout.readline()
@@ -295,13 +298,16 @@ def main(only=None):
                 page.screenshot(path=os.path.join(OUT, f'{name}-tall.png'))   # the whole screen, for review
                 page.set_viewport_size({'width': 390, 'height': 844})
                 print(f'{name}: {shot}')
-            if only in (None, 'alerts'):   # Alerts with the three-unders push and the Navy push open
+            if only in (None, 'alerts'):   # Alerts with one push open at a time (opening one closes the other), one shot each:
+                # alerts-open: the three-unders push, where both backups would have won; alerts-open-2: the Navy push,
+                # where both backups would have lost
                 page.goto(f'http://localhost:{PORT}/alerts/', wait_until='domcontentloaded'); page.wait_for_timeout(2500)
-                page.get_by_role('button', name=re.compile('Cardinals 3, Rams 3')).click(); page.wait_for_timeout(300)
-                page.get_by_role('button', name=re.compile('Navy 20, UTSA 21 \\(Q3')).click(); page.wait_for_timeout(300)
                 page.set_viewport_size({'width': 390, 'height': 2400}); page.wait_for_timeout(300)
-                page.screenshot(path=os.path.join(OUT, 'alerts-open.png'))
+                for shot, title in (('alerts-open', 'Cardinals 3, Rams 3'), ('alerts-open-2', 'Navy 20, UTSA 21 \\(Q3')):
+                    page.get_by_role('button', name=re.compile(title)).click(); page.wait_for_timeout(300)
+                    page.screenshot(path=os.path.join(OUT, f'{shot}.png'))
                 page.set_viewport_size({'width': 390, 'height': 844})
+                print('alerts-open, alerts-open-2')
             if only in (None, 'record'):   # the Record screen with a row open and with every half shown
                 page.goto(f'http://localhost:{PORT}/record/', wait_until='load')
                 page.wait_for_timeout(2500)
@@ -315,11 +321,13 @@ def main(only=None):
                 print('record-open, record-all')
             browser.close()
     finally:
-        dev.terminate()
         try:
+            os.killpg(dev.pid, signal.SIGTERM)
             dev.wait(timeout=10)
-        except Exception:
-            dev.kill()
+        except subprocess.TimeoutExpired:
+            os.killpg(dev.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
 
 
 if __name__ == '__main__':
