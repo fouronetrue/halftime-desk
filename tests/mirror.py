@@ -19,14 +19,31 @@ watch.RESULTS_PATH = os.path.join(scratch, 'results.csv')
 cfg = watch.load_json(watch.CONFIG_PATH, {})
 
 
+writes = []   # every write as it went out: (table, rows), so a batch can be checked for uniform keys
+
+
 def run(mirror):
     captured = {}
     store.enabled = lambda: mirror
-    store.write = lambda table, rows, on_conflict=None, ignore_duplicates=False: captured.setdefault(table, []).extend(copy.deepcopy(rows)) or True
+    def write(table, rows, on_conflict=None, ignore_duplicates=False):
+        writes.append((table, copy.deepcopy(rows)))
+        captured.setdefault(table, []).extend(copy.deepcopy(rows))
+        return True
+    store.write = write
     store.read = lambda table, params: []
     store.claim = lambda table, row, on_conflict: True
     pushes.clear()
     desk = watch.Desk(cfg, {}, FIX)
+    desk.run_pass()
+    # a second pass with book closes on one upcoming game only (the Odds API matches most games, not all): the
+    # games batch for that sport must go out as two writes, each with uniform keys, never one mixed batch
+    for g in [g for sport in cfg.get('sports', ['nfl', 'cfb']) for g in desk.games(sport)]:
+        rec = desk.state['games'].get(g['id']) or {}
+        if rec.get('phase') == 'pre' and (rec.get('pre') or {}).get('total'):
+            rec['pre']['books'] = {'pinnacle': [rec['pre']['total'], rec['pre'].get('home_spread')]}
+            rec['pre']['espn'] = rec['pre']['total']
+            break
+    desk._db_games = {}
     desk.run_pass()
     # a synthetic final for the fixture game that was priced at the half: exercise settle() and the results mirror
     for sport in cfg.get('sports', ['nfl', 'cfb']):
@@ -49,17 +66,26 @@ for table in ('games', 'suggestions', 'quote_snapshots', 'alerts', 'results'):
     assert rows, f'no {table} rows captured'
     keys = {tuple(sorted(r)) for r in rows}
     if table == 'games':
-        # Two shapes, two writes: a game with a pregame line carries the pre_* columns, a game without carries
-        # none of them, so a watcher with no line on record never nulls out the other watcher's line.
+        # Three shapes, separate writes: a game with a pregame line carries the pre_* columns (pre_books only when
+        # the line has book closes), a game without carries none of them, so a watcher with no line on record
+        # never nulls out the other watcher's line.
         lined = [r for r in rows if 'pre_total' in r]
         unlined = [r for r in rows if 'pre_total' not in r]
         assert lined and unlined, 'expected games rows both with and without a pregame line'
         assert all(r['pre_total'] for r in lined) and not any(k.startswith('pre_') for r in unlined for k in r), 'games rows mix pre_* columns'
-        assert len({tuple(sorted(r)) for r in lined}) == 1 and len({tuple(sorted(r)) for r in unlined}) == 1, f'games rows have different keys: {keys}'
+        lined_keys = {tuple(sorted(k for k in r if k != 'pre_books')) for r in lined}
+        assert len(lined_keys) == 1 and len({tuple(sorted(r)) for r in unlined}) == 1, f'games rows have different keys: {keys}'
     else:
         assert len(keys) == 1, f'{table} rows have different keys: {keys}'
     for r in rows:
         json.dumps(store.clean(r))   # must be JSON-serializable
+# every games write that went out carried one key set (Supabase rejects a mixed batch), and the pass with one
+# booked game sent its booked row and its unbooked rows in separate writes
+game_writes = [rows for table, rows in writes if table == 'games' and rows]
+assert game_writes and all(len({tuple(sorted(r)) for r in rows}) == 1 for rows in game_writes), 'a games write mixed key sets'
+booked = [rows for rows in game_writes if any('pre_books' in r for r in rows)]
+assert booked and all(all('pre_books' in r for r in rows) for rows in booked), 'a row with pre_books went out beside rows without it'
+assert any(all('pre_books' not in r and 'pre_total' in r for r in rows) for rows in game_writes), 'the unbooked lined rows went out on their own'
 sug = c_on['suggestions'][0]
 # the priced game's line came from the games table (tests/fixtures/supabase_games.json), never from the feed at the half
 assert sug['total'] == 55.5 and sug['home_spread'] == -3.5 and state['games'][sug['game_id']]['pre'].get('restored'), 'pregame line not restored from the games table'

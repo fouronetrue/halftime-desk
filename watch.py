@@ -223,13 +223,18 @@ class Desk:
                 continue
             self._db_games[g['id']] = (h, now)
             (lined if pre.get('total') else unlined).append(dict(row, last_seen=rec.get('last_seen'), updated_at=now_iso()))
-        # Two writes per sport: a game with no pregame line on record sends no pre_* columns at all, so a watcher
-        # that lost its state (or first saw the game in play) never nulls out the line the other watcher captured
-        # before kickoff. One batch per sport, so a sport the games table does not accept yet (NBA before
-        # supabase/004_nba.sql has run) is rejected on its own and never takes the other sports' rows down with it.
+        # One write per sport and per shape. A game with no pregame line on record sends no pre_* columns at all,
+        # and a game whose line has no book closes sends no pre_books, so a watcher that lost its state (or first
+        # saw the game in play) never nulls out what the other watcher captured before kickoff. Every row in one
+        # write must carry the same keys: Supabase rejects a batch whose rows differ (PGRST102), and on Oct 22 the
+        # college batch mixed rows with and without pre_books and failed every pass, which left Today showing
+        # kicked-off games as coming up. One batch per sport, so a sport the games table does not accept yet is
+        # rejected on its own and never takes the other sports' rows down with it.
         for sport in sorted({r['sport'] for r in lined + unlined}):
-            store.write('games', [r for r in lined if r['sport'] == sport], on_conflict='id')
-            store.write('games', [r for r in unlined if r['sport'] == sport], on_conflict='id')
+            for batch in (lined, unlined):
+                mine = [r for r in batch if r['sport'] == sport]
+                for keys in sorted({tuple(sorted(r)) for r in mine}):
+                    store.write('games', [r for r in mine if tuple(sorted(r)) == keys], on_conflict='id')
 
     def db_pregame(self, ids):
         """The pregame line columns of the games table for these ids, keyed by id. Under --fixtures the rows come
