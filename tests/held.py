@@ -5,7 +5,7 @@
 4. a game at the half is left to the engine; a held under pairs with a lower over,
 5. the free tier: hold KC Under 50.5 at 51c. Over 46.5 at 53c is open (a miss costs); at 45c the under pays for the
    over outright (no final loses) and the push says FREE MIDDLE with the protect size; 47c is free only resting."""
-import sys, os, json
+import sys, os, json, tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 import watch, store, held
@@ -117,4 +117,31 @@ d9 = desk_with(0.52, yes_ask_425=0.45); d9.state = d7.state
 sent = held.check(d9, push)
 assert len(sent) == 1 and sent[0][0].startswith('FREE MIDDLE') and d9.state['held'][f'{EV}-49']['tier'] == 'free', sent
 print('held: free tier sized so the held leg pays for the other, pushed on the upgrade')
+
+# 6. the app's calculator (app/lib/desk.js sizeHeld) prices a held leg the way held.py does: same protect size,
+# same three finals, same free price, with the fee paid on the held leg counted. Runs when node is on the box.
+import shutil, subprocess
+if shutil.which('node'):
+    cases = [(49, 153, 2.68, 45, 'take'), (49, 153, 2.68, 52, 'take'), (51, 100, 1.75, 44, 'rest'), (62, 40, 0.66, 36, 'take')]
+    script = ("import { sizeHeld } from '%s/app/lib/desk.js';\n" % ROOT.replace('\\', '/')
+              + 'const out = [];\n'
+              + 'for (const [pa, n, fee, pb, fill] of %s) {\n' % json.dumps(cases)
+              + "  const r = sizeHeld({ held: { side: 'over', paid: pa, fill: 'take', shares: n }, other: { price: pb, fill }, numbers: 2, sport: 'nfl', budget: 10 });\n"
+              + '  out.push([r.protect.n, r.protect.heldAlone, r.protect.both, r.protect.otherAlone, r.even.heldAlone, r.freeC, r.free]);\n'
+              + '}\nconsole.log(JSON.stringify(out));\n')
+    tmp = os.path.join(tempfile.mkdtemp(), 'held_check.mjs')
+    open(tmp, 'w').write(script)
+    got = json.loads(subprocess.run(['node', '--no-warnings', tmp], capture_output=True, text=True, check=True).stdout.strip())
+    for (pa, n, fee, pb, fill), g in zip(cases, got):
+        hh = dict(shares=n, paid_c=pa, fee=fee, side='yes')
+        want_n = held.protect_size(hh, pb, fill)
+        want = held.outcomes(hh, pb, want_n, fill)
+        assert g[0] == want_n, (pa, n, pb, fill, g[0], want_n)
+        assert abs(g[1] - want['held_alone']) < 0.011 and abs(g[2] - want['both']) < 0.011 and abs(g[3] - want['other_alone']) < 0.011, (g, want)
+        assert abs(g[4] - held.outcomes(hh, pb, n, fill)['held_alone']) < 0.011, (g[4], held.outcomes(hh, pb, n, fill))
+        assert g[5] == held.free_c(hh, fill), (pb, fill, g[5], held.free_c(hh, fill))
+        assert g[6] == (want_n >= 1 and want['other_alone'] >= 0), (g[6], want)
+    print('held: the app calculator matches held.py on protect size, finals and the free price')
+else:
+    print('held: node not found, app calculator parity skipped')
 print('held: ok')

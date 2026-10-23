@@ -210,6 +210,66 @@ export function sizeMiddle({ a, b, oFill = 'take', uFill = 'take', numbers, spor
   };
 }
 
+// Size the other side of a middle when one leg is already held (a pregame Sharp play, say): held = { side, paid (c),
+// fill, dollars or shares }, other = { price (c), fill }. Two sizes, every fee in:
+//   protect: the held leg's win pays for the new leg all in, so the held side winning alone nets about even (held.py);
+//   even: as many shares as you hold, so a miss costs the same whichever side hits alone. That is the smallest worst
+//   case any size can reach: fewer shares shrink one miss and grow the other, more than you hold is a naked bet.
+// free: the pair costs under 100c all in, so up to the protect size no final loses; pick is protect then, even otherwise.
+// The verdict scores the pair the way sizeMiddle does, with the held leg at the price it was paid. maxCost (the 7.5%
+// cost cap) only flags here: trimming a hedge would raise the worst case, the opposite of what the cap is for.
+export function sizeHeld({ held, other, numbers, sport, budget, maxCost }) {
+  const pa = Number(held.paid) / 100, pb = Number(other.price) / 100;
+  if (!(pa > 0 && pa < 1 && pb > 0 && pb < 1) || !(numbers >= 1)) return null;
+  const nA = held.shares !== undefined && held.shares !== '' ? Math.floor(Number(held.shares)) : Math.floor(Number(held.dollars || 0) / pa + 1e-9);
+  if (!(nA >= 1)) return null;
+  const feeA = held.fill === 'take' ? orderFee(nA, pa) : 0;
+  const costA = Math.round((nA * pa + feeA) * 100) / 100;
+  const win = nA * (1 - pa) - feeA;                                    // the held leg's net if it wins, before any hedge
+  const fb = other.fill === 'take' ? feePer(pb) : 0;
+  const feeB = (n) => (other.fill === 'take' ? orderFee(n, pb) : 0);
+  const at = (n) => ({
+    n, dollars: Math.round(n * pb * 100) / 100, fee: feeB(n),
+    heldAlone: Math.round((win - n * pb - feeB(n)) * 100) / 100,
+    both: Math.round((win + n * (1 - pb) - feeB(n)) * 100) / 100,
+    otherAlone: Math.round((n * (1 - pb) - feeB(n) - costA) * 100) / 100,
+  });
+  let nP = Math.floor(win / (pb + fb) + 1e-9);
+  while (nP > 0 && nP * pb + feeB(nP) > win + 1e-9) nP -= 1;
+  const protect = at(Math.max(0, nP));
+  const even = at(nA);
+  const c = pa + (held.fill === 'take' ? feePer(pa) : 0) + pb + fb;   // all-in cost of one pair, the held leg at its price
+  const breakeven = 0.97 + perNumber(sport) * numbers;
+  const free = protect.n >= 1 && protect.heldAlone >= -1e-9 && protect.otherAlone >= -1e-9;
+  const pick = free ? protect : even;
+  const overCap = maxCost > 0 && costA + pick.dollars + pick.fee > maxCost + 1e-9;
+  // the most the other side can cost for a free roll, and to stay inside breakeven, both with its fee in
+  let freeC = 0, maxC = 0;
+  for (let cc = 99; cc >= 1; cc--) {
+    const q = cc / 100, all = pa + (held.fill === 'take' ? feePer(pa) : 0) + q + (other.fill === 'take' ? feePer(q) : 0);
+    if (!maxC && all <= breakeven + 1e-9) maxC = cc;
+    if (all <= 1 + 1e-9) { freeC = cc; break; }
+  }
+  return {
+    nA, costA, feeA, win: Math.round(win * 100) / 100, protect, even, pick, c, breakeven, free, freeC, maxC, overCap,
+    verdict: c >= breakeven ? 'pass' : c > breakeven - 0.03 ? 'thin' : 'play',
+    // the even miss is the floor on the worst case; over the loss budget means no size gets inside it
+    overBudget: !free && Number(budget) > 0 && even.heldAlone < -Number(budget) - 1e-9,
+  };
+}
+
+export function heldOutcomes({ over, under }) {
+  const pa = Number(over.paid) / 100, pb = Number(under.paid) / 100;
+  const nA = over.shares !== undefined && over.shares !== '' ? Math.floor(Number(over.shares)) : Math.floor(Number(over.dollars || 0) / pa + 1e-9);
+  const nB = under.shares !== undefined && under.shares !== '' ? Math.floor(Number(under.shares)) : Math.floor(Number(under.dollars || 0) / pb + 1e-9);
+  if (!(pa > 0 && pa < 1 && pb > 0 && pb < 1) || !(nA >= 1 && nB >= 1)) return null;
+  const feeA = over.fill === 'take' ? orderFee(nA, pa) : 0, feeB = under.fill === 'take' ? orderFee(nB, pb) : 0;
+  const costA = nA * pa + feeA, costB = nB * pb + feeB;
+  const r = (x) => Math.round(x * 100) / 100;
+  return { nA, nB, costA: r(costA), costB: r(costB), overAlone: r(nA - costA - costB), both: r(nA + nB - costA - costB), underAlone: r(nB - costA - costB) };
+}
+
+
 // The highest under price, in cents, at which over at pa (fee fa paid) plus the under costs no more than 100c
 // all in, so a miss either way loses nothing. 0 when no price under 100c does it.
 export function freeUnder(pa, fa, uFill = 'take') {

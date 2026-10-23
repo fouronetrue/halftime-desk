@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { money, sizeMiddle } from '@/lib/desk';
+import { money, orderFee, sizeMiddle, sizeHeld, heldOutcomes } from '@/lib/desk';
 
 const BUDGETS = [5, 10, 15, 20];
 
@@ -21,10 +21,59 @@ function Price({ id, label, value, set }) {
 function Fill({ name, value, set }) {
   return (
     <span className="seg mc-fill" role="group" aria-label={`${name} fill`}>
-      {['take', 'rest'].map((m) => (
-        <button key={m} type="button" className={value === m ? 'on' : ''} aria-pressed={value === m} onClick={() => set(m)}>{m === 'take' ? 'Take' : 'Rest'}</button>
+      {['take', 'rest', 'held'].map((m) => (
+        <button key={m} type="button" className={value === m ? 'on' : ''} aria-pressed={value === m} onClick={() => set(m)}>{m === 'take' ? 'Take' : m === 'rest' ? 'Rest' : 'I hold'}</button>
       ))}
     </span>
+  );
+}
+
+// The dollars already in a held leg (contracts times the price paid, the way Kalshi's ticket shows the cost);
+// the share count follows, and the fee is added back on since the leg was taken at the ask.
+function Held({ id, label, dollars, set, shares, paid }) {
+  const cost = shares ? Math.round((shares * paid / 100 + orderFee(shares, paid / 100)) * 100) / 100 : 0;
+  return (
+    <div className="mc-held">
+      <label htmlFor={id}>{label}</label>
+      <div className="mc-step mc-dollars">
+        <span>$</span>
+        <input id={id} inputMode="decimal" value={dollars} onChange={(e) => set(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="75" />
+        <span className="mc-shares">{shares ? `${shares} sh` : ''}</span>
+      </div>
+      <span className="mc-sub">{shares ? `${money(cost)} in with the fee` : 'dollars in the leg'}</span>
+    </div>
+  );
+}
+
+// One leg held: the other side's size, the three finals at that size, and the prices that change the call.
+function HeldReadout({ r, heldName, otherName, otherPrice, budget, maxCost }) {
+  const held = heldName.toLowerCase(), other = otherName.toLowerCase();
+  const pick = r.pick;
+  const why = r.free ? `Your ${held} pays for it, so no final loses. Past ${r.protect.n} shares the ${held} winning alone starts to cost you.`
+    : r.verdict === 'pass' ? `The pair is over breakeven, so this hedge is not a play: it buys the smallest worst case, not an edge. Fewer ${other} shares cut one miss and grow the other.`
+    : `Matching what you hold makes a miss cost the same whichever side hits alone, and no size gets the worst case lower. More than you hold is a naked ${other} bet.`;
+  const rows = [[`${heldName} wins alone`, pick.heldAlone], ['Both (the middle)', pick.both], [`${otherName} wins alone`, pick.otherAlone]];
+  return (
+    <>
+      <p className={`mc-verdict ${r.free ? 'free' : r.verdict}`}>
+        <b>{r.free ? 'Free roll' : r.verdict === 'play' ? 'Play' : r.verdict === 'thin' ? 'Thin play' : 'Pass'}</b>
+        <span>Pair {(100 * r.c).toFixed(1)}c all in with your {held} at cost, breakeven {(100 * r.breakeven).toFixed(1)}c</span>
+      </p>
+      <p className="mc-big">{pick.n}<small> {other} shares at {otherPrice}c</small></p>
+      <p className="mc-miss"><b>{money(pick.dollars)}</b>{pick.fee ? `plus ${money(pick.fee)} fee` : 'no fee resting'}, {money(r.costA + pick.dollars + pick.fee)} in the game all told</p>
+      <p className="mc-note">{why}</p>
+      <dl className="mstats mc-outcomes">
+        {rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={v < -0.005 ? 'neg' : v > 0.005 ? 'pos' : ''}>{Math.abs(v) < 0.005 ? 'even' : money(v)}</dd></div>)}
+      </dl>
+      <p className="mc-note">
+        {r.free ? ` Matching them, ${r.even.n} shares, keeps a miss at ${money(r.even.heldAlone)} either way with the middle ${money(r.even.both)}.`
+          : ` Covering the ${held} instead, ${r.protect.n} shares, leaves the ${held} alone ${Math.abs(r.protect.heldAlone) < 0.005 ? 'even' : money(r.protect.heldAlone)} and the ${other} alone ${money(r.protect.otherAlone)}.`}
+        {r.overBudget ? ` A miss at ${r.even.n} shares is ${money(r.even.heldAlone)}, past your $${budget}; no ${other} size gets it inside.` : ''}
+        {r.freeC ? ` Free roll at ${r.freeC}c or less on the ${other}` : ` No ${other} price makes this a free roll`}
+        {r.maxC ? `; inside breakeven up to ${r.maxC}c.` : '; nothing inside breakeven either.'}
+        {r.overCap ? ` Both legs together pass the 7.5% cost cap (${money(maxCost)}); the hedge still cuts the worst case, so that is a flag here, not a limit.` : ''}
+      </p>
+    </>
   );
 }
 
@@ -36,6 +85,8 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
   const [b, setB] = useState(askB ?? '');
   const [oFill, setOFill] = useState('take');
   const [uFill, setUFill] = useState('take');
+  const [dA, setDA] = useState('');   // dollars in a held over leg
+  const [dB, setDB] = useState('');   // dollars in a held under leg
   const [budgetOwn, setBudgetOwn] = useState(budget0 ? Math.round(budget0) : 10);
   const [loaded, setLoaded] = useState(!storeKey);
   // The Desk owns the budget so Compare middles and this calculator size to the same number.
@@ -55,6 +106,8 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
         if (s.b !== undefined) setB(s.b);
         if (s.oFill) setOFill(s.oFill);
         if (s.uFill) setUFill(s.uFill);
+        if (s.dA !== undefined) setDA(s.dA);
+        if (s.dB !== undefined) setDB(s.dB);
         if (s.budget !== undefined && budgetIn === undefined) setBudgetOwn(s.budget);
       }
     } catch { /* private mode or blocked storage */ }
@@ -62,27 +115,49 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
   }, [storeKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!storeKey || !loaded) return;
-    try { localStorage.setItem(storeKey, JSON.stringify({ a, b, oFill, uFill, budget })); } catch { /* ignore */ }
-  }, [storeKey, loaded, a, b, oFill, uFill, budget]);
+    try { localStorage.setItem(storeKey, JSON.stringify({ a, b, oFill, uFill, dA, dB, budget })); } catch { /* ignore */ }
+  }, [storeKey, loaded, a, b, oFill, uFill, dA, dB, budget]);
 
   const numbers = Math.round(Number(underLine) - Number(overLine));
   const linesOk = Number(underLine) > Number(overLine) && numbers >= 1;
-  const r = linesOk ? sizeMiddle({ a: Number(a), b: Number(b), oFill, uFill, numbers, sport, budget: Number(budget) || 0, maxCost, pHit }) : null;
+  const heldA = oFill === 'held', heldB = uFill === 'held';
+  const sharesA = heldA && Number(a) > 0 ? Math.floor(Number(dA || 0) / (Number(a) / 100) + 1e-9) : 0;
+  const sharesB = heldB && Number(b) > 0 ? Math.floor(Number(dB || 0) / (Number(b) / 100) + 1e-9) : 0;
+  // a held leg was bought at the ask, so its fee is in; the other side's fill is whatever its toggle says
+  const r = linesOk && !heldA && !heldB ? sizeMiddle({ a: Number(a), b: Number(b), oFill, uFill, numbers, sport, budget: Number(budget) || 0, maxCost, pHit }) : null;
+  const h = linesOk && heldA !== heldB ? sizeHeld({
+    held: { side: heldA ? 'over' : 'under', paid: heldA ? a : b, fill: 'take', dollars: heldA ? dA : dB },
+    other: { price: heldA ? b : a, fill: heldA ? uFill : oFill }, numbers, sport, budget: Number(budget) || 0, maxCost,
+  }) : null;
+  const two = linesOk && heldA && heldB ? heldOutcomes({ over: { paid: a, fill: 'take', dollars: dA }, under: { paid: b, fill: 'take', dollars: dB } }) : null;
   const moved = askA !== undefined && askB !== undefined && (Number(a) !== Number(askA) || Number(b) !== Number(askB));
   const band = [a, b].some((p) => Number(p) < 15 || Number(p) > 85);
 
   return (
     <section className="mcalc" aria-label="Middle size">
       <div className="mc-row">
-        <div className="mc-leg"><span className="mc-name">Over {overLine}</span><Fill name="Over" value={oFill} set={setOFill} /><Price id="mc-a" label="Over price" value={a} set={setA} /></div>
-        <div className="mc-leg"><span className="mc-name">Under {underLine}</span><Fill name="Under" value={uFill} set={setUFill} /><Price id="mc-b" label="Under price" value={b} set={setB} /></div>
+        <div className="mc-leg"><span className="mc-name">Over {overLine}</span><Fill name="Over" value={oFill} set={setOFill} /><Price id="mc-a" label={heldA ? 'Over price paid' : 'Over price'} value={a} set={setA} />
+          {heldA && <Held id="mc-da" label="Dollars in the over" dollars={dA} set={setDA} shares={sharesA} paid={Number(a)} />}</div>
+        <div className="mc-leg"><span className="mc-name">Under {underLine}</span><Fill name="Under" value={uFill} set={setUFill} /><Price id="mc-b" label={heldB ? 'Under price paid' : 'Under price'} value={b} set={setB} />
+          {heldB && <Held id="mc-db" label="Dollars in the under" dollars={dB} set={setDB} shares={sharesB} paid={Number(b)} />}</div>
       </div>
       <div className="mc-budget" role="group" aria-label="Most to lose">
         <span>Most I'll lose</span>
         {BUDGETS.map((v) => <button key={v} type="button" className={Number(budget) === v ? 'on' : ''} aria-pressed={Number(budget) === v} onClick={() => setBudget(v)}>${v}</button>)}
         <input id="mc-budget" aria-label="Loss budget in dollars" inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value.replace(/[^0-9.]/g, ''))} />
       </div>
-      {!r ? <p className="hint">{linesOk ? 'Enter both prices.' : 'The under line has to sit above the over line. Your prices and budget are kept.'}</p> : (
+      {two ? (
+        <>
+          <p className="mc-verdict held"><b>You hold both</b><span>{two.nA} over at {a}c ({money(two.costA)}), {two.nB} under at {b}c ({money(two.costB)}), fees in</span></p>
+          <dl className="mstats mc-outcomes">
+            {[['Over wins alone', two.overAlone], ['Both (the middle)', two.both], ['Under wins alone', two.underAlone]].map(([k, v]) => (
+              <div key={k}><dt>{k}</dt><dd className={v < -0.005 ? 'neg' : v > 0.005 ? 'pos' : ''}>{Math.abs(v) < 0.005 ? 'even' : money(v)}</dd></div>))}
+          </dl>
+        </>
+      ) : h ? (
+        <HeldReadout r={h} heldName={heldA ? 'Over' : 'Under'} otherName={heldA ? 'Under' : 'Over'} otherPrice={heldA ? b : a} budget={Number(budget) || 0} maxCost={maxCost} />
+      ) : (heldA || heldB) ? <p className="hint">{linesOk ? 'Enter the price you paid and the dollars in the leg you hold, and the other side\'s price.' : 'The under line has to sit above the over line. Your prices and budget are kept.'}</p>
+      : !r ? <p className="hint">{linesOk ? 'Enter both prices.' : 'The under line has to sit above the over line. Your prices and budget are kept.'}</p> : (
         <>
           <p className={`mc-verdict ${r.free ? 'free' : r.verdict}`}>
             <b>{r.free ? 'Free roll' : r.verdict === 'play' ? 'Play' : r.verdict === 'thin' ? 'Thin play' : 'Pass'}</b>

@@ -193,7 +193,7 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 /* Middle calculator (Desk middle builder and /calc/) */
 .mcalc { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; display: grid; gap: 10px; }
 .mc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.mc-leg { display: grid; gap: 6px; min-width: 0; }
+.mc-leg { display: grid; gap: 6px; min-width: 0; align-content: start; }
 .mc-name { font: 700 18px var(--cond); }
 .mc-fill { margin: 0; justify-self: start; }
 .mc-fill button { padding: 4px 10px; font-size: 13px; }
@@ -212,6 +212,7 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .mc-verdict.thin b { background: var(--amber); color: var(--amber-ink); }
 .mc-verdict.pass b { background: var(--loss); color: var(--chalk); }
 .mc-verdict.free b { background: var(--win); color: var(--sky); }
+.mc-verdict.held b { background: var(--field-2); color: var(--chalk); }
 .mc-miss { margin: 0; font-size: 14px; color: var(--dim); }
 .mc-miss b { font: 700 20px/1.2 var(--cond); margin-right: 4px; }
 .mc-miss.neg b { color: var(--loss); }
@@ -221,6 +222,15 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .mc-note { font-size: 13px; color: var(--dim); margin: 0; }
 .mc-note b { color: var(--chalk); }
 .mc-lines { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 4px; }
+.mc-held { display: grid; gap: 4px; }
+.mc-held .mc-sub { font-size: 13px; }
+.mc-held > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.mc-dollars { grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; }
+.mc-dollars > span { font: 700 18px var(--cond); color: var(--dim); }
+.mc-dollars .mc-shares { font-size: 13px; white-space: nowrap; }
+.mc-outcomes dd.neg { color: var(--loss); }
+.mc-outcomes dd.pos { color: var(--win); }
+.mc-fill button { padding: 4px 8px; }
 .mc-lines label { display: grid; gap: 4px; color: var(--dim); font-size: 14px; }
 .deskhead .back { display: flex; justify-content: space-between; }
 .mc-head { font: 600 16px var(--cond); color: var(--dim); margin: 16px 0 0; }
