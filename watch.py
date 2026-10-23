@@ -80,6 +80,7 @@ class Desk:
         self._odds_rows = {}   # sport -> the Odds API's upcoming games (feeds.parse_odds_api rows), refreshed by odds_lines()
         self.trader = None   # trade.Trader when this process plans auto orders (the worker; a plain run never does)
         self._poly = {}      # game id -> time of the last Polymarket read, so a break reads it every 15 s, not every pass
+        self._venue_ok = True   # False after the first failed venue_quotes write (table missing), so the log is not spammed
 
     # ---- feeds (fixture-aware) ----
     def games(self, sport):
@@ -743,8 +744,10 @@ class Desk:
                                  kalshi_yes_bid=kq.get('yb'), kalshi_yes_ask=kq.get('y'), kalshi_no_bid=kq.get('nb'), kalshi_no_ask=kq.get('n')))
             if kind == 'fg':
                 rec['poly'] = dict(at=ts, quotes={f'{k:g}': q for k, q in pq.items()}, event=ev.get('slug'))
-        if rows and store.enabled():
-            store.write('venue_quotes', rows, on_conflict='taken_at,game_id,venue,kind,strike')
+        if rows and store.enabled() and self._venue_ok:
+            if not store.write('venue_quotes', rows, on_conflict='taken_at,game_id,venue,kind,strike'):
+                self._venue_ok = False   # the table is not there yet (run supabase/012_venues.sql); one line, then quiet until the next start
+                print('venue_quotes: not written again this run (run supabase/012_venues.sql)')
 
     def watch_orders(self, g, rec, ph):
         """A game with open auto orders: read its ladder on every pass (the break and the third quarter alike) and
