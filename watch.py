@@ -79,6 +79,7 @@ class Desk:
         self.holdings = {}   # event ticker -> open positions on that total (held.holdings rows), refreshed by the worker once a minute
         self._odds_rows = {}   # sport -> the Odds API's upcoming games (feeds.parse_odds_api rows), refreshed by odds_lines()
         self.trader = None   # trade.Trader when this process plans auto orders (the worker; a plain run never does)
+        self._poly = {}      # game id -> time of the last Polymarket read, so a break reads it every 15 s, not every pass
 
     # ---- feeds (fixture-aware) ----
     def games(self, sport):
@@ -637,6 +638,10 @@ class Desk:
                 x['since'] = e['first']
         self.log_row(g, rec, m, total, spread, quotes, sug, ev, ts, score)
         self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=pos, score=score)
+        try:
+            self.db_venues(ts, g, rec, stage, quotes)
+        except Exception as e:   # another venue's ladder is a log, never a reason to miss a pass
+            print(f"{g['short']}: venue log failed ({e})")
         sheet = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec)
         sheet['stage'] = stage
         if pos:
@@ -704,6 +709,42 @@ class Desk:
             self.db_alert(ts, g, slot, 'update', read_pri, title, body, ev, sent, sheet)
             rec.setdefault(K('sheet'), sheet)
         rec['last_eval'] = now_iso()
+
+    def db_venues(self, ts, g, rec, stage, quotes):
+        """Polymarket's total lines for the same game, read at the break every 15 seconds and written to the
+        venue_quotes table beside Kalshi's ladder at the same moment (supabase/012_venues.sql). The cross-venue
+        question (does one ladder lag the other, and by how much) is read from this table, nothing prices off
+        it. Off on fixtures and for a sport Polymarket does not slug; one line when the event is not found."""
+        if self.fixtures or g['sport'] not in feeds.POLY_SLUG:
+            return
+        now = time.time()
+        if now - self._poly.get(g['id'], 0) < 15:
+            return
+        self._poly[g['id']] = now
+        try:
+            ev = feeds.polymarket_event(g)
+        except Exception as e:
+            if not rec.get('noted_no_poly'):
+                print(f"{g['short']}: polymarket read failed ({e})")
+                rec['noted_no_poly'] = True
+            return
+        if not ev:
+            if not rec.get('noted_no_poly'):
+                print(f"{g['short']}: no Polymarket event ({feeds.polymarket_slug(g)})")
+                rec['noted_no_poly'] = True
+            return
+        rows = []
+        for kind in ('fg', '1h'):
+            pq = feeds.polymarket_totals(ev, kind)
+            for k, q in pq.items():
+                kq = quotes.get(k) or {}
+                rows.append(dict(taken_at=ts, game_id=g['id'], sport=g['sport'], venue='polymarket', kind=kind, strike=k, phase=rec.get('phase'), stage=stage,
+                                 yes_bid=q['yb'], yes_ask=q['y'], no_bid=q['nb'], no_ask=q['n'], market_id=q.get('ticker'),
+                                 kalshi_yes_bid=kq.get('yb'), kalshi_yes_ask=kq.get('y'), kalshi_no_bid=kq.get('nb'), kalshi_no_ask=kq.get('n')))
+            if kind == 'fg':
+                rec['poly'] = dict(at=ts, quotes={f'{k:g}': q for k, q in pq.items()}, event=ev.get('slug'))
+        if rows and store.enabled():
+            store.write('venue_quotes', rows, on_conflict='taken_at,game_id,venue,kind,strike')
 
     def watch_orders(self, g, rec, ph):
         """A game with open auto orders: read its ladder on every pass (the break and the third quarter alike) and

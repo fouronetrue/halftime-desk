@@ -228,6 +228,74 @@ def parse_odds_api(events):
     return rows
 
 
+# ---------- Polymarket (public Gamma API, no key): the same game's total lines, logged beside Kalshi's ----------
+POLY_EVENTS = 'https://gamma-api.polymarket.com/events'
+POLY_SLUG = {'nba': 'nba', 'nfl': 'nfl'}   # game events are slugged <league>-<away>-<home>-<date>, e.g. nba-bos-det-2026-10-20
+POLY_TYPES = {'totals': 'fg', 'first_half_totals': '1h'}
+
+
+def polymarket_slug(game):
+    """The Gamma event slug for an ESPN game: league, away and home codes (Kalshi's spellings where ESPN's differ,
+    which are Polymarket's too: nop, was, gsw), the game's Eastern date."""
+    pre = POLY_SLUG.get(game.get('sport'))
+    if not pre or not game.get('date_et'):
+        return None
+    alias = KALSHI_CODES.get(game.get('sport'), {})
+    a, h = game['away']['abbr'], game['home']['abbr']
+    a, h = alias.get(a, a), alias.get(h, h)
+    return f"{pre}-{a.lower()}-{h.lower()}-{game['date_et']}"
+
+
+def polymarket_event(game, timeout=10):
+    """The game's Gamma event (markets nested), or None when Polymarket has no event under that slug."""
+    slug = polymarket_slug(game)
+    if not slug:
+        return None
+    data = get_json(POLY_EVENTS, {'slug': slug}, tries=1, timeout=timeout)
+    if isinstance(data, list):
+        return data[0] if data else None
+    return data if isinstance(data, dict) and data.get('markets') else None
+
+
+def _poly_list(v):
+    if isinstance(v, list):
+        return v
+    try:
+        return json.loads(v) if isinstance(v, str) else []
+    except Exception:
+        return []
+
+
+def polymarket_totals(ev, kind='fg'):
+    """{strike: {'y': over_ask_c, 'yb': over_bid_c, 'n': under_ask_c, 'nb': under_bid_c, 'ticker': market slug}} from
+    a Gamma event's totals markets (kind 'fg' the full game, '1h' the first half). Gamma quotes the first outcome
+    (Over) as bestBid and bestAsk in dollars; the Under side is the mirror (an Under ask at 1 minus the Over bid),
+    which is how a two-outcome CLOB prices it. A market with no bid or ask is left out."""
+    out = {}
+    want = {t for t, k in POLY_TYPES.items() if k == kind}
+    for m in (ev or {}).get('markets') or []:
+        if m.get('sportsMarketType') not in want or m.get('closed'):
+            continue
+        outs = [str(o).lower() for o in _poly_list(m.get('outcomes'))]
+        if outs[:1] != ['over']:
+            continue
+        line = m.get('line')
+        if line is None:
+            mm = re.search(r'O/U (\d+(?:\.\d+)?)', m.get('question') or '')
+            line = float(mm.group(1)) if mm else None
+        bid, ask = m.get('bestBid'), m.get('bestAsk')
+        if line is None or bid is None or ask is None:
+            continue
+        try:
+            yb, y = int(round(float(bid) * 100)), int(round(float(ask) * 100))
+        except Exception:
+            continue
+        if not (0 < yb <= y < 100):
+            continue
+        out[float(line)] = dict(y=y, yb=yb, n=100 - yb, nb=100 - y, ticker=m.get('slug') or m.get('conditionId'))
+    return out
+
+
 def odds_api_lines(sport, key, timeout=20):
     """One call: every upcoming game of the sport with its closing-side lines, plus the quota from the response
     headers (remaining, used, last). Raises on a failed call so the caller can back off."""

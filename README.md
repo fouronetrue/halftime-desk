@@ -235,6 +235,14 @@ price (a restart cannot post it twice) and an `expiration_ts` at the window's en
 resting). The kill switch cancels what is resting and stops every send until it is turned off. `tests/trade_guard.py`
 pins all of it, and the fixtures run plans in shadow with the network forbidden.
 
+## Polymarket price log
+At every break the worker also reads Polymarket's total lines for the same game (the public Gamma API, no key;
+events are slugged `nba-bos-det-2026-10-20`, with full-game and first-half totals) every 15 seconds and writes each
+line's Over bid and ask in cents beside Kalshi's quote at that strike at the same moment (`venue_quotes`,
+`supabase/012_venues.sql`). Nothing prices off it. It answers the cross-venue question before any order crosses a
+venue: does one ladder lag the other at the half, on which strikes, by how much. NBA and NFL for now (no slug
+scheme for college yet).
+
 ## Manual use
 ```
 python cli.py --sport nfl --away BUF --home LAR --spread -3.5 --total 55.5 --half 13-7 --quotes "45.5y59,48.5y47,51.5n66"
