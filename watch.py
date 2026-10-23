@@ -1045,6 +1045,37 @@ def results_rows(path=RESULTS_PATH):
         return []
 
 
+def drift_lines(rows):
+    """The live drift line per sport (Roadmap v2, S1): this season's graded games against the model's own
+    second-half number, as a mean miss with its standard error. Rows from the results table carry the sheet
+    (mu_model and the break score); CSV rows carry only the fair line, so they are scored against that and say
+    so. Past 2 SE is the watch flag; the recency rule lives in scripts/drift.py."""
+    by = {}
+    for r in rows:
+        try:
+            T = float(r.get('final_total'))
+        except (TypeError, ValueError):
+            continue
+        sh = r.get('sheet') if isinstance(r.get('sheet'), dict) else None
+        if sh and sh.get('mu_model') is not None and sh.get('h1a') is not None and sh.get('h1h') is not None:
+            resid, how = T - sh['h1a'] - sh['h1h'] - float(sh['mu_model']), 'model'
+        else:
+            try:
+                resid, how = T - float(r.get('fair')), 'fair line'
+            except (TypeError, ValueError):
+                continue
+        by.setdefault((r.get('sport'), how), []).append(resid)
+    out = []
+    for (sport, how), rs in sorted(by.items(), key=lambda kv: str(kv[0])):
+        n = len(rs)
+        mean = sum(rs) / n
+        sd = (sum((x - mean) ** 2 for x in rs) / (n - 1)) ** 0.5 if n > 1 else 0.0
+        se = sd / n ** 0.5 if n > 1 else 0.0
+        z = mean / se if se else 0.0
+        out.append(f"drift {sport}: finals vs the {how} {mean:+.1f} on {n} games ({z:+.1f} SE)" + (' <-- past 2 SE, watch' if abs(z) >= 2 and n >= 30 else ''))
+    return out
+
+
 def scorecard(path=RESULTS_PATH, rows=None):
     """Season to date: are the plays making money, and is the model closer to the final than the market?"""
     rows = results_rows(path) if rows is None else rows
@@ -1076,6 +1107,7 @@ def scorecard(path=RESULTS_PATH, rows=None):
         r3 = [r for r in q3 if r.get('q3_rest_mid_pnl') not in (None, '')]
         out.append(f"end of 3rd (NBA): {len(q3)} graded, {len(q3p)} with a play: ${p3:+.0f} on ${c3:.0f} risked" + (f" ({100 * p3 / c3:+.1f}%)" if c3 else '')
                    + (f"; resting middles what-if {len(r3)} games, ${sum(f(r, 'q3_rest_mid_pnl') for r in r3):+.0f}" if r3 else ''))
+    out += drift_lines(rows)
     if store.enabled():
         try:   # the auto orders' own line (trade.py): shadow or live, fills at the break vs in play, P&L
             import trade
