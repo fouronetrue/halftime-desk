@@ -30,7 +30,22 @@ def _url():
 
 
 def _key():
-    return os.environ.get('SUPABASE_SECRET_KEY') or os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or ''
+    # stripped like the URL: a key pasted with a stray quote or newline is the usual reason writes fail
+    return (os.environ.get('SUPABASE_SECRET_KEY') or os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or '').strip().strip('"\'')
+
+
+def check():
+    """One small read, for the worker's boot line: (ok, detail). A bad URL or key fails here, in plain words,
+    instead of as a heartbeat that quietly stops."""
+    if not enabled():
+        return False, 'SUPABASE_URL or SUPABASE_SECRET_KEY is not set'
+    try:
+        r = requests.get(f'{_url()}/rest/v1/desk_state', params={'select': 'id', 'limit': 1}, headers=_headers(), timeout=20)
+        if r.status_code < 300:
+            return True, f"{_url().split('//', 1)[1].split('.')[0]} answers"
+        return False, f'HTTP {r.status_code} {r.text[:120]}'
+    except Exception as e:
+        return False, str(e)[:160]
 
 
 def enabled():

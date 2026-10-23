@@ -67,11 +67,29 @@ def pace(desk, now=None):
     return IDLE
 
 
+def boot_checks():
+    """One line per key at start, so a rotated or mistyped variable reads as a sentence in the deploy logs
+    instead of a heartbeat that quietly stops (Oct 23: the Railway credential reset)."""
+    ok, detail = store.check()
+    print(f'supabase: ok, {detail}' if ok else
+          f"supabase: FAILED ({detail}); check SUPABASE_URL and SUPABASE_SECRET_KEY in this service's variables, then Deploy", flush=True)
+    if portfolio.enabled():
+        try:
+            b = portfolio.pull_balance(portfolio.load_key())
+            print(f"kalshi: ok, balance ${b['balance']:.2f}" if b.get('balance') is not None else 'kalshi: ok', flush=True)
+        except Exception as e:
+            print(f'kalshi: FAILED ({str(e)[:160]}); check KALSHI_API_KEY_ID and KALSHI_PRIVATE_KEY (the whole PEM file), then Deploy', flush=True)
+    else:
+        print('kalshi: sync off (no KALSHI_API_KEY_ID / KALSHI_PRIVATE_KEY)', flush=True)
+    print(f"ntfy: {'topic set' if os.environ.get('NTFY_TOPIC') else 'OFF, no NTFY_TOPIC'}; odds api: {'key set' if os.environ.get('ODDS_API_KEY') else 'no ODDS_API_KEY, book lines off'}", flush=True)
+
+
 def main():
     signal.signal(signal.SIGTERM, _on_term)
     signal.signal(signal.SIGINT, _on_term)
     if not store.enabled():
         sys.exit('worker: SUPABASE_URL and SUPABASE_SECRET_KEY are required (state lives in Supabase)')
+    boot_checks()
     cfg = watch.load_json(watch.CONFIG_PATH, {})
     desk = watch.Desk(cfg, load_state())
     trader = trade.Trader(cfg, desk.cfg['bankroll'])
