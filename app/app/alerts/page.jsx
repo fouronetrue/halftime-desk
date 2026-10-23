@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { ago, etTime, gradeSheet, sheetFromSuggestion } from '@/lib/desk';
+import { ago, etTime, gradeSheet, sheetFromSuggestion, kalshiUrl } from '@/lib/desk';
 
 // Every push, graded on its own text. A PLAY is graded on what it led with (the first single, or the middle when
 // it led with one, or the reverse middle when it was all that cleared); the other lines in the push are backups and are graded as what they would have done. An
@@ -108,7 +108,16 @@ export default function Alerts() {
               <span className="when">{etTime(a.sent_at)}, {ago(a.sent_at)}</span>
               <Grade a={a} g={g} final={final} />
             </button>
-            {open === a.id && (<><Detail a={a} g={g} final={final} /><pre>{a.body}</pre><Link className="link" href={`/desk/?g=${a.game_id}`}>Open the desk</Link></>)}
+            {open === a.id && (
+              <>
+                <Detail a={a} g={g} final={final} />
+                <pre>{a.body}</pre>
+                <div className="actions">
+                  {kalshiUrl(a.event_ticker) && !final && <a className="act primary" href={kalshiUrl(a.event_ticker)} target="_blank" rel="noopener">Open on Kalshi</a>}
+                  <Link className="act" href={`/desk/?g=${a.game_id}`}>Open the desk</Link>
+                </div>
+              </>
+            )}
           </li>
         ))}
       </ul>
