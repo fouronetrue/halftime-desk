@@ -304,7 +304,8 @@ class Desk:
             singles=sug['singles'], mids=sug['mids'][:max(MIDS_KEPT, sum(1 for x in sug['mids'] if x['ok']))],   # best first, every cleared one kept
             # reverse middles the same way (supabase/005_reverse.sql adds the column; written without it until then)
             revs=(sug.get('revs') or [])[:max(10, sum(1 for x in sug.get('revs') or [] if x['ok']))],
-            held=held or [],   # the open positions on this total when priced, with the sell-or-hold verdict and the pairings (same file adds the column)
+            held=held or {},   # what you hold on this total, read as one position: legs with verdicts, the finals in dollars, the hedge (supabase/005_reverse.sql adds the column)
+            spot=m.spot(),     # the game-state label (blowout, favorite trailing, ...), for the Record split; it left the push text on Oct 22 (supabase/010_spot.sql)
             bankroll=sizing['bankroll'], max_risk=sizing['max_risk'], max_cost=sizing['max_cost'])], on_conflict='taken_at,game_id')
         snaps = []
         for r in rows:
@@ -586,21 +587,27 @@ class Desk:
         remaining = max(0.0, bank * self.cfg['day_cost_pct'] / 100 - spent)
         max_risk = min(bank * self.cfg['risk_pct'] / 100, remaining)
         max_cost = min(bank * self.cfg['cost_pct'] / 100, remaining)
+        # What you already own on this total counts against the middle loss cap before anything new is sized
+        # (Nick, Oct 22): a built middle's miss comes out of the cap first.
+        held_legs = self.held_legs(ev, quotes)
+        cap = self.cfg.get('mid_loss_cap')
+        held_miss = engine.held_miss_loss(held_legs) if held_legs else 0.0
+        mid_loss = None if cap is None else max(0.0, cap - held_miss)
         sug = engine.suggest(rows, quotes, self.cfg['order'], self.cfg['margin_c'] / 100, self.cfg['trust_pct'] / 100,
-                             bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']), self.cfg.get('mid_loss_cap'))
+                             bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']), mid_loss)
         inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'], h1a=away_pts, h1h=home_pts,
                    sharp=(rec.get('h2') or {}).get('line') if center_src == 'sharp' else None)
-        sizing = dict(bankroll=bank, max_risk=max_risk, max_cost=max_cost, margin=self.cfg['margin_c'] / 100, mid_loss=self.cfg.get('mid_loss_cap'),
-                      near_pts=(self.cfg.get('rest_near_pts') or {}).get(g['sport'], 3.5))
+        sizing = dict(bankroll=bank, max_risk=max_risk, max_cost=max_cost, margin=self.cfg['margin_c'] / 100, mid_loss=mid_loss,
+                      mid_loss_cap=cap, held_miss=held_miss, near_pts=(self.cfg.get('rest_near_pts') or {}).get(g['sport'], 3.5))
         focus = 'middles' if g['sport'] in (self.cfg.get('middle_focus') or []) else None
-        kind, head, text = engine.order_sheet(m, inp, rows, sug, sizing, focus=focus)
+        # What you already own on this total, read as one position off the same ladder: a verdict a leg, the
+        # finals together, and the hedge that leaves no final losing when one exists. It lifts a read to high
+        # priority when there is something to do (a SELL verdict or a hedge).
+        pos = engine.held_position(rows, quotes, held_legs, self.cfg['margin_c'] / 100, self.cfg['order'], (self.cfg['min_price_c'], self.cfg['max_price_c'])) if held_legs else None
+        held_lines = engine.held_block(pos) if pos else []
+        held_act = bool(pos) and (bool(pos.get('hedge')) or any((h.get('sell') or {}).get('verdict') == 'SELL' for h in pos['legs']))
+        kind, head, text = engine.order_sheet(m, inp, rows, sug, sizing, focus=focus, held=held_lines)
         plays = [x for x in sug['mids'] if x['ok']] + [x for x in sug['singles'] if x['ok']] + [x for x in sug.get('revs') or [] if x['ok']]
-        # What you already own on this total, priced off the same ladder: sell or hold against fair, the middle
-        # completion or the lay-off when that leg clears, a free completion when the ask allows one. On a read it
-        # goes first (it is the actionable part) and lifts the push to high priority when there is something to do.
-        held_lines, held_rows, held_act = self.held_block(ev, rows, quotes)
-        if held_lines:
-            text = ('\n'.join(held_lines) + '\n\n' + text) if (not plays and held_act) else (text + '\n\n' + '\n'.join(held_lines))
         ts = now_iso()
         rec.setdefault(K('half_at'), ts)
         # Every cleared line gets stamped with when it first cleared this break, so Today can say "clear for 2 min"
@@ -618,11 +625,11 @@ class Desk:
                 e['last'], e['n'] = ts, e['n'] + 1
                 x['since'] = e['first']
         self.log_row(g, rec, m, total, spread, quotes, sug, ev, ts, score)
-        self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=held_rows, score=score)
+        self.db_eval(ts, g, rec, m, total, spread, quotes, rows, sug, ev, sizing, held=pos, score=score)
         sheet = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec)
         sheet['stage'] = stage
-        if held_rows:
-            sheet['held'] = held_rows
+        if pos:
+            sheet['held'] = pos
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
         # polling allows), one the first time it is seen after the Q3 kick while the score is still the
         # halftime score (the moved-score check above already returned otherwise). For the NBA the second slot
@@ -674,27 +681,17 @@ class Desk:
             rec.setdefault(K('sheet'), sheet)
         rec['last_eval'] = now_iso()
 
-    def held_block(self, ev, rows, quotes):
-        """YOU HOLD lines for the open positions on this game's total, from self.holdings (held.holdings() rows,
-        keyed by event ticker, which the worker refreshes once a minute from the Kalshi sync; a plain watch.py run
-        loads them once at the start). Returns (lines, rows for the sheet, whether anything is actionable:
-        a SELL verdict, a pairing or a lay-off that clears, or a free completion)."""
-        hs = self.holdings.get(ev.get('event_ticker')) or []
-        lines, kept, act = [], [], False
-        for h in hs:
+    def held_legs(self, ev, quotes):
+        """The open positions on this game's total (self.holdings: held.holdings() rows keyed by event ticker,
+        which the worker refreshes once a minute from the Kalshi sync; a plain watch.py run loads them once at
+        the start), each with its strike read off the ladder. Legs on a strike the ladder does not quote are left out."""
+        out = []
+        for h in self.holdings.get(ev.get('event_ticker')) or []:
             k = next((k for k, v in quotes.items() if v.get('ticker') == h.get('ticker')), None)
             if k is None:
                 continue
-            hh = dict(h, strike=k)
-            o = engine.held_options(rows, quotes, hh, self.cfg['margin_c'] / 100, self.cfg['order'], (self.cfg['min_price_c'], self.cfg['max_price_c']))
-            if not o:
-                continue
-            if lines:
-                lines.append('')
-            lines += engine.held_lines(hh, o)
-            kept.append(dict(ticker=h.get('ticker'), side=h['side'], strike=k, shares=int(h['shares']), paid_c=h['paid_c'], fee=h.get('fee'), options=o))
-            act = act or bool(o.get('pair') or o.get('layoff') or o.get('free') or (o.get('sell') or {}).get('verdict') == 'SELL')
-        return lines, kept, act
+            out.append(dict(ticker=h.get('ticker'), side=h['side'], strike=k, shares=int(h['shares']), paid_c=h['paid_c'], fee=h.get('fee')))
+        return out
 
     def sheet(self, g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec=None):
         """What the first push said, kept so the final can grade it: cleared plays at their prices and sizes, the
@@ -706,11 +703,11 @@ class Desk:
         # sport whenever one cleared, otherwise the best single, the reverse middle only when it is all that
         # cleared; a read has only the resting what-if
         lead = 'mid' if (mid and (focus or not singles)) else 'single' if singles else 'rev' if rev else 'rest'
-        out = dict(at=now_iso(), lead=lead, total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2),
+        out = dict(at=now_iso(), lead=lead, total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2), spot=m.spot(),
                    mu_model=round(m.mu_model, 2), center=None if m.center is None else round(m.center, 2), center_w=m.center_w,
                    center_src=(rec or {}).get('center_src'), sharp=((rec or {}).get('h2') or {}).get('line'), sharp_books=((rec or {}).get('h2') or {}).get('books'),
                    pace=(rec or {}).get('pace'), spread_half=(rec or {}).get('spread_half'),
-                   fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev),
+                   fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev), held_miss=sizing.get('held_miss') or 0,
                    singles=[dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost']) for s in singles],
                    mid=None, rest_mid=None)
         if rev:
