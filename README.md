@@ -203,6 +203,19 @@ sample. The oft-repeated "60+ first-half points means a 20-point second half" is
 29.6 actual, 30.9 model). `python scripts/fit_cfb.py data/cfb_games.csv` reprints the study (`--write` refits
 the block); `scripts/build_cfb_games.py` rebuilds the table. The study is in `claude/cfb-blowout-refit.md`.
 
+## Bankroll from the live balance
+Every cap is a percentage of `bankroll`. The worker sets it from Kalshi instead of a number typed into
+`config.json`: the first time it runs with no stored bankroll, and every Tuesday after that (the unit-reset day),
+the bankroll becomes the newest portfolio snapshot's cash plus positions at market, rounded to the dollar, when
+that snapshot is under 36 hours old and the number is at least $500. It is stored in `desk_state` (id `bankroll`)
+so the worker and the GitHub backup size alike; `config.json` is the seed and the fallback. `"bankroll_auto": false`
+in `config.json` turns it off.
+
+## The push carries the market
+Every push's tap target is the Kalshi event page (`kalshi.com/markets/<series>/event/<event ticker>`), and the
+notification carries an Open market button; Pushover gets the same as its supplementary URL. One tap from the
+alert to the market. The Today card at a break and the Desk have the same button.
+
 ## Auto orders (trade.py), shadow first
 `trade.py` is the one module that may send an order, and `tests/readonly.py` fails the build if any other file
 names an order endpoint. It runs in the worker only, and only with an `auto` block in `config.json`:

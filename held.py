@@ -291,7 +291,10 @@ def check(desk, push=None, max_loss=MAX_LOSS):
         if last and not upgraded and m['slack_c'] < float(last.get('slack_c', 0)) + IMPROVE_C:
             continue
         title, body = text(h, mine, m, sell_now(h, quotes[mine]), ev.get('sub_title') or ev.get('title') or h['event_ticker'])
-        push(title, body, priority='high', tags='football')
+        try:
+            push(title, body, priority='high', tags='football', url=feeds.kalshi_url(h['event_ticker']))
+        except TypeError:   # a test's stand-in push without the url argument
+            push(title, body, priority='high', tags='football')
         held[h['ticker']] = dict(tier=m.get('tier'), kind=m['kind'], strike=m['strike'], price_c=m['price_c'], slack_c=m['slack_c'], pairs=m['pairs'],
                                  at=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
         sent.append((title, body))

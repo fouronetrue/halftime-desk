@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import MiddleCalc from '@/components/MiddleCalc';
 import MiddleCompare from '@/components/MiddleCompare';
 import FairMiddle from '@/components/FairMiddle';
-import { ago, etTime, isHalfish, middle, money, phaseLabel, reverse, reverseAt, scoreMoved, seriesOf, spreadText } from '@/lib/desk';
+import { ago, etTime, isHalfish, middle, money, phaseLabel, reverse, reverseAt, scoreMoved, seriesOf, spreadText, kalshiUrl } from '@/lib/desk';
 
 function lastGame() {
   try { return localStorage.getItem('hd-last-game'); } catch { return null; }
@@ -254,7 +254,7 @@ function DeskView() {
           <Ladder rows={rows} legs={moved ? {} : legs} pick={pick} onPick={onPick} />
           <MiddleCompare rows={rows} sport={game.sport} budget={Number(budget) || 0} maxCost={Number(sug?.max_cost || 0)} mids={sug?.mids} pick={pick} onPick={(o, u) => setPick({ over: o, under: u })} />
           <MiddleBuilder m={m} pick={pick} sport={game.sport} sug={sug} budget={budget} setBudget={setBudget} pairs={pairs} setPairs={setPairs} clear={() => { setPick({ over: null, under: null }); setPairs(''); }} />
-          {series && <a className="cta" href={`https://kalshi.com/markets/${series}`} target="_blank" rel="noopener noreferrer">Open on Kalshi</a>}
+          {series && <a className="cta" href={kalshiUrl(game.kalshi_total_event || sug?.event_ticker) || `https://kalshi.com/markets/${series}`} target="_blank" rel="noopener noreferrer">Open on Kalshi</a>}
         </>
       )}
     </main>

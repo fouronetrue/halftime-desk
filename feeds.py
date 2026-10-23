@@ -452,6 +452,15 @@ def kalshi_events(series, status='open'):
     return out
 
 
+def kalshi_url(event_ticker):
+    """The Kalshi page for an event: kalshi.com/markets/<series>/event/<event ticker>, lower case. Opens the Kalshi
+    app on a phone that has it."""
+    if not event_ticker:
+        return None
+    t = str(event_ticker).lower()
+    return f"https://kalshi.com/markets/{t.split('-')[0]}/event/{t}"
+
+
 def ticker_date(event_ticker):
     """KXNFLTOTAL-26OCT15SEADEN -> ('2026-10-15', 'SEADEN')"""
     m = re.match(r'^[A-Z0-9]+-(\d\d)([A-Z]{3})(\d\d)([A-Z0-9]+)$', event_ticker or '')

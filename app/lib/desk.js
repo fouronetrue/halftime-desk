@@ -63,6 +63,17 @@ export function spreadText(g) {
   return v < 0 ? `${g.home_abbr} ${v}` : `${g.away_abbr} -${v}`;
 }
 
+// The Kalshi page for a totals event: kalshi.com/markets/<series>/event/<event ticker>, lower case. Opens the
+// Kalshi app on a phone that has it. (Oct 23: the one-tap path from a push or a card to the market.)
+export function kalshiUrl(eventTicker) {
+  if (!eventTicker) return null;
+  const t = String(eventTicker).toLowerCase();
+  return `https://kalshi.com/markets/${t.split('-')[0]}/event/${t}`;
+}
+
+// How long a break lasts from the watcher's first look at it, by sport: the halftime window the push prices.
+export const BREAK_MIN = { nfl: 13, cfb: 20, nba: 15 };
+
 export function money(x) {
   const v = Number(x || 0);
   return `${v < 0 ? '-' : ''}$${Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 2)}`;

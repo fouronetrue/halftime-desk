@@ -46,6 +46,14 @@ CENTER_2H_RANGE = {'nba': (70, 160), 'nfl': (6, 60), 'cfb': (8, 90)}   # a cente
 CENTER_Q4_RANGE = {'nba': (30, 95)}    # the same for the points left at the end of the third (a 4th quarter plus the overtime chance)
 
 
+def send_push(title, body, priority='default', tags='football', url=None):
+    """notify.push with the market link; a stand-in push without the url argument (the tests') still works."""
+    try:
+        return notify.push(title, body, priority=priority, tags=tags, url=url)
+    except TypeError:
+        return notify.push(title, body, priority=priority, tags=tags)
+
+
 def load_json(path, default):
     try:
         with open(path) as f:
@@ -150,10 +158,56 @@ class Desk:
         print(f"odds api {sport}: {len(rows)} games ({pin} with Pinnacle), {'closing read' if close else 'early read'}, "
               f"{usage.get('remaining', '?')} credits left this month")
 
+    # ---- bankroll from the live balance ----
+    def sync_bankroll(self):
+        """The bankroll every cap is a percentage of, from Kalshi instead of a number typed into config.json
+        (Nick, Oct 23). The rule: the first time this runs with no stored bankroll, and every Tuesday after that
+        (the unit-reset day), the bankroll becomes the newest portfolio snapshot's cash plus positions at market,
+        rounded to the dollar, if that snapshot is under 36 hours old and the number is at least $500. Stored in
+        desk_state (id 'bankroll') so the worker and the GitHub backup size alike; config.json is the seed and the
+        fallback. Off with "bankroll_auto": false in config.json. Checked at most once an hour."""
+        if not store.enabled() or self.fixtures or self.cfg.get('bankroll_auto') is False:
+            return
+        now = time.time()
+        if now - getattr(self, '_bank_checked', 0) < 3600:
+            return
+        self._bank_checked = now
+        rows = store.read('desk_state', {'select': 'state,updated_at', 'id': 'eq.bankroll'})
+        cur = rows[0].get('state') if rows and isinstance(rows[0].get('state'), dict) else None
+        if cur and cur.get('bankroll'):
+            self.cfg['bankroll'] = float(cur['bankroll'])
+            if self.trader:
+                self.trader.bank = self.cfg['bankroll']
+        today = dt.datetime.now(feeds.ET)
+        due = cur is None or (today.weekday() == 1 and (cur.get('set_on') or '') != today.strftime('%Y-%m-%d'))
+        if not due:
+            return
+        snap = store.read('portfolio_snapshots', {'select': 'taken_at,balance,portfolio_value', 'order': 'taken_at.desc', 'limit': 1})
+        if not snap:
+            return
+        s = snap[0]
+        taken = dt.datetime.fromisoformat(str(s.get('taken_at')).replace('Z', '+00:00'))
+        if (dt.datetime.now(dt.timezone.utc) - taken).total_seconds() > 36 * 3600:
+            return
+        bank = round(float(s.get('balance') or 0) + float(s.get('portfolio_value') or 0))
+        if bank < 500:
+            return
+        prev = self.cfg.get('bankroll')
+        state = dict(bankroll=bank, set_on=today.strftime('%Y-%m-%d'), set_at=now_iso(), balance=s.get('balance'), portfolio_value=s.get('portfolio_value'), prev=prev)
+        if store.write('desk_state', [dict(id='bankroll', state=state, last_beat=now_iso(), note=f'bankroll ${bank} from the Kalshi balance', updated_at=now_iso())], on_conflict='id'):
+            self.cfg['bankroll'] = float(bank)
+            if self.trader:
+                self.trader.bank = float(bank)
+            print(f"bankroll set to ${bank} from the Kalshi balance (was ${prev:.0f}); caps follow it")
+
     # ---- one pass over both sports ----
     def run_pass(self):
         active = False
         seen = []
+        try:
+            self.sync_bankroll()
+        except Exception as e:   # the bankroll read never blocks a pass
+            print(f'bankroll sync failed: {e}')
         self.phases, self.next_kick = {}, None   # read by worker.py to pick its polling pace
         self._pre_snaps = []
         for sport in self.cfg['sports']:
@@ -684,7 +738,7 @@ class Desk:
                 slots[slot] = 'elsewhere'
                 rec['last_eval'] = now_iso()
                 return
-            sent = notify.push(title, body, priority='high', tags='moneybag')
+            sent = send_push(title, body, priority='high', tags='moneybag', url=feeds.kalshi_url(ev.get('event_ticker')))
             slots[slot] = 'play'
             self.pushed.append(title)
             self.db_alert(ts, g, slot, 'play', 'high', title, body, ev, sent, sheet)
@@ -704,7 +758,7 @@ class Desk:
                 slots[slot] = 'elsewhere'
                 rec['last_eval'] = now_iso()
                 return
-            sent = notify.push(title, body, priority=read_pri)
+            sent = send_push(title, body, priority=read_pri, url=feeds.kalshi_url(ev.get('event_ticker')))
             slots[slot] = 'read'
             self.pushed.append(title)
             self.db_alert(ts, g, slot, 'update', read_pri, title, body, ev, sent, sheet)

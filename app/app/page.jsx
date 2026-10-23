@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { etDate, etDay, etTime, ago, phaseLabel, isHalfish, scoreMoved, spreadText } from '@/lib/desk';
+import { etDate, etDay, etTime, ago, phaseLabel, isHalfish, scoreMoved, spreadText, kalshiUrl, BREAK_MIN } from '@/lib/desk';
 import { middleOpen, freeOpen } from '@/components/HeldTotals';
 
 const SPORTS = [['all', 'All'], ['nfl', 'NFL'], ['cfb', 'College'], ['nba', 'NBA']];
@@ -48,29 +48,68 @@ function clearFor(since) {
 
 function BetLines({ sug }) {
   const { single, mid, pairs } = bets(sug);
-  if (!single && !mid) return <p className="betline none"><b>BET:</b> None. Nothing clears the 3c edge.</p>;
+  if (!single && !mid) return <p className="betline none"><b>No bet</b> Nothing clears the 3c edge at these prices.</p>;
   return (
     <div className="bets">
       {single && (
-        <p className="betline"><b>BET:</b> Single - {single.kind === 'over' ? 'Over' : 'Under'} {Number(single.line)} ({single.contracts} shares, {single.price_c}c){single.since ? <span className={`clearfor ${clearFor(single.since) === 'just now' ? 'new' : ''}`}>{clearFor(single.since)}</span> : null}</p>
+        <p className="betline"><b>BET</b> {single.kind === 'over' ? 'Over' : 'Under'} {Number(single.line)} at {single.price_c}c, {single.contracts} shares<span className="edge">+{(100 * Number(single.edge || 0)).toFixed(1)}c</span>{single.since ? <span className={`clearfor ${clearFor(single.since) === 'just now' ? 'new' : ''}`}>{clearFor(single.since)}</span> : null}</p>
       )}
       {mid && pairs > 0 && (
-        <p className="betline"><b>BET:</b> Middle - O{Number(mid.a.line)} ({pairs} shares, {mid.a.price_c}c), U{Number(mid.b.line)} ({pairs} shares, {mid.b.price_c}c){mid.since ? <span className={`clearfor ${clearFor(mid.since) === 'just now' ? 'new' : ''}`}>{clearFor(mid.since)}</span> : null}</p>
+        <p className="betline"><b>BET</b> Middle O{Number(mid.a.line)} at {mid.a.price_c}c + U{Number(mid.b.line)} at {mid.b.price_c}c, {pairs} pairs<span className="edge">+{(100 * Number(mid.ev || 0)).toFixed(1)}c</span>{mid.since ? <span className={`clearfor ${clearFor(mid.since) === 'just now' ? 'new' : ''}`}>{clearFor(mid.since)}</span> : null}</p>
       )}
       {single && mid && pairs > 0 && <p className="betnote">One or the other, not both.</p>}
     </div>
   );
 }
 
-function GameCard({ g, sug, big, mkt }) {
+// The break clock. The watcher stamps half_at at its first look; the sport says how long a halftime runs. A
+// prediction-market bettor needs one number here: how long the stale prices have left before the third quarter
+// reprices everything. Ticks every second while the card is on screen.
+function Window({ g }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
+  if (g.phase === 'approaching' || g.phase === 'approaching3') return <p className="window soon">Break coming, {g.clock || ''} on the clock. The push lands at the horn.</p>;
+  if (g.phase === 'q3end' || g.phase === 'early4') return <p className="window">End of the third. Prices hold until the first basket of the fourth.</p>;
+  if (g.phase === 'early3') return <p className="window">Third quarter under way. The half prices hold until someone scores.</p>;
+  if (!g.half_at) return null;
+  const total = (BREAK_MIN[g.sport] || 15) * 60;
+  const left = Math.round(total - (now - new Date(g.half_at).getTime()) / 1000);
+  if (left <= 0) return <p className="window late">Break should be over. Prices move at the first score.</p>;
+  const m = Math.floor(left / 60), sec = String(left % 60).padStart(2, '0');
+  return (
+    <div className="window">
+      <div className="wbar" role="img" aria-label={`About ${m} minutes left in the break`}><div className="wfill" style={{ width: `${Math.max(2, (100 * left) / total)}%` }} /></div>
+      <p>About <b>{m}:{sec}</b> left in the break</p>
+    </div>
+  );
+}
+
+// What the desk's own orders did on this game (trade.py): shadow rows say what would have been posted and whether
+// the ladder reached the price; live rows carry Kalshi's answer.
+function AutoLine({ orders }) {
+  if (!orders || !orders.length) return null;
+  const mode = orders[0].mode;
+  const rests = orders.filter((o) => o.kind === 'rest');
+  const hit = orders.filter((o) => ['touched', 'filled', 'partial'].includes(o.status));
+  return (
+    <p className="autoline">
+      <b>{mode === 'live' ? 'Auto' : 'Auto, shadow'}</b> {rests.length} resting order{rests.length === 1 ? '' : 's'} posted
+      {hit.length ? <>, <span className="pos">{hit.length} reached</span></> : ', none reached yet'}.
+    </p>
+  );
+}
+
+function GameCard({ g, sug, big, mkt, orders }) {
   const live = g.phase === 'live' || isHalfish(g) || g.phase === 'post';
   const away = live ? (g.phase === 'post' ? g.final_away ?? g.away_score : g.away_score) : null;
   const home = live ? (g.phase === 'post' ? g.final_home ?? g.home_score : g.home_score) : null;
   const awayWins = away !== null && home !== null && away > home;
   const homeWins = away !== null && home !== null && home > away;
   const sp = spreadText(g);
+  const kalshi = kalshiUrl(g.kalshi_total_event);
   return (
-    <Link href={`/desk/?g=${g.id}`} className={`card ${big ? 'big' : ''} ph-${g.phase}`}>
+    <article className={`card ${big ? 'big' : ''} ph-${g.phase}`}>
+      <Link href={`/desk/?g=${g.id}`} className="cardlink" aria-label={`Open the desk for ${g.away_abbr} at ${g.home_abbr}`} />
       <div className="rows">
         <div className={`team ${awayWins ? 'lead' : ''}`}><span className="abbr">{g.away_abbr}</span><span className="name">{g.away_name}</span><span className="pts">{away ?? ''}</span></div>
         <div className={`team ${homeWins ? 'lead' : ''}`}><span className="abbr">{g.home_abbr}</span><span className="name">{g.home_name}</span><span className="pts">{home ?? ''}</span></div>
@@ -102,7 +141,17 @@ function GameCard({ g, sug, big, mkt }) {
           {isHalfish(g) && <BetLines sug={sug} />}
         </div>
       ))}
-    </Link>
+      {big && (
+        <div className="cardfoot">
+          <Window g={g} />
+          <AutoLine orders={orders} />
+          <div className="actions">
+            {kalshi && <a className="act primary" href={kalshi} target="_blank" rel="noopener">Open on Kalshi</a>}
+            <Link className="act" href={`/desk/?g=${g.id}`}>Full ladder</Link>
+          </div>
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -112,6 +161,7 @@ export default function Today() {
   const [beat, setBeat] = useState(null);
   const [mkts, setMkts] = useState({});
   const [held, setHeld] = useState({});
+  const [orders, setOrders] = useState({});
   const [sport, setSport] = useState('all');
   const [showFinal, setShowFinal] = useState(false);
   const [err, setErr] = useState('');
@@ -139,6 +189,10 @@ export default function Today() {
       const latest = {};
       for (const s of ss || []) if (!latest[s.game_id]) latest[s.game_id] = s;
       setSugs(latest);
+      const { data: os } = await supabase.from('orders').select('game_id,side,strike,price_c,count,status,kind,mode,stage').in('game_id', halfIds).limit(400);
+      const byGame = {};
+      for (const o of os || []) (byGame[o.game_id] ||= []).push(o);
+      setOrders(byGame);
     }
   }, []);
 
@@ -170,7 +224,7 @@ export default function Today() {
       {middleOpen(held).map((ev) => (
         <p key={ev.game} className="openline"><b>{freeOpen(ev) ? 'Free middle' : 'Middle open'}</b> on your {ev.game} total. <Link href="/bets/" className="link">See Bets</Link></p>
       ))}
-      {half.length > 0 && <section><h2>At the half</h2>{half.map((g) => <GameCard key={g.id} g={g} sug={sugs[g.id]} big />)}</section>}
+      {half.length > 0 && <section><h2>At the break</h2>{half.map((g) => <GameCard key={g.id} g={g} sug={sugs[g.id]} orders={orders[g.id]} big />)}</section>}
       {live.length > 0 && <section><h2>Live</h2>{live.map((g) => <GameCard key={g.id} g={g} />)}</section>}
       {pre.length > 0 && <section><h2>Coming up</h2>{pre.map((g) => <GameCard key={g.id} g={g} mkt={mkts[g.id]} />)}</section>}
       {done.length > 0 && (
@@ -179,7 +233,7 @@ export default function Today() {
           {showFinal && done.map((g) => <GameCard key={g.id} g={g} sug={sugs[g.id]} />)}
         </section>
       )}
-      {!err && shown.length === 0 && <p className="empty">No games on today&apos;s slate yet. The watcher adds them as ESPN posts the scoreboard.</p>}
+      {!err && shown.length === 0 && <p className="empty">No games on today&apos;s slate yet. They appear as ESPN posts the scoreboard; the first push lands at the first halftime.</p>}
     </main>
   );
 }
