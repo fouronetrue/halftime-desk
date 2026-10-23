@@ -29,5 +29,19 @@
     "nfl": 50,
     "cfb": 80,
     "nba": 0
+  },
+  "auto": {
+    "mode": "shadow",
+    "sports": ["nba"],
+    "rest_mode": "pair",
+    "rest_until": "q4",
+    "pair_miss_pct": 0.5,
+    "pair_miss_max": null,
+    "night_loss_pct": 5,
+    "night_loss_max": null,
+    "rest_capital_pct": 40,
+    "singles": false,
+    "max_orders_per_game": 12,
+    "max_orders_per_night": 200
   }
 }

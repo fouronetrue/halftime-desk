@@ -78,6 +78,7 @@ class Desk:
         self._db_games = {}   # game id -> (row hash, time sent), so Supabase only hears about games that changed
         self.holdings = {}   # event ticker -> open positions on that total (held.holdings rows), refreshed by the worker once a minute
         self._odds_rows = {}   # sport -> the Odds API's upcoming games (feeds.parse_odds_api rows), refreshed by odds_lines()
+        self.trader = None   # trade.Trader when this process plans auto orders (the worker; a plain run never does)
 
     # ---- feeds (fixture-aware) ----
     def games(self, sport):
@@ -189,6 +190,11 @@ class Desk:
                         self.settle(g, rec)
                     except Exception as e:  # grading must never block the watch
                         print(f"settle {g.get('short')} failed: {e}")
+                if self.trader and ph not in ('pre', 'post'):
+                    try:
+                        self.watch_orders(g, rec, ph)
+                    except Exception as e:   # the order log never blocks the watch
+                        print(f"orders {g.get('short')}: {e}")
                 seen.append((g, rec))
         self.prune()
         self.db_games(seen)
@@ -635,6 +641,19 @@ class Desk:
         sheet['stage'] = stage
         if pos:
             sheet['held'] = pos
+        # Auto orders (trade.py): planned once per break, at the first look, whatever the push slot did. Shadow
+        # mode records what it would have sent; live mode sends only when every switch in trade.Trader.armed is on.
+        if self.trader and not (rec.get('auto') or {}).get(stage):
+            try:
+                orders, note = self.trader.plan(g, rec, stage, m, rows, sug, quotes, ev, sizing, ts, held_legs)
+                done = self.trader.act(orders)
+                rec.setdefault('auto', {})[stage] = dict(at=ts, n=len(done), note=note, mode=self.trader.mode(),
+                                                        open=[o for o in done if o.get('status') in ('planned', 'sent', 'resting')])
+                if done or note:
+                    print(f"auto {self.trader.mode()} {g['short']} ({stage}): {len(done)} orders" + (f"; {note}" if note else ''))
+            except Exception as e:   # the executor never blocks a push
+                print(f"auto {g['short']} failed: {e}")
+                rec.setdefault('auto', {})[stage] = dict(at=ts, n=0, note=f'failed: {e}'[:200], open=[])
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
         # polling allows), one the first time it is seen after the Q3 kick while the score is still the
         # halftime score (the moved-score check above already returned otherwise). For the NBA the second slot
@@ -685,6 +704,19 @@ class Desk:
             self.db_alert(ts, g, slot, 'update', read_pri, title, body, ev, sent, sheet)
             rec.setdefault(K('sheet'), sheet)
         rec['last_eval'] = now_iso()
+
+    def watch_orders(self, g, rec, ph):
+        """A game with open auto orders: read its ladder on every pass (the break and the third quarter alike) and
+        let the trader mark what a resting price has reached (the shadow fill model) or has expired. One events
+        call per sport per pass, the same one the break pricing uses."""
+        auto = rec.get('auto') or {}
+        if not any(st.get('open') for st in auto.values()):
+            return
+        tk = rec.get('kalshi_total_event')
+        ev = next((e for e in self.events(g['sport'], 'total') if e.get('event_ticker') == tk), None) if tk else None
+        if not ev:
+            return
+        self.trader.touch(g, rec, feeds.total_quotes(ev), ph)
 
     def held_legs(self, ev, quotes):
         """The open positions on this game's total (self.holdings: held.holdings() rows keyed by event ticker,
@@ -798,10 +830,16 @@ class Desk:
         sh = self.record_sheet(g, rec)
         two = (g['sport'] + '_q3') in engine.MODEL
         sh3 = self.record_sheet(g, rec, 'q3') if two else None
+        T = g['away']['score'] + g['home']['score']
+        auto = None
+        if self.trader and rec.get('auto'):
+            try:
+                auto = self.trader.grade(g, rec, T)
+            except Exception as e:
+                print(f"auto grade {g['short']} failed: {e}")
         if not sh and not sh3:
             rec['settled'] = dict(at=now_iso(), nothing_pushed=True)
             return
-        T = g['away']['score'] + g['home']['score']
         pre = rec.get('pre') or {}
         gr = grade_sheet(sh, T) if sh else None
         fl = self.flickers(g['id'], T, sh) if sh else []
@@ -838,7 +876,8 @@ class Desk:
                 db['sheet_q3'], db['flickers_q3'] = sh3, fl3
             store.write('results', [db], on_conflict='game_id')
         print(f"settled {g['short']}: final {T}, fair {fair}, market {mkt}, play {gr['pnl'] if gr else 0:+.0f}, middle {(gr or {}).get('mid_pnl') or 0:+.0f}"
-              + (f"; end of 3rd: fair {sh3.get('fair')}, play {gr3['pnl']:+.0f}, middle {gr3['mid_pnl'] or 0:+.0f}" if gr3 else ''))
+              + (f"; end of 3rd: fair {sh3.get('fair')}, play {gr3['pnl']:+.0f}, middle {gr3['mid_pnl'] or 0:+.0f}" if gr3 else '')
+              + (f"; auto {self.trader.mode()}: {auto['fills']} fills of {auto['orders']} orders, {auto['pnl']:+.0f}" if auto else ''))
 
     def log_row(self, g, rec, m, total, spread, quotes, sug, ev, ts=None, score=None):
         score = score or rec['half']
@@ -1037,6 +1076,14 @@ def scorecard(path=RESULTS_PATH, rows=None):
         r3 = [r for r in q3 if r.get('q3_rest_mid_pnl') not in (None, '')]
         out.append(f"end of 3rd (NBA): {len(q3)} graded, {len(q3p)} with a play: ${p3:+.0f} on ${c3:.0f} risked" + (f" ({100 * p3 / c3:+.1f}%)" if c3 else '')
                    + (f"; resting middles what-if {len(r3)} games, ${sum(f(r, 'q3_rest_mid_pnl') for r in r3):+.0f}" if r3 else ''))
+    if store.enabled():
+        try:   # the auto orders' own line (trade.py): shadow or live, fills at the break vs in play, P&L
+            import trade
+            line = trade.readout()
+            if line and not line.startswith('auto: no'):
+                out.append(line)
+        except Exception as e:
+            out.append(f'auto readout unavailable: {e}')
     return '\n'.join(out)
 
 

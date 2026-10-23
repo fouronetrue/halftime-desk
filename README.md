@@ -203,6 +203,38 @@ sample. The oft-repeated "60+ first-half points means a 20-point second half" is
 29.6 actual, 30.9 model). `python scripts/fit_cfb.py data/cfb_games.csv` reprints the study (`--write` refits
 the block); `scripts/build_cfb_games.py` rebuilds the table. The study is in `claude/cfb-blowout-refit.md`.
 
+## Auto orders (trade.py), shadow first
+`trade.py` is the one module that may send an order, and `tests/readonly.py` fails the build if any other file
+names an order endpoint. It runs in the worker only, and only with an `auto` block in `config.json`:
+
+| key | meaning | default |
+|---|---|---|
+| mode | shadow (record what it would send, send nothing) or live | shadow |
+| sports | which sports it plans for | nba |
+| rest_mode | pair: the push's resting middle legs (tight and wide for the NBA); ladder: YES on every strike at or below fair and NO on every strike at or above it, within rest_near_pts | pair |
+| rest_until | how long a resting order lives: break (the end of the half) or q4 (the start of the fourth, the push's own cancel rule) | q4 |
+| pair_miss_pct, pair_miss_max | per game: if every resting order filled, the worst final loses at most this % of bankroll (or this many dollars when set), less what you already hold on the total | 0.5, none |
+| night_loss_pct, night_loss_max | once the night's graded auto orders have lost this much, nothing new is posted | 5, none |
+| rest_capital_pct | open resting orders at once, % of bankroll | 40 |
+| singles | also send the push's lead (the cleared middle, else the first single) as immediate-or-cancel orders at the ask (phase 3); shadow records them regardless | false |
+| max_orders_per_game, max_orders_per_night | hard stops | 12, 200 |
+
+At the first look at a break the worker plans the orders at the resting limits the push names, sizes them under
+the cap (the caps count every leg at once, plus a middle you already hold), and in shadow mode writes them to the
+`orders` table (`supabase/011_orders.sql`). It then keeps reading that game's ladder through the third quarter: a
+resting bid is marked touched when the ask reaches it, with the phase (the break or in play) and the seconds since
+the first look, and at the final every touched order is graded. `python trade.py --readout` prints the readout
+(orders, fills at the break vs in play, both legs of a middle filled, P&L); the scorecard carries the same line.
+
+Live mode sends only when, at the moment of sending, all of these hold: `auto.mode` is live, the environment has
+`TRADE_ENABLED=1`, the trade key is present (`KALSHI_TRADE_KEY_ID` and `KALSHI_TRADE_PRIVATE_KEY`, a second
+Kalshi key kept in the Railway worker's variables only, never in GitHub secrets, so the Actions backup can never
+trade), and the `control` row (id `trade`) does not say kill. Every order is a buy limit order at the engine's
+price and count, post-only when resting, with a `client_order_id` built from the game, window, strike, side and
+price (a restart cannot post it twice) and an `expiration_ts` at the window's end (a dead worker leaves nothing
+resting). The kill switch cancels what is resting and stops every send until it is turned off. `tests/trade_guard.py`
+pins all of it, and the fixtures run plans in shadow with the network forbidden.
+
 ## Manual use
 ```
 python cli.py --sport nfl --away BUF --home LAR --spread -3.5 --total 55.5 --half 13-7 --quotes "45.5y59,48.5y47,51.5n66"
@@ -221,12 +253,13 @@ halftime score); without it the model prices on its own center.
   The windows run until about 4 AM Eastern after each game night so West Coast finals get graded.
 - A game the watcher never saw before kickoff has no pregame line on record and is skipped at the half, on
   purpose: a line read after kickoff is the live line, and pricing off it cost real money on Oct 17.
-- Nothing here places orders. You tap buy. Auto-execution is a different risk discussion.
+- Nothing places an order until `auto.mode` is live and every switch in the Auto orders section is on. Until then
+  you tap buy.
 
 ## Files
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
 state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (13,127 games, 2006-2025, halftime scores from play by play), how it is built, and the second-half fit with the blowout study; `data/nfl_games.csv`, `scripts/build_nfl_games.py` and `scripts/fit_nfl.py` the same for the NFL (7,058 games, 2000-2026). `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
-read-only Kalshi sync. `held.py` open-position watch. `cli.py` manual desk. `model.json` fitted coefficients and
+read-only Kalshi sync. `held.py` open-position watch. `trade.py` the order executor (shadow by default). `cli.py` manual desk. `model.json` fitted coefficients and
 residual quantiles. `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
 without ever committing a conflict. `tests/` parity check against the ledger artifact, the read-only proof, the
 mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), the NBA path (`nba.py`, on

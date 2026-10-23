@@ -12,12 +12,15 @@ State lives in Supabase (desk_state, id 'worker') so a redeploy or restart picks
 every alert slot already pushed still marked. The GitHub Actions watcher can keep running as a backup: before
 either one pushes, it claims the game's slot in the alerts table, so a push never goes out twice.
 
-Nothing here places, cancels or changes an order.
+Auto orders (trade.py) are planned here and nowhere else: with an "auto" block in config.json the worker records
+what it would send at every break (shadow mode), and sends only in live mode with TRADE_ENABLED=1, the trade
+key in this service's variables and the kill switch off. The GitHub Actions backup never carries the trade key.
 
-Env: SUPABASE_URL, SUPABASE_SECRET_KEY, NTFY_TOPIC, KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (the last two optional).
+Env: SUPABASE_URL, SUPABASE_SECRET_KEY, NTFY_TOPIC, KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (the last two optional),
+     TRADE_ENABLED, KALSHI_TRADE_KEY_ID, KALSHI_TRADE_PRIVATE_KEY (live orders only).
 """
 import os, sys, time, json, signal, datetime as dt
-import watch, store, portfolio, held
+import watch, store, portfolio, held, trade
 
 FAST, LIVE, IDLE = 5, 60, 300
 STATE_ID = 'worker'
@@ -71,9 +74,15 @@ def main():
         sys.exit('worker: SUPABASE_URL and SUPABASE_SECRET_KEY are required (state lives in Supabase)')
     cfg = watch.load_json(watch.CONFIG_PATH, {})
     desk = watch.Desk(cfg, load_state())
+    trader = trade.Trader(cfg, desk.cfg['bankroll'])
+    if trader.on:
+        desk.trader = trader
+    auto_note = (f"auto {trader.mode()} for {', '.join(trader.cfg.get('sports') or [])}"
+                 + (f", {'ARMED' if trader.armed() else 'not armed'}" if trader.mode() == 'live' else '')) if trader.on else 'auto off'
     print(f"worker up: {len(desk.state.get('games', {}))} games in state, ntfy {'on' if os.environ.get('NTFY_TOPIC') else 'OFF'}, "
-          f"kalshi sync {'on' if portfolio.enabled() else 'off'}", flush=True)
-    last_sync, last_held, passes = 0.0, 0.0, 0
+          f"kalshi sync {'on' if portfolio.enabled() else 'off'}, {auto_note}", flush=True)
+    last_sync, last_held, last_refresh, passes = 0.0, 0.0, 0.0, 0
+    killed = False
     while not _stop:
         started = time.time()
         desk._events = {}
@@ -95,6 +104,22 @@ def main():
                 portfolio.sync()
             except Exception as e:
                 print(f'portfolio sync failed: {e}', flush=True)
+        if desk.trader and trader.mode() == 'live' and wait <= LIVE and time.time() - last_refresh > 30:
+            last_refresh = time.time()
+            try:
+                # the kill switch pulls every resting order once; while it stays on nothing new is sent (armed() is false)
+                if trader.kill() and not killed:
+                    for rec in desk.state.get('games', {}).values():
+                        trader.cancel_game(rec, 'kill switch')
+                    killed = True
+                    print(f'{watch.now_iso()} kill switch on: resting orders cancelled', flush=True)
+                elif not trader.kill():
+                    killed = False
+                for rec in desk.state.get('games', {}).values():
+                    if any(st.get('open') for st in (rec.get('auto') or {}).values()):
+                        trader.refresh(rec)
+            except Exception as e:
+                print(f'order refresh failed: {e}', flush=True)
         if wait <= LIVE and time.time() - last_held > 60:
             last_held = time.time()
             try:
