@@ -45,6 +45,35 @@ function Held({ id, label, dollars, set, shares, paid }) {
   );
 }
 
+// The call on a pair: a free roll, a play, a thin play or a pass, from its all-in cost against the breakeven.
+function Verdict({ free, verdict, children }) {
+  const cls = free ? 'free' : verdict || '';
+  const word = free ? 'Free roll' : verdict === 'play' ? 'Play' : verdict === 'thin' ? 'Thin play' : verdict === 'pass' ? 'Pass' : 'Held';
+  return <p className={`mc-verdict ${cls}`}><b>{word}</b><span>{children}</span></p>;
+}
+
+// The three finals as a stat row; even inside half a cent.
+function Finals({ rows }) {
+  return (
+    <dl className="mstats mc-outcomes">
+      {rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={v < -0.005 ? 'neg' : v > 0.005 ? 'pos' : ''}>{Math.abs(v) < 0.005 ? 'even' : money(v)}</dd></div>)}
+    </dl>
+  );
+}
+
+// While the keyboard is up the readout sits under it, so the call rides in a bar pinned just above the keys
+// (the shell keeps --vvt and --vvh at the visible area; the bar only shows with the keyboard, see .kb in the css).
+function KbBar({ free, verdict, line, finals }) {
+  const cls = free ? 'free' : verdict || '';
+  const word = free ? 'Free roll' : verdict === 'play' ? 'Play' : verdict === 'thin' ? 'Thin play' : verdict === 'pass' ? 'Pass' : 'Held';
+  return (
+    <div className={`mc-kbbar ${cls}`} aria-live="polite">
+      <div><b>{word}</b><span>{line}</span></div>
+      <div className="mc-kbfinals">{finals.map(([k, v]) => <span key={k}>{k} <b className={v < -0.005 ? 'neg' : v > 0.005 ? 'pos' : ''}>{Math.abs(v) < 0.005 ? 'even' : money(v)}</b></span>)}</div>
+    </div>
+  );
+}
+
 // One leg held: the other side's size, the three finals at that size, and the prices that change the call.
 function HeldReadout({ r, heldName, otherName, otherPrice, budget, maxCost }) {
   const held = heldName.toLowerCase(), other = otherName.toLowerCase();
@@ -55,16 +84,11 @@ function HeldReadout({ r, heldName, otherName, otherPrice, budget, maxCost }) {
   const rows = [[`${heldName} wins alone`, pick.heldAlone], ['Both (the middle)', pick.both], [`${otherName} wins alone`, pick.otherAlone]];
   return (
     <>
-      <p className={`mc-verdict ${r.free ? 'free' : r.verdict}`}>
-        <b>{r.free ? 'Free roll' : r.verdict === 'play' ? 'Play' : r.verdict === 'thin' ? 'Thin play' : 'Pass'}</b>
-        <span>Pair {(100 * r.c).toFixed(1)}c all in with your {held} at cost, breakeven {(100 * r.breakeven).toFixed(1)}c</span>
-      </p>
+      <Verdict free={r.free} verdict={r.verdict}>Pair {(100 * r.c).toFixed(1)}c all in with your {held} at cost, breakeven {(100 * r.breakeven).toFixed(1)}c</Verdict>
       <p className="mc-big">{pick.n}<small> {other} shares at {otherPrice}c</small></p>
       <p className="mc-miss"><b>{money(pick.dollars)}</b>{pick.fee ? `plus ${money(pick.fee)} fee` : 'no fee resting'}, {money(r.costA + pick.dollars + pick.fee)} in the game all told</p>
       <p className="mc-note">{why}</p>
-      <dl className="mstats mc-outcomes">
-        {rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={v < -0.005 ? 'neg' : v > 0.005 ? 'pos' : ''}>{Math.abs(v) < 0.005 ? 'even' : money(v)}</dd></div>)}
-      </dl>
+      <Finals rows={rows} />
       <p className="mc-note">
         {r.free ? ` Matching them, ${r.even.n} shares, keeps a miss at ${money(r.even.heldAlone)} either way with the middle ${money(r.even.both)}.`
           : ` Covering the ${held} instead, ${r.protect.n} shares, leaves the ${held} alone ${Math.abs(r.protect.heldAlone) < 0.005 ? 'even' : money(r.protect.heldAlone)} and the ${other} alone ${money(r.protect.otherAlone)}.`}
@@ -87,6 +111,8 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
   const [uFill, setUFill] = useState('take');
   const [dA, setDA] = useState('');   // dollars in a held over leg
   const [dB, setDB] = useState('');   // dollars in a held under leg
+  const [addP, setAddP] = useState('');   // both held: the price to even up the lighter side at ('' = its price paid)
+  const [typing, setTyping] = useState(false);   // an input here has focus, so the keyboard may be up
   const [budgetOwn, setBudgetOwn] = useState(budget0 ? Math.round(budget0) : 10);
   const [loaded, setLoaded] = useState(!storeKey);
   // The Desk owns the budget so Compare middles and this calculator size to the same number.
@@ -108,6 +134,7 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
         if (s.uFill) setUFill(s.uFill);
         if (s.dA !== undefined) setDA(s.dA);
         if (s.dB !== undefined) setDB(s.dB);
+        if (s.addP !== undefined) setAddP(s.addP);
         if (s.budget !== undefined && budgetIn === undefined) setBudgetOwn(s.budget);
       }
     } catch { /* private mode or blocked storage */ }
@@ -115,8 +142,8 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
   }, [storeKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!storeKey || !loaded) return;
-    try { localStorage.setItem(storeKey, JSON.stringify({ a, b, oFill, uFill, dA, dB, budget })); } catch { /* ignore */ }
-  }, [storeKey, loaded, a, b, oFill, uFill, dA, dB, budget]);
+    try { localStorage.setItem(storeKey, JSON.stringify({ a, b, oFill, uFill, dA, dB, addP, budget })); } catch { /* ignore */ }
+  }, [storeKey, loaded, a, b, oFill, uFill, dA, dB, addP, budget]);
 
   const numbers = Math.round(Number(underLine) - Number(overLine));
   const linesOk = Number(underLine) > Number(overLine) && numbers >= 1;
@@ -129,12 +156,21 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
     held: { side: heldA ? 'over' : 'under', paid: heldA ? a : b, fill: 'take', dollars: heldA ? dA : dB },
     other: { price: heldA ? b : a, fill: heldA ? uFill : oFill }, numbers, sport, budget: Number(budget) || 0, maxCost,
   }) : null;
-  const two = linesOk && heldA && heldB ? heldOutcomes({ over: { paid: a, fill: 'take', dollars: dA }, under: { paid: b, fill: 'take', dollars: dB } }) : null;
+  const two = linesOk && heldA && heldB ? heldOutcomes({ over: { paid: a, fill: 'take', dollars: dA }, under: { paid: b, fill: 'take', dollars: dB }, numbers, sport,
+    add: addP !== '' ? { price: addP, fill: 'take' } : undefined }) : null;
+  // what the keyboard bar shows for whichever mode is live
+  const bar = two ? { free: two.free, verdict: two.verdict, line: `pair ${(100 * two.c).toFixed(1)}c, breakeven ${(100 * two.breakeven).toFixed(1)}c`,
+                      finals: [['Over', two.overAlone], ['Middle', two.both], ['Under', two.underAlone]] }
+    : h ? { free: h.free, verdict: h.verdict, line: `${h.pick.n} ${heldA ? 'under' : 'over'} at ${heldA ? b : a}c, ${money(h.pick.dollars)}`,
+            finals: [[heldA ? 'Over' : 'Under', h.pick.heldAlone], ['Middle', h.pick.both], [heldA ? 'Under' : 'Over', h.pick.otherAlone]] }
+    : r ? { free: r.free, verdict: r.verdict, line: `${r.pairs} each side, ${money(r.cost)} in`, finals: [['Hit', r.win], ['Miss', r.lose]] } : null;
   const moved = askA !== undefined && askB !== undefined && (Number(a) !== Number(askA) || Number(b) !== Number(askB));
   const band = [a, b].some((p) => Number(p) < 15 || Number(p) > 85);
 
+  const focusIn = () => setTyping(true);
+  const focusOut = (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setTyping(false); };
   return (
-    <section className="mcalc" aria-label="Middle size">
+    <section className={`mcalc${typing ? ' typing' : ''}`} aria-label="Middle size" onFocusCapture={focusIn} onBlurCapture={focusOut}>
       <div className="mc-row">
         <div className="mc-leg"><span className="mc-name">Over {overLine}</span><Fill name="Over" value={oFill} set={setOFill} /><Price id="mc-a" label={heldA ? 'Over price paid' : 'Over price'} value={a} set={setA} />
           {heldA && <Held id="mc-da" label="Dollars in the over" dollars={dA} set={setDA} shares={sharesA} paid={Number(a)} />}</div>
@@ -148,11 +184,17 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
       </div>
       {two ? (
         <>
-          <p className="mc-verdict held"><b>You hold both</b><span>{two.nA} over at {a}c ({money(two.costA)}), {two.nB} under at {b}c ({money(two.costB)}), fees in</span></p>
-          <dl className="mstats mc-outcomes">
-            {[['Over wins alone', two.overAlone], ['Both (the middle)', two.both], ['Under wins alone', two.underAlone]].map(([k, v]) => (
-              <div key={k}><dt>{k}</dt><dd className={v < -0.005 ? 'neg' : v > 0.005 ? 'pos' : ''}>{Math.abs(v) < 0.005 ? 'even' : money(v)}</dd></div>))}
-          </dl>
+          <Verdict free={two.free} verdict={two.verdict}>Pair {(100 * two.c).toFixed(1)}c all in at your prices, breakeven {(100 * two.breakeven).toFixed(1)}c</Verdict>
+          <p className="mc-note">You hold {two.nA} over at {a}c ({money(two.costA)}) and {two.nB} under at {b}c ({money(two.costB)}), fees in.</p>
+          <Finals rows={[['Over wins alone', two.overAlone], ['Both (the middle)', two.both], ['Under wins alone', two.underAlone]]} />
+          {two.even ? (
+            <p className="mc-note mc-even">
+              Even up: <b>{two.even.n}</b> more {two.even.side} at{' '}
+              <span className="mc-nowrap"><input className="mc-inline" inputMode="numeric" aria-label={`Price to add ${two.even.side} shares at`} value={addP} placeholder={String(two.even.price)}
+                     onChange={(e) => setAddP(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} />c</span>
+              {' '}({money(two.even.dollars)}{two.even.fee ? ` + ${money(two.even.fee)} fee` : ''}): a miss <b>{Math.abs(two.even.miss) < 0.005 ? 'even' : money(two.even.miss)}</b> either way, the middle <b>{money(two.even.both)}</b>.
+            </p>
+          ) : <p className="mc-note">Even shares each side: a miss costs the same whichever side hits alone.</p>}
         </>
       ) : h ? (
         <HeldReadout r={h} heldName={heldA ? 'Over' : 'Under'} otherName={heldA ? 'Under' : 'Over'} otherPrice={heldA ? b : a} budget={Number(budget) || 0} maxCost={maxCost} />
@@ -183,6 +225,7 @@ export default function MiddleCalc({ sport, overLine, underLine, askA, askB, bud
           </p>
         </>
       )}
+      {typing && bar && <KbBar {...bar} />}
     </section>
   );
 }

@@ -258,7 +258,10 @@ export function sizeHeld({ held, other, numbers, sport, budget, maxCost }) {
   };
 }
 
-export function heldOutcomes({ over, under }) {
+// Both legs held: the three finals on what is in, fees in, and the pair scored at the prices paid (verdict and
+// free the way sizeMiddle scores them). add = { price (c), fill } sizes the top-up that evens the two legs: as
+// many shares of the lighter side as it is short, so a miss costs the same whichever side hits alone.
+export function heldOutcomes({ over, under, numbers, sport, add }) {
   const pa = Number(over.paid) / 100, pb = Number(under.paid) / 100;
   const nA = over.shares !== undefined && over.shares !== '' ? Math.floor(Number(over.shares)) : Math.floor(Number(over.dollars || 0) / pa + 1e-9);
   const nB = under.shares !== undefined && under.shares !== '' ? Math.floor(Number(under.shares)) : Math.floor(Number(under.dollars || 0) / pb + 1e-9);
@@ -266,7 +269,20 @@ export function heldOutcomes({ over, under }) {
   const feeA = over.fill === 'take' ? orderFee(nA, pa) : 0, feeB = under.fill === 'take' ? orderFee(nB, pb) : 0;
   const costA = nA * pa + feeA, costB = nB * pb + feeB;
   const r = (x) => Math.round(x * 100) / 100;
-  return { nA, nB, costA: r(costA), costB: r(costB), overAlone: r(nA - costA - costB), both: r(nA + nB - costA - costB), underAlone: r(nB - costA - costB) };
+  const c = pa + (over.fill === 'take' ? feePer(pa) : 0) + pb + (under.fill === 'take' ? feePer(pb) : 0);
+  const breakeven = numbers >= 1 ? 0.97 + perNumber(sport) * numbers : null;
+  const out = { nA, nB, costA: r(costA), costB: r(costB), overAlone: r(nA - costA - costB), both: r(nA + nB - costA - costB), underAlone: r(nB - costA - costB),
+                c, breakeven, free: c <= 1 + 1e-9, verdict: breakeven === null ? null : c >= breakeven ? 'pass' : c > breakeven - 0.03 ? 'thin' : 'play', even: null };
+  if (nA !== nB) {
+    const side = nA > nB ? 'under' : 'over', m = Math.abs(nA - nB);
+    const q = Number(add?.price ?? (side === 'under' ? under.paid : over.paid)) / 100;
+    if (q > 0 && q < 1) {
+      const fee = (add?.fill ?? 'take') === 'take' ? orderFee(m, q) : 0, costX = m * q + fee;
+      const all = costA + costB + costX, hi = Math.max(nA, nB);
+      out.even = { side, n: m, price: Math.round(q * 100), dollars: r(m * q), fee: r(fee), miss: r(hi - all), both: r(nA + nB + m - all) };
+    }
+  }
+  return out;
 }
 
 

@@ -213,6 +213,23 @@ h2 { font: 600 19px/1.2 var(--cond); color: var(--dim); margin: 26px 0 10px; }
 .mc-verdict.pass b { background: var(--loss); color: var(--chalk); }
 .mc-verdict.free b { background: var(--win); color: var(--sky); }
 .mc-verdict.held b { background: var(--field-2); color: var(--chalk); }
+.mc-even { line-height: 1.9; }
+.mc-nowrap { white-space: nowrap; }
+.mc-inline { width: 40px; font: 700 15px var(--cond); text-align: center; vertical-align: middle; background: var(--sky); color: var(--chalk); border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; margin: 0 1px 0 0; }
+/* the call rides above the keyboard: the shell sizes itself to the visible area, so the bar sits at its foot */
+.mc-kbbar { display: none; position: fixed; left: 0; right: 0; top: calc(var(--vvt, 0px) + var(--vvh, 100dvh) - 58px); height: 58px; z-index: 15;
+  padding: 6px 16px; box-sizing: border-box; background: rgb(15 30 48 / 0.97); backdrop-filter: blur(10px); border-top: 1px solid var(--line); font-size: 13px; color: var(--dim); }
+.kb .mc-kbbar { display: grid; align-content: center; gap: 2px; }
+.kb .mcalc.typing { padding-bottom: 64px; }
+.mc-kbbar > div { display: flex; flex-wrap: nowrap; align-items: baseline; gap: 8px; white-space: nowrap; overflow: hidden; }
+.mc-kbbar > div > b { font: 700 13px/1 var(--cond); letter-spacing: 0.6px; text-transform: uppercase; padding: 3px 6px; border-radius: 5px; background: var(--field-2); color: var(--chalk); }
+.mc-kbbar.play > div > b, .mc-kbbar.free > div > b { background: var(--win); color: var(--sky); }
+.mc-kbbar.thin > div > b { background: var(--amber); color: var(--amber-ink); }
+.mc-kbbar.pass > div > b { background: var(--loss); color: var(--chalk); }
+.mc-kbfinals span { color: var(--dim); }
+.mc-kbfinals b { font: 700 15px var(--cond); color: var(--chalk); font-variant-numeric: tabular-nums; }
+.mc-kbfinals b.neg { color: var(--loss); }
+.mc-kbfinals b.pos { color: var(--win); }
 .mc-miss { margin: 0; font-size: 14px; color: var(--dim); }
 .mc-miss b { font: 700 20px/1.2 var(--cond); margin-right: 4px; }
 .mc-miss.neg b { color: var(--loss); }
