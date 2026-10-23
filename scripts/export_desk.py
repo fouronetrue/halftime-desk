@@ -16,7 +16,12 @@ drops bankroll, max_risk, max_cost and held; inside every JSON column it drops a
 key (the sheet carries the YOU HOLD block). Sized plays stay: they are already in log/ and the scorecard.
 
 Small tables (games, suggestions, alerts, results) are rewritten when a day's rows changed, since a final
-or a grade can land after the first export; the quote tables are written once and left alone."""
+or a grade can land after the first export; the quote tables are written once and left alone.
+
+Two tables are thinned, or the repo would grow 70 MB a month: quote_snapshots keeps every row at a break
+(half, early3, q3end, early4) and, pregame, the first poll of each hour per game plus the last poll before
+tip (the close); suggestions keeps every row's numbers but the singles, mids and revs JSON only on the first
+and last row of each game's break and on the row a push came from."""
 import sys, os, csv, io, gzip, json, argparse, datetime as dt
 from zoneinfo import ZoneInfo
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,15 +34,17 @@ OUT = os.path.join(ROOT, 'data', 'desk')
 PAGE = 1000
 SLATE_HOUR = 5
 
-# table -> (how its rows are picked for a slate, columns never exported, rewritten when changed)
+# table -> (how its rows are picked for a slate, columns never exported, rewritten when changed); alerts before
+# suggestions, since the rows a push came from keep their full JSON
 TABLES = {
     'games': ('date_et', (), True),
-    'suggestions': ('date_et', ('bankroll', 'max_risk', 'max_cost', 'held'), True),
     'alerts': ('sent_at', (), True),
+    'suggestions': ('date_et', ('bankroll', 'max_risk', 'max_cost', 'held'), True),
     'results': ('date_et', (), True),
     'quote_snapshots': ('taken_at', (), False),
     'venue_quotes': ('taken_at', (), False),
 }
+HEAVY = ('singles', 'mids', 'revs')
 NEVER = ('bets', 'positions', 'portfolio_snapshots', 'desk_state', 'control', 'orders')
 PRIVATE_KEYS = ('held', 'held_miss')
 ORDER = {'games': 'id', 'suggestions': 'taken_at,game_id', 'alerts': 'sent_at,game_id', 'results': 'settled_at,game_id',
@@ -82,6 +89,38 @@ def fetch(table, day):
         offset += PAGE
 
 
+def thin_quotes(rows):
+    """Every row at a break; pregame, each game's first poll of the hour and its last poll (the close)."""
+    first, last = {}, {}                       # per game and hour, the poll kept; per game, the close
+    for r in rows:
+        if r.get('phase') == 'pre':
+            first.setdefault((r['game_id'], str(r['taken_at'])[:13]), r['taken_at'])
+            last[r['game_id']] = max(last.get(r['game_id'], ''), r['taken_at'])
+    out = []
+    for r in rows:
+        if r.get('phase') != 'pre' or r['taken_at'] in (first[(r['game_id'], str(r['taken_at'])[:13])], last[r['game_id']]):
+            out.append(r)
+    return out
+
+
+def thin_suggestions(rows, alert_at):
+    """Every row's numbers; the singles, mids and revs JSON only on the first and last row of each game's
+    phase and on the rows pushes came from (alert_at: their suggestion_at values)."""
+    first, last = {}, {}
+    for r in rows:
+        k = (r['game_id'], r.get('phase'))
+        first.setdefault(k, r['taken_at'])
+        last[k] = r['taken_at']
+    out = []
+    for r in rows:
+        k = (r['game_id'], r.get('phase'))
+        if r['taken_at'] in (first[k], last[k]) or r['taken_at'] in alert_at:
+            out.append(r)
+        else:
+            out.append({c: (None if c in HEAVY else v) for c, v in r.items()})
+    return out
+
+
 def to_csv(table, rows):
     """The rows as CSV text: private columns out, JSON columns scrubbed and serialised, columns in a fixed order."""
     _, drop, _ = TABLES[table]
@@ -114,15 +153,21 @@ def existing(path):
 
 def export(day, force=False):
     """Write the slate's files; returns the list of paths written."""
-    written = []
+    written, alert_at = [], set()
     for table, (_, _, rewrite) in TABLES.items():
         path = os.path.join(OUT, table, f'{day.isoformat()}.csv.gz')
         have = existing(path)
         if have is not None and not force and not rewrite:
             continue
         rows = fetch(table, day)
+        if table == 'alerts':
+            alert_at = {r.get('suggestion_at') for r in rows}
         if not rows:
             continue
+        if table == 'quote_snapshots':
+            rows = thin_quotes(rows)
+        elif table == 'suggestions':
+            rows = thin_suggestions(rows, alert_at)
         text = to_csv(table, rows)
         if have == text and not force:
             continue

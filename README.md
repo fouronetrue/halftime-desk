@@ -143,8 +143,11 @@ credits you allow. That table is what the model-versus-market trust study runs o
 at 05:00 ET) and commits the desk's own rows as `data/desk/TABLE/DATE.csv.gz`: games, suggestions, alerts,
 results, quote_snapshots and venue_quotes, one file per table per slate. It re-checks the last three slates, so
 a missed night heals itself; games, suggestions, alerts and results are rewritten when a day's rows changed (a
-final or a grade landing late), the quote files are written once. Run it by hand from the Actions tab with a
-date or `force`. The repo is public, so it never exports bets, positions, portfolio_snapshots, desk_state (the
+final or a grade landing late), the quote files are written once. Two tables are thinned so the repo grows about
+10 MB a month instead of 70: quote_snapshots keeps every row at a break and, pregame, one poll an hour per game
+plus the close; suggestions keeps every row's numbers but the singles, mids and revs JSON only on the first and
+last row of a game's break and on the row a push came from. Run it by hand from the Actions tab with a date or
+`force`. The repo is public, so it never exports bets, positions, portfolio_snapshots, desk_state (the
 bankroll), control or orders, drops bankroll, max_risk, max_cost and held from suggestions, and strips the held
 block out of every JSON column; `tests/export.py` holds it to that. Once the files are in, old quote rows can be
 pruned from Supabase before the free tier fills (around March at the current rate).
