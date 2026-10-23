@@ -19,26 +19,22 @@ how many shares or pairs, and the resting limits for every strike near fair.
    score it shows, and the app marks it stale when the games row's live score no longer matches it.
 3. Pushes exactly twice per game: once the first time the game is seen at the half (within about a minute of
    the end of Q2), once the first time it is seen after the Q3 kick with the score unchanged. The title is
-   `PLAY: Away 21, Home 45 (half, CFB)` when something clears, `UPDATE: ...` when nothing does.
-   - PLAY body: `Buy UNDER 102.5 for $90 at 55c (-122)` lines (best first, the rest are backups, not a stack),
-     then `MIDDLE:` with both legs as `Buy OVER 93.5 at 60c (227 shares for $136)` and the win/lose line.
-   - UPDATE body: `POSSIBLE MIDDLE (post as limit orders):` with the most you should pay on each side for the
-     pair to still carry the edge, shares and dollars, and what happens if both fill. If they don't fill, you
-     didn't want it.
-   - `REVERSE MIDDLE:` when the ladder prices the numbers between two strikes too dear: NO on the lower strike
-     plus YES on the higher one, one leg pays on any final outside that hole, both lose inside it. The edge a
-     pair is 1 minus the pair cost minus P(hole), the mirror of the middle's rule, and it is the two legs'
-     single edges added together: a reverse that clears is two cheap wings, sized as one bet (quarter Kelly
-     on the pair, the hole as the risk, under the single caps). It follows the singles and the middle
-     (instead of, not on top) and leads the push only when it is all that cleared. Expect it rarely; the
-     stale wings that feed middles run the other way.
-   - `YOU HOLD Over 44.5, 100 sh at 48c. Fair now 61c.` when you own a side of this total (from the Kalshi
-     sync): the bid against fair with a SELL or HOLD verdict and both numbers; `PAIR IT:` the other side
-     beyond your strike when it clears as a single (your shares, the three finals in dollars); `LAY OFF:` the
-     other side short of your strike when it clears (a reverse on the leg you own); `FREE:` the completion
-     your leg pays for outright, with that leg's own edge, which can be negative. On a read with something to
-     do the block goes first and the push is high priority whatever `read_push` says.
-   The priority of an UPDATE comes from `read_push` per sport; a PLAY is always high priority.
+   `PLAY: Away 21, Home 45 (half, CFB)` when something clears, `UPDATE: ...` when nothing does. The body reads
+   in the same order every time (Oct 22):
+   - `Fair 44.5. Book 46.5.` The book's number is the full-game total (the half score plus the sharp
+     second-half line, when one was read), so nothing has to be added up on the phone.
+   - What to do: `Buy UNDER 102.5 for $90 at 55c (-122)` lines (best first, the rest are backups, not a stack),
+     then `MIDDLE:` with both legs as shares and dollars and one finals line (`43 to 45 pays +$124 (10%). Any
+     other final -$5.`), then a reverse middle when one clears.
+   - What you hold, as one position: `YOU HOLD Over 50.5, 279 sh at 52c. Worth 83c. Hold.` a leg (or `Bid 68c:
+     SELL for +$18.`), then `Together it's a 51 to 57 middle: 50 or less -$93 (17%), 51 to 57 +$186 (25%), 58
+     or more +$46 (58%).`, then `NO-LOSE HEDGE:` when one leg leaves every final at zero or better. The hedge
+     is sized to the net downside of everything you hold on the total, never to one leg.
+   - `REST A MIDDLE:` with the limit prices to post, shares and dollars, and the finals line. If they don't
+     fill, you didn't want it. A middle you already hold on the total counts against the $15 loss cap first:
+     when it has spent the cap the push says `Nothing new to post` instead of offering the same middle again.
+   The priority of an UPDATE comes from `read_push` per sport; a PLAY is always high priority, and so is an
+   UPDATE with a SELL verdict or a hedge.
 4. Logs every priced halftime to `log/halftime_log.csv`, and when the game goes final grades what the first push
    said against the final total in `log/results.csv` (first single, middle, reverse middle, and the what-if resting middle),
    plus the model's fair line against the market's. What is graded is what was pushed: every push carries its
@@ -90,6 +86,7 @@ how many shares or pairs, and the resting limits for every strike near fair.
 | read_push | per sport, the ntfy priority of an UPDATE: default (normal), min (silent, shows in the app list only), off | nfl default, cfb default |
 | min_price_c, max_price_c | ignore legs priced outside this band (model tails are not trusted) | 15, 85 |
 | day_cost_pct | most to suggest across all plays in one day, % of bankroll | 20 |
+| mid_loss_cap | most a middle may lose on a miss, dollars; a middle you already hold on the total spends it first | 15 |
 | poll_seconds, max_poll_minutes | in-run polling during a halftime | 60, 22 |
 | sharp_model_pct | per sport, the weight the model keeps when the sharp second-half line is in hand at the half (needs ODDS_API_KEY) | nfl 50, cfb 80, nba 0 |
 

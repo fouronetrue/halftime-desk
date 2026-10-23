@@ -80,24 +80,49 @@ function ReverseBuilder({ r, pick, sport, clear, pairs, setPairs }) {
   );
 }
 
-// What the push said about a total you already own on this game, from the suggestions row (held).
+// What the push said about everything you own on this game's total, from the suggestions row (held): one
+// position, a line a leg with one verdict, the finals together in dollars, and the no-lose hedge when one exists.
+// Old rows (before Oct 22) carried a list of legs with per-leg options; those still render as plain lines.
+const signedMoney = (v) => `${v >= 0 ? '+' : '-'}$${Math.abs(Number(v)).toFixed(0)}`;
+const spanText = (g) => (g.lo === null || g.lo === undefined) ? `${Math.round(g.hi)} or less` : (g.hi === null || g.hi === undefined) ? `${Math.round(g.lo)} or more` : g.lo === g.hi ? `${Math.round(g.lo)}` : `${Math.round(g.lo)} to ${Math.round(g.hi)}`;
+function Finals({ regions }) {
+  return (
+    <ul className="finals">
+      {(regions || []).map((g, i) => (
+        <li key={i} className={g.pnl < -0.5 ? 'neg' : g.pnl > 0.5 ? 'pos' : ''}><span>{spanText(g)}</span><b>{signedMoney(g.pnl)}</b>{g.p !== null && g.p !== undefined ? <em>{Math.round(100 * g.p)}%</em> : null}</li>
+      ))}
+    </ul>
+  );
+}
 function HeldAtHalf({ held }) {
-  if (!held?.length) return null;
+  const pos = Array.isArray(held) ? (held.length ? { legs: held } : null) : held;
+  if (!pos?.legs?.length) return null;
+  const hd = pos.hedge;
   return (
     <section className="held athalf">
-      {held.map((h) => {
-        const o = h.options || {};
-        const side = h.side === 'yes' ? 'Over' : 'Under', other = h.side === 'yes' ? 'Under' : 'Over';
+      {pos.legs.map((h) => {
+        const side = h.side === 'yes' ? 'Over' : 'Under';
+        const s = h.sell || h.options?.sell;
+        const fair = h.fair_c ?? h.options?.fair_c;
+        const sell = s && s.verdict === 'SELL';
         return (
-          <div key={h.ticker} className="leg">
-            <p className="hold">You hold <b>{side} {Number(h.strike)}</b>, {h.shares} shares at {Number(h.paid_c).toFixed(0)}c. Fair now {Math.round(o.fair_c)}c.
-              {o.sell ? <> Bid {o.sell.bid_c}c: <b className={o.sell.verdict === 'SELL' ? 'pos' : ''}>{o.sell.verdict}</b>. Sell now {money(o.sell.pnl)}; holding is worth {money(o.sell.hold)} at fair.</> : null}</p>
-            {o.pair && <p className="target on"><b>PAIR IT:</b> Buy {other} {Number(o.pair.strike)} at {o.pair.ask_c}c, {o.pair.shares} shares ({money(o.pair.cost)}). Final {o.pair.lo} to {o.pair.hi} pays both ({money(o.pair.both)}); {side.toLowerCase()} alone {money(o.pair.mine_alone)}; {other.toLowerCase()} alone {money(o.pair.other_alone)}. Edge +{o.pair.edge_c}c a share.</p>}
-            {o.free && !(o.pair && o.pair.strike === o.free.strike) && <p className="target free"><b>FREE:</b> Buy {other} {Number(o.free.strike)} at {o.free.ask_c}c, {o.free.shares} shares ({money(o.free.cost)}): no final loses. Final {o.free.lo} to {o.free.hi} pays {money(o.free.both)}. That leg is {o.free.edge_c > 0 ? '+' : ''}{o.free.edge_c}c of fair.</p>}
-            {o.layoff && <p className="target on"><b>LAY OFF:</b> Buy {other} {Number(o.layoff.strike)} at {o.layoff.ask_c}c, {o.layoff.shares} shares ({money(o.layoff.cost)}). Your {side.toLowerCase()} pays {money(o.layoff.mine_alone)}, the {other.toLowerCase()} pays {money(o.layoff.other_alone)}, {o.layoff.lo} to {o.layoff.hi} loses both ({money(o.layoff.neither)}). Edge +{o.layoff.edge_c}c a share.</p>}
-          </div>
+          <p key={h.ticker || `${h.side}${h.strike}`} className="hold">You hold <b>{side} {Number(h.strike)}</b>, {h.shares} sh at {Number(h.paid_c).toFixed(0)}c.
+            {fair !== undefined && fair !== null ? <> Worth {Math.round(fair)}c.</> : null}
+            {sell ? <> Bid {s.bid_c}c: <b className="pos">SELL</b> for {signedMoney(s.pnl)}.</> : <> <b>Hold.</b></>}</p>
         );
       })}
+      {pos.regions && pos.legs.length > 1 && (
+        <div className="together">
+          <p className="target">{pos.window ? <>Together it's a <b>{Math.round(pos.window[0])} to {Math.round(pos.window[1])}</b> middle.</> : 'Together, by final:'}{pos.no_lose ? ' No final loses.' : ''}</p>
+          <Finals regions={pos.regions} />
+        </div>
+      )}
+      {hd && (
+        <div className="together">
+          <p className="target free"><b>NO-LOSE HEDGE:</b> buy {hd.kind === 'over' ? 'Over' : 'Under'} {Number(hd.strike)} at {hd.ask_c}c, {hd.shares} sh ({money(hd.cost)}).{Math.abs(hd.edge_c) >= 0.05 ? ` The leg is ${Math.abs(hd.edge_c).toFixed(1)}c ${hd.edge_c < 0 ? 'under' : 'over'} fair.` : ''}</p>
+          <Finals regions={hd.regions} />
+        </div>
+      )}
     </section>
   );
 }
