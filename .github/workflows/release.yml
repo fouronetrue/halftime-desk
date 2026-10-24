@@ -1,0 +1,69 @@
+name: worker release
+# Railway deploys the worker from the `worker` branch, not from main. This workflow moves `worker` to a commit
+# on main only when that commit changes what the worker runs (the root Python modules, config.json, model.json,
+# the Python version and requirements, railway.json) and only after the tests pass on it.
+#
+# Why (Oct 24): with Railway on main, every push to main reached Railway: the backup's state.json saves (about
+# 30 a night), the nightly data export and app-only changes. Railway's watch patterns skipped most of them but
+# not all, so the worker was rebuilt and restarted mid-slate for a state save, and on a bad night Railway's own
+# builder failed on them ("failed to fetch snapshot") and sent failure emails for commits with no code in them.
+# On `worker`, every push is a tested code change, so a Railway build means a real deploy.
+#
+# The backup's saves are pushed with GITHUB_TOKEN, which starts no workflows, and the paths below leave them out
+# besides, so a save can never move `worker`. tests/release.py pins these paths to what worker.py imports.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '*.py'
+      - 'config.json'
+      - 'model.json'
+      - 'requirements.txt'
+      - '.python-version'
+      - 'railway.json'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+concurrency:
+  group: worker-release
+  cancel-in-progress: false
+jobs:
+  tests:
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+  release:
+    needs: tests
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Move worker to this commit (fast-forward only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          subject=$(gh api "repos/$REPO/commits/$SHA" --jq '.commit.message' | head -n 1)
+          # a missing branch is a 404 whose body gh prints on stdout, so trust only a full commit hash
+          cur=$(gh api "repos/$REPO/git/ref/heads/worker" --jq '.object.sha' 2>/dev/null) || cur=""
+          [[ "$cur" =~ ^[0-9a-f]{40}$ ]] || cur=""
+          if [ -z "$cur" ]; then
+            gh api -X POST "repos/$REPO/git/refs" -f ref=refs/heads/worker -f sha="$SHA" > /dev/null
+            note="worker branch created at ${SHA:0:7} ($subject). Railway deploys it once its service follows worker."
+          elif [ "$cur" = "$SHA" ]; then
+            note="worker is already at ${SHA:0:7}; nothing to move."
+          else
+            status=$(gh api "repos/$REPO/compare/$cur...$SHA" --jq '.status')
+            if [ "$status" = "ahead" ]; then
+              # force=false: GitHub refuses anything but a fast-forward, so a re-run of an old commit cannot move it back
+              gh api -X PATCH "repos/$REPO/git/refs/heads/worker" -f sha="$SHA" -F force=false > /dev/null
+              note="worker moved ${cur:0:7} -> ${SHA:0:7} ($subject). Railway deploys it now."
+            else
+              note="worker left at ${cur:0:7}: ${SHA:0:7} is not ahead of it (GitHub says $status)."
+            fi
+          fi
+          echo "$note"
+          echo "$note" >> "$GITHUB_STEP_SUMMARY"

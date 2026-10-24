@@ -279,6 +279,17 @@ Quotes are Kalshi asks in cents. Same engine, same PLAY/UPDATE text as the push,
 NBA, `--center` is the market's full-game line at the half (Kalshi's 50-50 line, or a sharp 2H line plus the
 halftime score); without it the model prices on its own center.
 
+## What deploys the worker (Railway)
+Railway builds the worker from the `worker` branch, not from `main`. `worker release` (`.github/workflows/release.yml`)
+moves `worker` to a commit on `main` only when it changes what the worker runs (the root `.py` modules,
+`config.json`, `model.json`, `requirements.txt`, `.python-version`, `railway.json`) and only after the full test
+suite passes on it, fast-forward only. The backup's `state.json` and log saves, the nightly `data/desk` export, the
+app and the docs never touch `worker`, so they never rebuild or restart the worker. Before Oct 24 Railway followed
+`main`: its watch patterns skipped most state saves but not all, so the worker restarted mid-slate for a save, and
+Railway's own builder failures arrived as emails about commits with no code in them. `tests/release.py` keeps
+the path list matched to what `worker.py` imports. To ship by hand: Actions > worker release > Run workflow.
+A Railway variable change still redeploys the worker on its own, from the newest commit on `worker`.
+
 ## Honest limits
 - The model knows the lines, the score and the clock. It does not know injuries, weather or pace. That is why the
   market price gets half the weight once it is known, and why a 3-cent edge is required.
@@ -298,4 +309,4 @@ read-only Kalshi sync. `held.py` open-position watch. `trade.py` the order execu
 residual quantiles. `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
 without ever committing a conflict. `scripts/export_desk.py` the nightly Supabase export to `data/desk/`. `tests/` parity check against the ledger artifact, the read-only proof, the
 mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), the NBA path (`nba.py`, on
-`fixtures_nba/`), reverse middles and held positions at the half (`reverse.py`), the football model blocks and game tables (`football.py`), and an offline run on fixtures.
+`fixtures_nba/`), reverse middles and held positions at the half (`reverse.py`), the football model blocks and game tables (`football.py`), what moves the worker branch (`release.py`), and an offline run on fixtures.
