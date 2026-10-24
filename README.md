@@ -287,7 +287,10 @@ suite passes on it, fast-forward only. The backup's `state.json` and log saves, 
 app and the docs never touch `worker`, so they never rebuild or restart the worker. Before Oct 24 Railway followed
 `main`: its watch patterns skipped most state saves but not all, so the worker restarted mid-slate for a save, and
 Railway's own builder failures arrived as emails about commits with no code in them. `tests/release.py` keeps
-the path list matched to what `worker.py` imports. To ship by hand: Actions > worker release > Run workflow.
+the path list matched to what `worker.py` imports. After moving the branch the run waits for Railway's status on
+the commit and fails (GitHub emails you) if none shows up in 4 minutes, which means Railway is not listening to
+`worker` (its service settings have been reported to drift back to `main`). To ship by hand: Actions > worker
+release > Run workflow.
 A Railway variable change still redeploys the worker on its own, from the newest commit on `worker`.
 
 ## Honest limits

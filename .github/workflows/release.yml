@@ -35,11 +35,13 @@ jobs:
     needs: tests
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     permissions:
       contents: write
+      statuses: read
     steps:
       - name: Move worker to this commit (fast-forward only)
+        id: move
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -52,6 +54,7 @@ jobs:
           [[ "$cur" =~ ^[0-9a-f]{40}$ ]] || cur=""
           if [ -z "$cur" ]; then
             gh api -X POST "repos/$REPO/git/refs" -f ref=refs/heads/worker -f sha="$SHA" > /dev/null
+            echo "moved=true" >> "$GITHUB_OUTPUT"
             note="worker branch created at ${SHA:0:7} ($subject). Railway deploys it once its service follows worker."
           elif [ "$cur" = "$SHA" ]; then
             note="worker is already at ${SHA:0:7}; nothing to move."
@@ -60,6 +63,7 @@ jobs:
             if [ "$status" = "ahead" ]; then
               # force=false: GitHub refuses anything but a fast-forward, so a re-run of an old commit cannot move it back
               gh api -X PATCH "repos/$REPO/git/refs/heads/worker" -f sha="$SHA" -F force=false > /dev/null
+              echo "moved=true" >> "$GITHUB_OUTPUT"
               note="worker moved ${cur:0:7} -> ${SHA:0:7} ($subject). Railway deploys it now."
             else
               note="worker left at ${cur:0:7}: ${SHA:0:7} is not ahead of it (GitHub says $status)."
@@ -67,3 +71,24 @@ jobs:
           fi
           echo "$note"
           echo "$note" >> "$GITHUB_STEP_SUMMARY"
+      - name: Check Railway picked it up
+        # Railway posts a commit status within seconds of seeing a push, even when its watch patterns skip the
+        # build. None at all means it is not listening to worker (users report the branch flipping back to main
+        # on its own), and a code change would otherwise sit undeployed without a word. This fails the run instead.
+        if: steps.move.outputs.moved == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 16); do
+            st=$(gh api "repos/$REPO/commits/$SHA/statuses?per_page=50" --jq '[.[] | select(.creator.login == "railway-app[bot]")][0].state // empty')
+            if [ -n "$st" ]; then
+              echo "Railway saw ${SHA:0:7} (latest status: $st)." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Railway has not picked up ${SHA:0:7} after 4 minutes. In Railway, the halftime-desk service > Settings > Source should follow the worker branch."
+          exit 1

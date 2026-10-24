@@ -4,7 +4,8 @@
    reaches it. state.json is the exception on purpose: the worker's state lives in Supabase.
 2. Nothing the backup, the export or the app writes matches those paths (state.json, log/, data/, app/,
    scripts/, tests/), so a state save or an app change never rebuilds or restarts the worker.
-3. Only release.yml moves the worker branch, the backup still pushes to main, and the tests gate the release."""
+3. Only release.yml moves the worker branch, the backup still pushes to main, the tests gate the release, and
+   the run fails when Railway never shows up on the moved commit."""
 import ast, json, os, re, glob
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WF = os.path.join(ROOT, '.github', 'workflows')
@@ -112,6 +113,8 @@ assert re.search(r'^on:\s*\n\s+push:\s*\n\s+branches:\s*\[main\]', release, re.M
 assert re.search(r'uses:\s*\./\.github/workflows/test\.yml', release) and re.search(r'needs:\s*tests', release), \
     'release.yml must run the tests and move the branch only after they pass'
 assert 'force=false' in release, 'release.yml must move the branch fast-forward only'
+assert 'railway-app[bot]' in release and 'exit 1' in release.split('Check Railway picked it up', 1)[-1], \
+    'release.yml must fail when Railway never shows up on the moved commit (a silent non-deploy)'
 assert 'workflow_call' in open(os.path.join(WF, 'test.yml')).read(), 'test.yml must be callable by release.yml'
 for path in glob.glob(os.path.join(WF, '*.yml')) + glob.glob(os.path.join(ROOT, 'scripts', '*.py')):
     if os.path.basename(path) == 'release.yml':
@@ -119,5 +122,5 @@ for path in glob.glob(os.path.join(WF, '*.yml')) + glob.glob(os.path.join(ROOT, 
     text = open(path).read()
     assert not re.search(r'heads/worker|HEAD:worker|:worker\b', text), f'{os.path.relpath(path, ROOT)} names the worker branch; only release.yml moves it'
 assert "'HEAD:main'" in open(os.path.join(ROOT, 'scripts', 'save_run.py')).read(), 'the backup must keep pushing its saves to main'
-print('release: only release.yml moves worker, after the tests pass, fast-forward only; the backup pushes to main')
+print('release: only release.yml moves worker, after the tests pass, fast-forward only, and fails if Railway never sees it; the backup pushes to main')
 print('release: ok')
