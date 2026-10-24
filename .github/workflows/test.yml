@@ -1,5 +1,7 @@
 name: tests
-on: [push, workflow_dispatch]
+# Runs on every push, and is called by worker release (release.yml) before it moves the worker branch, so a
+# commit that fails here never reaches Railway.
+on: [push, workflow_dispatch, workflow_call]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -11,6 +13,7 @@ jobs:
       - run: pip install -q -r requirements.txt
       - run: python tests/parity.py
       - run: python tests/readonly.py
+      - run: python tests/trade_guard.py
       - run: python tests/mirror.py
       - run: python tests/worker.py
       - run: python tests/held.py
@@ -23,4 +26,7 @@ jobs:
       - run: python tests/odds.py
       - run: python tests/push.py
       - run: python tests/export.py
+      - run: python tests/venues.py
+      - run: python tests/bankroll.py
+      - run: python tests/release.py
       - run: cp state.json /tmp/state.bak && python watch.py --fixtures tests/fixtures && cp /tmp/state.bak state.json
