@@ -29,4 +29,6 @@ jobs:
       - run: python tests/venues.py
       - run: python tests/bankroll.py
       - run: python tests/release.py
+      - run: python tests/weather.py
+      - run: python tests/shot.py
       - run: cp state.json /tmp/state.bak && python watch.py --fixtures tests/fixtures && cp /tmp/state.bak state.json

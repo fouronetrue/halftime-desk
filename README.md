@@ -89,6 +89,8 @@ how many shares or pairs, and the resting limits for every strike near fair.
 | mid_loss_cap | most a middle may lose on a miss, dollars; a middle you already hold on the total spends it first | 15 |
 | poll_seconds, max_poll_minutes | in-run polling during a halftime | 60, 22 |
 | sharp_model_pct | per sport, the weight the model keeps when the sharp second-half line is in hand at the half (needs ODDS_API_KEY) | nfl 50, cfb 80, nba 0 |
+| weather | per sport, the bad-weather haircut: pts added to the model's second-half mean when it is raining or snowing, or the wind is at wind_mph or more, outdoors (NFL only; the Weather section) | nfl -1.0 at 16 mph |
+| mismatch | per sport, the mismatch lane: at a pregame spread of `spread` or more the ladder's width is `width` of the block's and the band's top is `band_hi`; mode shadow logs and shows a SHOT line, live prices the desk with it (the Mismatch lane section) | cfb 28, 0.87, 90c, shadow |
 
 ## The Odds API (optional, 5 minutes): the sharp pregame line
 Without it the pregame total and spread come from ESPN's consensus, then ESPN's odds endpoint, then Kalshi's
@@ -293,8 +295,31 @@ the commit and fails (GitHub emails you) if none shows up in 4 minutes, which me
 release > Run workflow.
 A Railway variable change still redeploys the worker on its own, from the newest commit on `worker`.
 
+## Weather at the half (NFL)
+The tail study (claude/tail-study-oct24.md) found one thing visible before the second half that the model did
+not carry: in rain or snow, or 16+ mph wind, outdoors, the NFL second half ran about a point under the model on
+927 games since 2000, and the 80-90c overs there won 80 percent at an 85c price in every five-year stretch. So
+at the half the worker reads the weather at the stadium (`weather.py`: Open-Meteo's current observation at the
+home stadium's coordinates, or the neutral site's; free, no key) and, when it is bad, takes `weather.nfl.pts`
+(-1.0) off the model's own second-half mean before the blend with the sharp line, which already shades for
+weather, so the blended number moves about half a point. A dome or a retractable roof never gets it; no reading
+means no haircut. The push's first line says so when it applies (`Weather: rain, 18 mph wind. Model -1.0.`), the
+reading is on every priced row (`suggestions.weather`, supabase/014_weather_shot.sql) and on the graded sheet.
+
+## The mismatch lane (college, 28+ point spreads)
+The same study found the ladder too wide in college mismatches: at a pregame spread of 28 or more the second
+half's spread runs 0.87 of the block's, so the 80-90c sides there won 88 percent at an 85c price (both halves
+of 20 seasons, and against the book's halftime line). `mismatch.cfb` puts those games in a lane. In `shadow`
+mode (today) the desk's own numbers do not change; beside them a narrowed ladder (width 0.87, the band's top at
+90c, the model alone against Kalshi's ask) picks the high-probability side it would take, the push shows it as
+one line (`SHOT (shadow, 31-point spread): UNDER 63.5 at 83c, fair 88c (desk says 85c). 106 sh for $89 wins
+$22. Logged, not a play.`), the row keeps it (`suggestions.shot`) and the final grades it as a what-if
+(`shot ...` in the results detail, never in the play's P&L). After three weeks of Saturdays the graded shots say
+whether Kalshi's ladder is as wide as the book's; `mode: live` then narrows the desk itself in those games and
+the usual trust blend and margin apply.
+
 ## Honest limits
-- The model knows the lines, the score and the clock. It does not know injuries, weather or pace. That is why the
+- The model knows the lines, the score and the clock. It does not know injuries or pace (and weather only in the NFL, at the half). That is why the
   market price gets half the weight once it is known, and why a 3-cent edge is required.
 - Kalshi's second-half line already discounts blowouts. The edge the desk reports is the gap between the model
   and the price you can actually get, nothing more.
@@ -307,7 +332,7 @@ A Railway variable change still redeploys the worker on its own, from the newest
 
 ## Files
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
-state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (13,127 games, 2006-2025, halftime scores from play by play), how it is built, and the second-half fit with the blowout study; `data/nfl_games.csv`, `scripts/build_nfl_games.py` and `scripts/fit_nfl.py` the same for the NFL (7,058 games, 2000-2026). `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
+state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (13,127 games, 2006-2025, halftime scores from play by play), how it is built, and the second-half fit with the blowout study; `data/nfl_games.csv`, `scripts/build_nfl_games.py` and `scripts/fit_nfl.py` the same for the NFL (7,058 games, 2000-2026). `worker.py` the always-on loop. `weather.py` the venue weather read and the bad-weather call. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
 read-only Kalshi sync. `held.py` open-position watch. `trade.py` the order executor (shadow by default). `cli.py` manual desk. `model.json` fitted coefficients and
 residual quantiles. `data/nfl_features.csv.gz` and `data/cfb_features.csv.gz` (`scripts/build_nfl_features.py`,
 `scripts/build_cfb_features.py`) per-game play-by-play features by half (yards, plays, turnovers, missed kicks,

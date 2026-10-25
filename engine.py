@@ -35,9 +35,14 @@ class HalfModel:
     calibrated to a cent, so the NBA desk centers on the market and keeps the model for the shape of the
     ladder (see claude/nba-halftime.md). mu_model is always the model's own number, for the log."""
 
-    def __init__(self, sport, total, home_spread, h1h, h1a, center=None, center_w=1.0):
+    def __init__(self, sport, total, home_spread, h1h, h1a, center=None, center_w=1.0, shift=0.0, width=1.0):
+        """shift: points added to the model's own second-half mean before the blend (the NFL bad-weather
+        haircut, -1 in rain, snow or 16+ mph wind outdoors; tail study, Oct 24). width: the ladder's spread as
+        a multiple of the block's (0.87 in a 28+ point college mismatch, where the second half is more
+        predictable than the block says; same study). Both default to no change."""
         m = MODEL.get(sport) or MODEL['nfl']
         self.sport = sport
+        self.shift, self.width = float(shift or 0.0), float(width or 1.0)
         home_fav_by = -(home_spread or 0)
         self.fav_by = abs(home_fav_by)
         m1 = h1h - h1a
@@ -49,7 +54,7 @@ class HalfModel:
             # the running clock: past the knee (two scores) each point of halftime margin takes points off the
             # second half, over and above the linear margin terms (the CFB refit, scripts/fit_cfb.py)
             mu += c[6] * max(0.0, abs(self.favm) - m.get('knee', 14))
-        self.mu_model = max(8.0, mu)
+        self.mu_model = max(8.0, mu + self.shift)
         self.center = center
         self.center_w = 1.0 if center is None else max(0.0, min(1.0, center_w))
         self.q = m['z']
@@ -64,7 +69,7 @@ class HalfModel:
             for _ in range(5):
                 cm = center - m['k'] * math.sqrt(max(8.0, cm)) * self.q[100]
             self.mu = max(8.0, self.center_w * self.mu_model + (1 - self.center_w) * cm)
-        self.sd = m['k'] * math.sqrt(self.mu)
+        self.sd = m['k'] * math.sqrt(self.mu) * self.width
         self.n = m['n']
         self.state = 'trail' if self.favm < 0 else ('lead' if self.favm > 0 else 'tied')
         fb = self.fav_by
@@ -782,7 +787,19 @@ def closest_middle_line(sug, margin=0.03):
             f"= ${best['c']:.2f} a pair, hits {100*best['p_mid']:.0f}%, edge {100*best['ev']:+.1f}c (needs +{100*margin:.0f}).")
 
 
-def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, focus=None, held=None):
+def shot_lines(shot):
+    """The SHOT line for the push (the mismatch lane in shadow): the narrowed ladder's best high-probability side,
+    its price and fair, the size at the cap, and that it is logged, not a play. None when nothing clears."""
+    picks = (shot or {}).get('picks') or []
+    if not picks:
+        return None
+    x = picks[0]
+    side = 'OVER' if x['kind'] == 'over' else 'UNDER'
+    return [f"SHOT (shadow, {shot['spread']:g}-point spread): {side} {x['line']:.1f} at {x['price_c']}c, fair {100 * x['fair_used']:.0f}c "
+            f"(desk says {100 * x['fair_live']:.0f}c). {x['contracts']} sh for ${x['cost']:.0f} wins ${x['win']:.0f}. Logged, not a play."]
+
+
+def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, focus=None, held=None, shot=None):
     """The push text: PLAY when something clears, UPDATE otherwise. Returns (kind, title, body).
     The order never changes (Nick, Oct 22): the score and fair against the book, then what to do (singles,
     the middle, the reverse), then what you hold (held: the YOU HOLD lines from held_block), then the resting
@@ -795,10 +812,11 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
     fl = fair_line(model, mode)
     # the book's full-game number: the points so far plus the sharp second-half line, when one was read
     book = None if inp.get('sharp') is None else (0 if mode == '2h' else inp['h1a'] + inp['h1h']) + inp['sharp']
-    ctx = f"Fair {fl:.1f}." + (f" Book {book:.1f}." if book is not None else '')
+    ctx = f"Fair {fl:.1f}." + (f" Book {book:.1f}." if book is not None else '') + (f" {inp['weather']}" if inp.get('weather') else '')
     singles, mid = chosen(sug, top)
     rev = chosen_rev(sug)
     held = [l for l in (held or []) if l]
+    shot = [l for l in (shot or []) if l]
     out = [ctx, '']
     if focus == 'middles':
         if mid:
@@ -844,9 +862,13 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
                    mid_lines(m['a']['line'], m['a']['price_c'], m['b']['line'], m['b']['price_c'], m['pairs'], m['best'], m['worst'], m['p_mid']) + ['']
         if rev:
             out += rev_lines(rev, not (mid or singles)) + ['']
+        if shot:
+            out += shot + ['']
         if held:
             out += held + ['']
         return 'PLAY', f'PLAY: {score}', '\n'.join(out).rstrip()
+    if shot:
+        out += shot + ['']
     if held:
         out += held + ['']
     rest, rp = rest_block(model, rows, sizing, mode)

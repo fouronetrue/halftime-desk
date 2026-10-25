@@ -71,6 +71,9 @@ def parse_espn(data, sport):
             return dict(abbr=t.get('abbreviation', ''), name=t.get('displayName', ''), loc=t.get('location', ''), short=t.get('shortDisplayName', ''),
                         score=int(float(c.get('score') or 0)), linescores=[int(float(v)) for v in ls if v is not None])
         odds = (comp.get('odds') or [{}])[0]
+        vn = comp.get('venue') or {}
+        venue = dict(name=vn.get('fullName', ''), city=(vn.get('address') or {}).get('city', ''), state=(vn.get('address') or {}).get('state', ''),
+                     indoor=bool(vn.get('indoor'))) if vn else None
         try:
             when = dt.datetime.fromisoformat(ev['date'].replace('Z', '+00:00'))
         except Exception:
@@ -78,7 +81,7 @@ def parse_espn(data, sport):
         games.append(dict(
             id=str(ev.get('id')), sport=sport, name=ev.get('name', ''), short=ev.get('shortName', ''),
             start_utc=when.isoformat() if when else None, date_et=when.astimezone(ET).strftime('%Y-%m-%d') if when else None,
-            home=side(home), away=side(away), neutral=bool(comp.get('neutralSite')),
+            home=side(home), away=side(away), neutral=bool(comp.get('neutralSite')), venue=venue,
             state=typ.get('state', ''), status=typ.get('name', ''), detail=typ.get('shortDetail', ''),
             period=int(st.get('period') or 0), clock=st.get('displayClock', ''), clock_s=parse_clock(st.get('displayClock')),
             odds_details=odds.get('details'), over_under=odds.get('overUnder'),

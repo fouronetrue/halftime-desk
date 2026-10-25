@@ -32,7 +32,9 @@
   },
   "auto": {
     "mode": "shadow",
-    "sports": ["nba"],
+    "sports": [
+      "nba"
+    ],
     "rest_mode": "pair",
     "rest_until": "q4",
     "pair_miss_pct": 0.5,
@@ -43,5 +45,20 @@
     "singles": false,
     "max_orders_per_game": 12,
     "max_orders_per_night": 200
+  },
+  "weather": {
+    "nfl": {
+      "pts": -1.0,
+      "wind_mph": 16,
+      "precip_in": 0.01
+    }
+  },
+  "mismatch": {
+    "cfb": {
+      "spread": 28,
+      "width": 0.87,
+      "band_hi": 90,
+      "mode": "shadow"
+    }
   }
 }

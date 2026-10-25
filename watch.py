@@ -13,7 +13,7 @@ Usage:
   python watch.py --fixtures DIR  # run against saved JSON instead of the network (tests)
 """
 import os, sys, json, csv, time, argparse, datetime as dt
-import engine, feeds, notify, store
+import engine, feeds, notify, store, weather
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH, STATE_PATH, LOG_PATH = os.path.join(HERE, 'config.json'), os.path.join(HERE, 'state.json'), os.path.join(HERE, 'log', 'halftime_log.csv')
@@ -373,6 +373,8 @@ class Desk:
             revs=(sug.get('revs') or [])[:max(10, sum(1 for x in sug.get('revs') or [] if x['ok']))],
             held=held or {},   # what you hold on this total, read as one position: legs with verdicts, the finals in dollars, the hedge (supabase/005_reverse.sql adds the column)
             spot=m.spot(),     # the game-state label (blowout, favorite trailing, ...), for the Record split; it left the push text on Oct 22 (supabase/010_spot.sql)
+            # the weather read at the half and the mismatch lane's shadow call (supabase/014_weather_shot.sql adds both columns)
+            weather=rec.get('weather') if rec.get('phase') != 'q3end' else None, shot=rec.get('shot') if rec.get('phase') != 'q3end' else None,
             bankroll=sizing['bankroll'], max_risk=sizing['max_risk'], max_cost=sizing['max_cost'])], on_conflict='taken_at,game_id')
         snaps = []
         for r in rows:
@@ -541,6 +543,63 @@ class Desk:
             return None, 1.0, None
         return c, pct / 100, 'kalshi'
 
+    def weather(self, g, rec):
+        """The weather at the venue, read once per break (kept 45 minutes on the record), for sports with a block
+        in config weather. The shift it carries is the haircut HalfModel applies to the model's own mean."""
+        cfg = (self.cfg.get('weather') or {}).get(g['sport'])
+        if not cfg:
+            return None
+        wx = rec.get('weather')
+        if wx and wx.get('at'):
+            try:
+                age = (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(wx['at'])).total_seconds()
+            except Exception:
+                age = 10**6
+            if age < 45 * 60:
+                return wx
+        try:
+            wx = weather.for_game(g, cfg, self.fixtures)
+        except Exception as e:   # a weather read never blocks a pass
+            print(f"{g['short']}: weather read failed ({e})")
+            wx = None
+        if wx:
+            rec['weather'] = wx
+            print(f"{g['short']}: weather {wx['why']} at {wx['venue']}" + (f", model {wx['shift']:+.1f}" if wx['bad'] else ''))
+        return wx
+
+    def mismatch(self, g, spread):
+        """config mismatch.<sport>: a pregame spread at or past `spread` points puts the game in the lane, with the
+        ladder's width (`width`, 0.87) and the band's upper edge (`band_hi`, 90c). mode shadow logs and shows what
+        it would call; live prices the desk with it. None when the game is not in the lane."""
+        cfg = (self.cfg.get('mismatch') or {}).get(g['sport'])
+        if not cfg or spread is None or abs(float(spread)) < float(cfg.get('spread', 28)):
+            return None
+        return dict(mode=cfg.get('mode', 'shadow'), width=float(cfg.get('width', 0.87)), band_hi=int(cfg.get('band_hi', 90)), spread=abs(float(spread)))
+
+    def shot_lane(self, g, lane, total, spread, home_pts, away_pts, center, center_w, quotes, bank, max_risk, max_cost, m0):
+        """The narrowed ladder's own suggest() over the band's extended top, kept as the sides it would take at
+        80c or more (the high-probability sides the tail study found underpriced in these games). The lane
+        prices with the narrowed model alone (trust 1.0): the question it is logging is whether Kalshi's ladder
+        is too wide in these games, so blending Kalshi's own price in would halve the signal under test. Each
+        pick carries Kalshi's implied number and the live desk's fair for the same leg. In live mode the width
+        goes into the desk's own model and the usual trust blend applies."""
+        m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w, shift=m0.shift, width=lane['width'])
+        rows = engine.price_lines(m, list(quotes), 'fg', self.cfg['margin_c'] / 100)
+        sug = engine.suggest(rows, quotes, self.cfg['order'], self.cfg['margin_c'] / 100, 1.0, bank, max_risk, max_cost,
+                             (self.cfg['min_price_c'], lane['band_hi']), None)
+        live = {(r['line'],): r for r in engine.price_lines(m0, list(quotes), 'fg', self.cfg['margin_c'] / 100)}
+        picks = []
+        for x in sug['singles']:
+            if not x['ok'] or x['price_c'] < 80:
+                continue
+            r0 = live.get((x['line'],)) or {}
+            picks.append(dict(kind=x['kind'], line=x['line'], price_c=x['price_c'], fair_model=round(x['fair_model'], 4), fair_used=round(x['fair_used'], 4),
+                              fair_kalshi=None if x.get('fair_mkt') is None else round(x['fair_mkt'], 4),
+                              fair_live=round(r0.get('p_over' if x['kind'] == 'over' else 'p_under', 0.0), 4), edge=round(x['edge'], 4),
+                              contracts=x['contracts'], cost=x['cost'], win=x['win']))
+        return dict(mode=lane['mode'], spread=lane['spread'], width=lane['width'], band_hi=lane['band_hi'], mu=round(m.mu, 2), sd=round(m.sd, 2),
+                    fair=engine.fair_line(m), picks=picks[:2])
+
     def first_half_box(self, g, rec):
         """NBA only: the first-half box score (shots, free throws, offensive rebounds, turnovers, fouls, and the
         possession count they imply), read once per game at the half from ESPN's summary and kept on the record
@@ -645,7 +704,10 @@ class Desk:
         else:
             self.first_half_box(g, rec)
             self.spread_at_half(g, rec, spread, home_pts, away_pts)
-            m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w)
+            wx = self.weather(g, rec)
+            lane = self.mismatch(g, spread)
+            m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w,
+                                 shift=(wx or {}).get('shift') or 0.0, width=lane['width'] if lane and lane['mode'] == 'live' else 1.0)
         rows = engine.price_lines(m, list(quotes), 'fg', self.cfg['margin_c'] / 100)
         bank = float(self.cfg['bankroll'])
         # daily cap: plays already pushed today (by cost) count against day_cost_pct of bankroll
@@ -663,7 +725,14 @@ class Desk:
         sug = engine.suggest(rows, quotes, self.cfg['order'], self.cfg['margin_c'] / 100, self.cfg['trust_pct'] / 100,
                              bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']), mid_loss)
         inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'], h1a=away_pts, h1h=home_pts,
-                   sharp=(rec.get('h2') or {}).get('line') if center_src == 'sharp' else None)
+                   sharp=(rec.get('h2') or {}).get('line') if center_src == 'sharp' else None,
+                   weather=weather.text(rec.get('weather')) if not q3 else None)
+        # the mismatch lane (shadow): what a narrowed ladder would call in a 28+ point college game, logged and
+        # shown as a SHOT line, never a play until config mismatch.<sport>.mode is live
+        shot = None
+        if not q3 and lane and lane['mode'] == 'shadow':
+            shot = self.shot_lane(g, lane, total, spread, home_pts, away_pts, center, center_w, quotes, bank, max_risk, max_cost, m)
+            rec['shot'] = shot
         sizing = dict(bankroll=bank, max_risk=max_risk, max_cost=max_cost, margin=self.cfg['margin_c'] / 100, mid_loss=mid_loss,
                       mid_loss_cap=cap, held_miss=held_miss, near_pts=(self.cfg.get('rest_near_pts') or {}).get(g['sport'], 3.5))
         focus = 'middles' if g['sport'] in (self.cfg.get('middle_focus') or []) else None
@@ -673,7 +742,7 @@ class Desk:
         pos = engine.held_position(rows, quotes, held_legs, self.cfg['margin_c'] / 100, self.cfg['order'], (self.cfg['min_price_c'], self.cfg['max_price_c'])) if held_legs else None
         held_lines = engine.held_block(pos) if pos else []
         held_act = bool(pos) and (bool(pos.get('hedge')) or any((h.get('sell') or {}).get('verdict') == 'SELL' for h in pos['legs']))
-        kind, head, text = engine.order_sheet(m, inp, rows, sug, sizing, focus=focus, held=held_lines)
+        kind, head, text = engine.order_sheet(m, inp, rows, sug, sizing, focus=focus, held=held_lines, shot=engine.shot_lines(shot) if shot else None)
         plays = [x for x in sug['mids'] if x['ok']] + [x for x in sug['singles'] if x['ok']] + [x for x in sug.get('revs') or [] if x['ok']]
         ts = now_iso()
         rec.setdefault(K('half_at'), ts)
@@ -699,6 +768,11 @@ class Desk:
             print(f"{g['short']}: venue log failed ({e})")
         sheet = self.sheet(g, m, total, spread, away_pts, home_pts, rows, sug, ev, sizing, rec)
         sheet['stage'] = stage
+        if not q3:
+            if rec.get('weather'):
+                sheet['weather'] = rec['weather']
+            if shot:
+                sheet['shot'] = shot
         if pos:
             sheet['held'] = pos
         # Auto orders (trade.py): planned once per break, at the first look, whatever the push slot did. Shadow
@@ -1050,6 +1124,12 @@ def grade_sheet(sh, T):
     if rm:
         rest_hit = rm['a_line'] < T < rm['b_line']
         rest_pnl = round((2 * rm['pairs'] - rm['cost']) if rest_hit else (rm['pairs'] - rm['cost']), 2)
+    # the mismatch lane's shadow call, graded as a what-if (the first pick), never part of the play's P&L
+    shot_pnl, shot_win = None, None
+    for x in ((sh.get('shot') or {}).get('picks') or [])[:1]:
+        shot_win = T > x['line'] if x['kind'] == 'over' else T < x['line']
+        shot_pnl = round((x['contracts'] - x['cost']) if shot_win else -x['cost'], 2)
+        detail.append(f"shot {x['kind']} {x['line']:g}@{x['price_c']} {'W' if shot_win else 'L'} {shot_pnl:+.0f}")
     if lead == 'mid' and m:
         pnl, cost, win = mid_pnl, round(m['cost'], 2), mid_hit
     elif lead == 'single' and options:
@@ -1059,7 +1139,7 @@ def grade_sheet(sh, T):
     else:
         pnl, cost, win = 0.0, 0.0, None
     return dict(lead=lead, pnl=round(pnl, 2), cost=cost, win=win, options=options, mid_pnl=mid_pnl, mid_hit=mid_hit,
-                rev_pnl=rev_pnl, rev_hole=rev_hole,
+                rev_pnl=rev_pnl, rev_hole=rev_hole, shot_pnl=shot_pnl, shot_win=shot_win,
                 rest_pnl=rest_pnl, rest_hit=rest_hit, n_plays=len(singles) + (1 if m else 0) + (1 if rv else 0), detail='; '.join(detail),
                 rest_text=f"over {rm['a_line']:g}@{rm['a_price']} / under {rm['b_line']:g}@{rm['b_price']} x{rm['pairs']}" if rm else '')
 
