@@ -309,7 +309,10 @@ A Railway variable change still redeploys the worker on its own, from the newest
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
 state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (13,127 games, 2006-2025, halftime scores from play by play), how it is built, and the second-half fit with the blowout study; `data/nfl_games.csv`, `scripts/build_nfl_games.py` and `scripts/fit_nfl.py` the same for the NFL (7,058 games, 2000-2026). `worker.py` the always-on loop. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
 read-only Kalshi sync. `held.py` open-position watch. `trade.py` the order executor (shadow by default). `cli.py` manual desk. `model.json` fitted coefficients and
-residual quantiles. `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
+residual quantiles. `data/nfl_features.csv.gz` and `data/cfb_features.csv.gz` (`scripts/build_nfl_features.py`,
+`scripts/build_cfb_features.py`) per-game play-by-play features by half (yards, plays, turnovers, missed kicks,
+return TDs, red zone, fourth downs, late and garbage-time points, kickoff time, weather) and
+`scripts/study_tails.py` the tail study that reads them (claude/tail-study-oct24.md). `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
 without ever committing a conflict. `scripts/export_desk.py` the nightly Supabase export to `data/desk/`. `tests/` parity check against the ledger artifact, the read-only proof, the
 mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), the NBA path (`nba.py`, on
 `fixtures_nba/`), reverse middles and held positions at the half (`reverse.py`), the football model blocks and game tables (`football.py`), what moves the worker branch (`release.py`), and an offline run on fixtures.
