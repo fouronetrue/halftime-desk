@@ -90,6 +90,7 @@ how many shares or pairs, and the resting limits for every strike near fair.
 | poll_seconds, max_poll_minutes | in-run polling during a halftime | 60, 22 |
 | sharp_model_pct | per sport, the weight the model keeps when the sharp second-half line is in hand at the half (needs ODDS_API_KEY) | nfl 50, cfb 80, nba 0 |
 | weather | per sport, the bad-weather haircut: pts added to the model's second-half mean when it is raining or snowing, or the wind is at wind_mph or more, outdoors (NFL only; the Weather section) | nfl -1.0 at 16 mph |
+| require_center | sports that never price without a usable market center at the break (the NBA: its model alone is wrong-signed, trust study) | [nba] |
 | mismatch | per sport, the mismatch lane: at a pregame spread of `spread` or more the ladder's width is `width` of the block's and the band's top is `band_hi`; mode shadow logs and shows a SHOT line, live prices the desk with it (the Mismatch lane section) | cfb 28, 0.87, 90c, shadow |
 
 ## The Odds API (optional, 5 minutes): the sharp pregame line
@@ -317,6 +318,18 @@ $22. Logged, not a play.`), the row keeps it (`suggestions.shot`) and the final 
 (`shot ...` in the results detail, never in the play's P&L). After three weeks of Saturdays the graded shots say
 whether Kalshi's ladder is as wide as the book's; `mode: live` then narrows the desk itself in those games and
 the usual trust blend and margin apply.
+
+## Quarter breaks: what counts as the half
+ESPN marks a quarter break with the next period's number and a 0:00 clock, so "period 2, 0:00" can be the end
+of the first quarter and "period 3, 0:00" the start of the third. On Oct 24 the NBA desk priced Heat-Hornets
+31-31 as the half and Warriors-Suns 54-57 as the end of the third, each a $132 loss on an under the model
+thought was free. Four guards now stand in front of a break (`feeds.half_score`, `feeds.third_score`,
+`feeds.break_too_early`, `tests/breaks.py`): a break needs evidence the period was played (the desk saw its
+clock running, or a linescore with points in it); it cannot come before it could have happened (the half 50
+minutes after the listed start, the end of the third 30 minutes after the half was read); the break score is
+taken once, so a score that moves while ESPN still shows the break stops the pricing; and the NBA never prices
+without a usable market center (`require_center`), since a center the plausible range rejects is the surest
+sign of a bad read and the NBA model alone is a ruler, not a compass.
 
 ## Honest limits
 - The model knows the lines, the score and the clock. It does not know injuries or pace (and weather only in the NFL, at the half). That is why the

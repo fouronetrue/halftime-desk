@@ -95,19 +95,87 @@ def espn_games(sport, date_yyyymmdd=None):
     return parse_espn(get_json(url, params), sport)
 
 
-def half_score(g):
-    """(away_pts, home_pts) at the half, or None if not known yet."""
+PERIOD_SECONDS = {'nba': 720}        # a quarter's clock; football 900
+# A break can't come before this much wall clock has passed: the half after the listed start, the end of the
+# third after the half was read (a quarter plus the halftime break). ESPN marks a quarter break with the NEXT
+# period's number and a 0:00 clock, so "period 2, 0:00" can be the end of the first and "period 3, 0:00" the
+# start of the third (Oct 24: Heat-Hornets priced 31-31 as the half, Warriors-Suns 54-57 as the end of the third).
+MIN_HALF_MINUTES = 50
+MIN_Q3END_MINUTES = 30
+MIN_Q3END_FROM_START = 95
+
+
+def period_played(g, n, rec=None):
+    """Evidence that period n was actually played: the desk saw its clock running (rec['seen']), or both teams
+    have a linescore for it and somebody scored in it. A 0:00 clock on its own is not evidence, and neither is
+    a linescore entry of 0-0 (ESPN can list the next period before it starts)."""
+    if rec and str(n) in (rec.get('seen') or {}):
+        return True
+    ls_h, ls_a = g['home'].get('linescores') or [], g['away'].get('linescores') or []
+    return len(ls_h) >= n and len(ls_a) >= n and (ls_h[n - 1] + ls_a[n - 1]) > 0
+
+
+def note_clock(g, rec):
+    """Remember a period whose clock the desk has seen running (strictly between 0 and the period length)."""
+    secs = PERIOD_SECONDS.get(g.get('sport'), 900)
+    c = g.get('clock_s')
+    if g.get('state') == 'in' and c is not None and 0 < c < secs and g.get('period'):
+        rec.setdefault('seen', {})[str(g['period'])] = True
+
+
+def clock_now():
+    """The wall clock the break guards read (tests replace it)."""
+    return dt.datetime.now(dt.timezone.utc)
+
+
+def _minutes_since(iso, now=None):
+    try:
+        t = dt.datetime.fromisoformat(str(iso).replace('Z', '+00:00'))
+    except Exception:
+        return None
+    now = now or clock_now()
+    return (now - t).total_seconds() / 60
+
+
+def break_too_early(g, rec, stage, now=None):
+    """A reason string when a break is being reported before it could have happened, else None."""
+    if stage == 'half':
+        m = _minutes_since(g.get('start_utc'), now)
+        if m is not None and m < MIN_HALF_MINUTES:
+            return f'half reported {m:.0f} min after the listed start'
+        return None
+    half_at = (rec or {}).get('half_at')
+    if half_at:
+        m = _minutes_since(half_at, now)
+        if m is not None and m < MIN_Q3END_MINUTES:
+            return f'end of 3rd reported {m:.0f} min after the half'
+        return None
+    m = _minutes_since(g.get('start_utc'), now)
+    if m is not None and m < MIN_Q3END_FROM_START:
+        return f'end of 3rd reported {m:.0f} min after the listed start'
+    return None
+
+
+def half_score(g, rec=None):
+    """(away_pts, home_pts) at the half, or None if not known yet. The live score counts as the half only with
+    evidence the second period was played (period_played); after the third starts the first two linescores
+    are the half."""
     if g['status'] == 'STATUS_HALFTIME' or (g['period'] == 2 and g['clock_s'] == 0 and g['state'] == 'in'):
-        return g['away']['score'], g['home']['score']
+        if period_played(g, 2, rec):
+            return g['away']['score'], g['home']['score']
+        return None
     if g['period'] >= 3 and len(g['home']['linescores']) >= 2 and len(g['away']['linescores']) >= 2:
         return sum(g['away']['linescores'][:2]), sum(g['home']['linescores'][:2])
     return None
 
 
-def third_score(g):
-    """(away_pts, home_pts) at the end of the third quarter, or None if not known yet."""
+def third_score(g, rec=None):
+    """(away_pts, home_pts) at the end of the third quarter, or None if not known yet. Same rule: the live
+    score is the end of the third only with evidence the third was played."""
     if g['period'] == 3 and (g['status'] == 'STATUS_END_PERIOD' or (g['clock_s'] == 0 and g['state'] == 'in')):
-        return g['away']['score'], g['home']['score']
+        if period_played(g, 3, rec):
+            return g['away']['score'], g['home']['score']
+        return None
     if g['period'] >= 4 and len(g['home']['linescores']) >= 3 and len(g['away']['linescores']) >= 3:
         return sum(g['away']['linescores'][:3]), sum(g['home']['linescores'][:3])
     return None

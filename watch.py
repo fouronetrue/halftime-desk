@@ -224,8 +224,15 @@ class Desk:
             except Exception as e:   # a sharp line is a bonus, never a reason to miss a pass
                 print(f'odds api {sport} failed: {e}')
             for g in games:
-                ph = feeds.phase(g)
                 rec = self.state['games'][g['id']]
+                feeds.note_clock(g, rec)
+                ph = feeds.phase(g)
+                # a break ESPN reports before it could have happened (the end of the first as the half, the start
+                # of the third as its end) is not a break: the label and the pacing stay with the quarter
+                if ph == 'half' and (feeds.break_too_early(g, rec, 'half') or not feeds.period_played(g, 2, rec)):
+                    ph = 'approaching'
+                elif ph == 'q3end' and (feeds.break_too_early(g, rec, 'q3') or not feeds.period_played(g, 3, rec)):
+                    ph = 'approaching3'
                 rec['last_seen'] = now_iso()
                 rec['phase'] = ph
                 self.phases[ph] = self.phases.get(ph, 0) + 1
@@ -655,12 +662,23 @@ class Desk:
     def evaluate_stage(self, g, rec, stage):
         q3 = stage == 'q3'
         K = (lambda k: k + '_q3') if q3 else (lambda k: k)   # record keys: half / half_at / moved / clear / sheet, or the _q3 versions
-        hs = feeds.third_score(g) if q3 else feeds.half_score(g)
+        hs = feeds.third_score(g, rec) if q3 else feeds.half_score(g, rec)
         if hs is None:
             return
-        away_pts, home_pts = hs
-        rec['third' if q3 else 'half'] = dict(away=away_pts, home=home_pts)
-        score = rec['third' if q3 else 'half']
+        early = feeds.break_too_early(g, rec, stage)
+        if early:
+            if rec.get(K('noted_early')) != early:
+                rec[K('noted_early')] = early
+                print(f"{g['short']}: {early}, not a break, nothing priced")
+            return
+        # The break score is taken once. Every later pass compares the live score with it, so a score that moves
+        # while ESPN still shows the break (a stuck 0:00 clock, Oct 24) stops the pricing instead of re-pricing
+        # the new score as the break.
+        key = 'third' if q3 else 'half'
+        if not rec.get(key):
+            rec[key] = dict(away=hs[0], home=hs[1])
+        score = rec[key]
+        away_pts, home_pts = score['away'], score['home']
         live = (g['away']['score'], g['home']['score'])
         if live != (away_pts, home_pts):
             # Someone scored since the break. The model no longer describes the game, so from here on nothing is
@@ -699,6 +717,13 @@ class Desk:
             return
         center, center_w, center_src = self.market_center(g, ev, away_pts + home_pts, stage, rec)
         rec['center_src'] = center_src
+        if center is None and g['sport'] in self.cfg.get('require_center', ['nba']):
+            # The NBA model is a ruler, not a compass (trust study): without a market center it never prices.
+            # A center the plausible range rejected is also the surest sign the break score is wrong.
+            if not rec.get(K('noted_no_center')):
+                rec[K('noted_no_center')] = True
+                print(f"{g['short']}: no usable market center at the {'end of the 3rd' if q3 else 'half'} ({away_pts}-{home_pts}), the NBA never prices on the model alone")
+            return
         if q3:
             m = engine.LateModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w)
         else:

@@ -60,5 +60,8 @@
       "band_hi": 90,
       "mode": "shadow"
     }
-  }
+  },
+  "require_center": [
+    "nba"
+  ]
 }
