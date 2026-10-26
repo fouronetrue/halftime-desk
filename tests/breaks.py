@@ -1,4 +1,4 @@
-"""The quarter-break misreads of Oct 24 (claude/tail-study-oct24.md, section 7), replayed offline:
+"""The quarter-break misreads of Oct 24 (claude/breaks-oct25.md), replayed offline:
   MIA @ CHA: the end of the first quarter (31-31) priced as the half, under 216.5 at 17c, -$132
   GS @ PHX: the start of the third (54-57, the halftime score) priced as the end of the third, under 213.5 at
             18c, -$132; then 57-59 and 57-61 priced the same way while the clock still read 0:00
