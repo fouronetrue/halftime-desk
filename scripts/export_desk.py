@@ -27,7 +27,7 @@ Two readouts ride along (scripts/readout.py), since this job is where the Supaba
 auto-order summary per slate (data/desk/shadow/DATE.csv, counts and dollars from the orders table, never an
 order) and the honest scorecard (data/desk/scorecard.md, the results table plus the pre-mirror games only
 log/results.csv has, one row a game window)."""
-import sys, os, csv, io, gzip, json, argparse, datetime as dt
+import sys, os, csv, io, gzip, json, time, argparse, traceback, datetime as dt
 from zoneinfo import ZoneInfo
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -75,14 +75,27 @@ def window(day):
 
 
 def query(table, where, order):
-    """Every row the filter matches, paged through PostgREST (1,000 a page)."""
+    """Every row the filter matches, paged through PostgREST (1,000 a page). A page that fails (a timeout, a 5xx
+    while Supabase is busy) is asked for again twice before the slate is given up on."""
     rows, offset = [], 0
     while True:
         # not store.read: that swallows a failed read as "no rows", and a failed export should fail the run
-        r = requests.get(f'{store._url()}/rest/v1/{table}', headers=store._headers(), timeout=60,
-                         params=dict(select='*', order=order, limit=PAGE, offset=offset, **where))
-        if r.status_code >= 300:
-            raise RuntimeError(f'{table}: HTTP {r.status_code} {r.text[:200]}')
+        err = None
+        for attempt in range(3):
+            try:
+                r = requests.get(f'{store._url()}/rest/v1/{table}', headers=store._headers(), timeout=90,
+                                 params=dict(select='*', order=order, limit=PAGE, offset=offset, **where))
+                if r.status_code < 300:
+                    err = None
+                    break
+                err = f'{table} offset {offset}: HTTP {r.status_code} {r.text[:200]}'
+                if r.status_code < 500:
+                    break
+            except Exception as e:
+                err = f'{table} offset {offset}: {e}'
+            time.sleep(3 * (attempt + 1))
+        if err:
+            raise RuntimeError(err)
         page = r.json()
         rows.extend(page)
         if len(page) < PAGE:
@@ -257,13 +270,28 @@ def main():
         now = dt.datetime.now(ET)
         last = now.date() - dt.timedelta(days=1 if now.hour >= SLATE_HOUR else 2)
         days = [last - dt.timedelta(days=i) for i in range(a.days)][::-1]
-    n = 0
+    n, errors = 0, []
     for day in days:
-        n += len(export(day, a.force))
-    if scorecard(a.force):
-        n += 1
+        try:
+            n += len(export(day, a.force))
+        except Exception as e:   # one bad slate does not cost the others their export
+            errors.append(f'{day}: {e}')
+            traceback.print_exc()
+    try:
+        if scorecard(a.force):
+            n += 1
+    except Exception as e:
+        errors.append(f'scorecard: {e}')
+        traceback.print_exc()
+    # what went wrong, in the repo, since the Actions log is not always readable from where the fix gets written
+    log = os.path.join(OUT, 'export_errors.txt')
+    if errors:
+        put_text(log, f"export at {dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC failed on:\n" + '\n'.join(errors) + '\n', force=True)
+        print('\n'.join(errors))
+    elif os.path.exists(log):
+        os.remove(log)
     print(f'{n} file(s) written' if n else 'nothing new')
-    return 0
+    return 1 if errors else 0
 
 
 if __name__ == '__main__':

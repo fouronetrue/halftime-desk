@@ -33,6 +33,10 @@ jobs:
           python-version: '3.12'
       - run: pip install -q -r requirements.txt
       - name: Export
+        id: export
+        # a slate that fails is written up in data/desk/export_errors.txt and the others still land; the last step
+        # then fails the run so GitHub still sends the email
+        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
@@ -45,9 +49,14 @@ jobs:
         run: |
           git config user.name "halftime-desk bot"
           git config user.email "bot@users.noreply.github.com"
-          git add data/desk
+          git add -A data/desk
           git diff --cached --quiet && echo "nothing new" && exit 0
           n=$(git diff --cached --name-only | wc -l)
           git commit -q -m "data: desk export, $n file(s)"
           for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          exit 1
+      - name: Fail the run if a slate failed
+        if: steps.export.outcome == 'failure'
+        run: |
+          cat data/desk/export_errors.txt 2>/dev/null || true
           exit 1
