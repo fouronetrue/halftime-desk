@@ -26,6 +26,7 @@ jobs:
       - run: python tests/odds.py
       - run: python tests/push.py
       - run: python tests/export.py
+      - run: python tests/readout.py
       - run: python tests/venues.py
       - run: python tests/bankroll.py
       - run: python tests/release.py

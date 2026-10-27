@@ -21,16 +21,23 @@ or a grade can land after the first export; the quote tables are written once an
 Two tables are thinned, or the repo would grow 70 MB a month: quote_snapshots keeps every row at a break
 (half, early3, q3end, early4) and, pregame, the first poll of each hour per game plus the last poll before
 tip (the close); suggestions keeps every row's numbers but the singles, mids and revs JSON only on the first
-and last row of each game's break and on the row a push came from."""
+and last row of each game's break and on the row a push came from.
+
+Two readouts ride along (scripts/readout.py), since this job is where the Supabase keys are: the shadow
+auto-order summary per slate (data/desk/shadow/DATE.csv, counts and dollars from the orders table, never an
+order) and the honest scorecard (data/desk/scorecard.md, the results table plus the pre-mirror games only
+log/results.csv has, one row a game window)."""
 import sys, os, csv, io, gzip, json, argparse, datetime as dt
 from zoneinfo import ZoneInfo
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 import requests
 import store
+from scripts import readout
 
 ET = ZoneInfo('America/New_York')
 OUT = os.path.join(ROOT, 'data', 'desk')
+RESULTS_CSV = os.path.join(ROOT, 'log', 'results.csv')
 PAGE = 1000
 SLATE_HOUR = 5
 
@@ -67,19 +74,13 @@ def window(day):
     return start.astimezone(dt.timezone.utc).isoformat(), end.astimezone(dt.timezone.utc).isoformat()
 
 
-def fetch(table, day):
-    """Every row of the table for the slate, paged through PostgREST (1,000 a page)."""
-    by, _, _ = TABLES[table]
-    if by == 'date_et':
-        where = {'date_et': f'eq.{day.isoformat()}'}
-    else:
-        lo, hi = window(day)
-        where = {'and': f'({by}.gte.{lo},{by}.lt.{hi})'}
+def query(table, where, order):
+    """Every row the filter matches, paged through PostgREST (1,000 a page)."""
     rows, offset = [], 0
     while True:
         # not store.read: that swallows a failed read as "no rows", and a failed export should fail the run
         r = requests.get(f'{store._url()}/rest/v1/{table}', headers=store._headers(), timeout=60,
-                         params=dict(select='*', order=ORDER[table], limit=PAGE, offset=offset, **where))
+                         params=dict(select='*', order=order, limit=PAGE, offset=offset, **where))
         if r.status_code >= 300:
             raise RuntimeError(f'{table}: HTTP {r.status_code} {r.text[:200]}')
         page = r.json()
@@ -87,6 +88,23 @@ def fetch(table, day):
         if len(page) < PAGE:
             return rows
         offset += PAGE
+
+
+def fetch(table, day):
+    """Every row of the table for the slate."""
+    by, _, _ = TABLES[table]
+    if by == 'date_et':
+        where = {'date_et': f'eq.{day.isoformat()}'}
+    else:
+        lo, hi = window(day)
+        where = {'and': f'({by}.gte.{lo},{by}.lt.{hi})'}
+    return query(table, where, ORDER[table])
+
+
+def fetch_orders(day=None):
+    """The orders table, one slate or all of it: read for the summaries only, never written out as rows."""
+    where = {'date_et': f'eq.{day.isoformat()}'} if day else {}
+    return query('orders', where, 'created_at,client_order_id')
 
 
 def thin_quotes(rows):
@@ -145,10 +163,23 @@ def to_csv(table, rows):
 
 def existing(path):
     try:
-        with gzip.open(path, 'rt', encoding='utf-8') as f:
+        if path.endswith('.gz'):
+            with gzip.open(path, 'rt', encoding='utf-8') as f:
+                return f.read()
+        with open(path, encoding='utf-8') as f:
             return f.read()
     except OSError:
         return None
+
+
+def put_text(path, text, force=False):
+    """A plain text file (the summaries), written only when its content changed. True when written."""
+    if existing(path) == text and not force:
+        return False
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8', newline='') as f:
+        f.write(text)
+    return True
 
 
 def export(day, force=False):
@@ -177,7 +208,34 @@ def export(day, force=False):
             f.write(text.encode('utf-8'))
         written.append(path)
         print(f'{table} {day}: {len(rows)} rows')
+    # the shadow summary: what the auto orders would have done this slate, as counts and dollars (never an order);
+    # rewritten as touches and grades land, like the small tables
+    summary = readout.shadow_rows(fetch_orders(day))
+    if summary:
+        path = os.path.join(OUT, 'shadow', f'{day.isoformat()}.csv')
+        if put_text(path, readout.shadow_csv(summary), force):
+            written.append(path)
+            print(f"shadow {day}: " + ', '.join(f"{r['sport']} {r['mode']} {r['rest_orders']} resting orders on {r['games']} games, {r['rest_touched']} would fill, ${r['pnl']:+.0f}" for r in summary))
     return written
+
+
+def csv_results(path=None):
+    try:
+        with open(path or RESULTS_CSV, newline='', encoding='utf-8') as f:
+            return list(csv.DictReader(f))
+    except OSError:
+        return []
+
+
+def scorecard(force=False):
+    """The honest scorecard from everything graded (the whole results table, the CSV's pre-mirror games, every
+    auto order), written to data/desk/scorecard.md when it changed; the text is returned and printed either way."""
+    db_rows = query('results', {}, ORDER['results'])
+    text = readout.scorecard_md(db_rows, csv_results(), fetch_orders())
+    path = os.path.join(OUT, 'scorecard.md')
+    wrote = put_text(path, text, force)
+    print(text)
+    return path if wrote else None
 
 
 def main():
@@ -201,6 +259,8 @@ def main():
     n = 0
     for day in days:
         n += len(export(day, a.force))
+    if scorecard(a.force):
+        n += 1
     print(f'{n} file(s) written' if n else 'nothing new')
     return 0
 
