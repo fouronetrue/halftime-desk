@@ -33,4 +33,5 @@ jobs:
       - run: python tests/weather.py
       - run: python tests/shot.py
       - run: python tests/breaks.py
+      - run: python tests/preladder.py
       - run: cp state.json /tmp/state.bak && python watch.py --fixtures tests/fixtures && cp /tmp/state.bak state.json

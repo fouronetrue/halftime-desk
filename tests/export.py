@@ -125,7 +125,7 @@ path = ex.scorecard()
 assert path == os.path.join(ex.OUT, 'scorecard.md'), path
 card = open(path, encoding='utf-8').read()
 assert 'from the Supabase results table (1 games' in card and 'plus the 1 games only log/results.csv has' in card and '2 windows on 2 games' in card, card
-assert '| Oct 18 to Oct 18 | NFL | 1 | 1 | $65 | $+77 |' in card and '| NBA | shadow | 1 | 1 | 4 | 3 | 1 | 1 of 2 | 1 | $+2 | $-22 |' in card, card
+assert '| Oct 18 to Oct 18 | NFL | 1 | 1 | $65 | $+77 |' in card and '| NBA | shadow | 1 | 1 | 4 | 3 | 1 | 1 of 2 | 0 | 1 | $-20 | $+27 | $-47 | $+2 | $-22 |' in card, card
 assert '- NBA: finals vs the model -3.0 on 1 game' in card, card
 for word in ('held', 'KXNBA', 'deadbeef', '210.5'):
     assert word not in card, word

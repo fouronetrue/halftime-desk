@@ -49,6 +49,7 @@ assert s['tight_orders'] == 4 and s['tight_touched'] == 3 and s['wide_orders'] =
 assert (s['touch_under_60s'], s['touch_1_5m'], s['touch_5_15m'], s['touch_later']) == (1, 1, 0, 2) and s['touch_median_s'] == 1700, s
 assert s['middles'] == 3 and s['middles_both'] == 1 and s['middles_one'] == 2, s
 assert s['graded'] == 4 and s['pnl'] == round(27 - 25 - 13.2 + 10.4, 2) and s['pnl_both'] == 2.0 and s['pnl_lone'] == round(-13.2 + 10.4, 2), s
+assert s['pnl_break'] == round(27 + 10.4, 2) and s['pnl_play'] == round(-25 - 13.2, 2) and s['middles_both_break'] == 0 and s['pnl_both_break'] == 0, s
 assert s['pnl_cost'] == round(23 + 25 + 13.2 + 9.6, 2), s
 assert s['takes'] == 2 and s['takes_available'] == 1 and s['takes_pnl'] == 10.0, s
 live = rows[0]
@@ -107,7 +108,7 @@ assert '- CFB: finals vs the model -7.0 on 1 game' in text and '- CFB: finals vs
 assert '| NBA | half | 3 | 2 | $+37 |' in text and '| NBA | end of 3rd | 2 | 1 | $+16 |' in text, text
 assert '| Oct 24 | 1 | 1 | $88 | $+18 |' in text, text                                    # the shot: under 63.5 won on a 48
 assert '| CFB | 1 | 1 | $+40 |' in text, text                                             # one line came and went
-assert '| NBA | shadow | 1 | 2 | 6 | 4 | 2 | 1 of 3 | 2 | $+2 | $-3 |' in text, text
+assert '| NBA | shadow | 1 | 2 | 6 | 4 | 2 | 1 of 3 | 0 | 2 | $-1 | $+37 | $-38 | $+2 | $-3 |' in text, text
 for word in ('KXNBA', 'c0ffee', '210.5'):
     assert word not in text, word
 assert chr(8212) not in text and chr(8212) not in open(os.path.join(ROOT, 'scripts', 'readout.py'), encoding='utf-8').read()

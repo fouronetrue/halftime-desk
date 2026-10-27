@@ -55,7 +55,11 @@ how many shares or pairs, and the resting limits for every strike near fair.
 5. If any game is approaching the half (Q2 under 5:00) or at the half, the run keeps polling every
    `poll_seconds` for up to `max_poll_minutes`, so a 5-minute cron still covers the whole halftime window.
 6. With Supabase keys set, everything above also lands in Supabase as it happens: `games`, `quote_snapshots`
-   (every strike's bid and ask next to the model's number, every poll), `suggestions` (with the live score it
+   (every strike's bid and ask next to the model's number, every poll; pregame, the strikes near the line as they
+   move, plus the whole ladder twice with a phase label: `pre60`, the first read inside the hour before the listed
+   start, and `pre0`, the close, the last read inside the 30 minutes before the kick, written by the first pass
+   that sees the game kicked off at the time it was read, so a move before kick can be graded strike by strike;
+   both watchers may write a set, so a grader takes the earliest `pre60` and the latest `pre0`), `suggestions` (with the live score it
    was priced at, the ranked singles, middles and reverse middles, and what you held with the verdicts;
    `supabase/005_reverse.sql` adds the last two columns), `alerts` (the exact push text) and `results`. The CSVs stay the source of truth; a
    failed write prints one line and the watch goes on. A column the schema does not have yet (a file in

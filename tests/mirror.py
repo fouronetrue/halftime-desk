@@ -90,11 +90,15 @@ sug = c_on['suggestions'][0]
 # the priced game's line came from the games table (tests/fixtures/supabase_games.json), never from the feed at the half
 assert sug['total'] == 55.5 and sug['home_spread'] == -3.5 and state['games'][sug['game_id']]['pre'].get('restored'), 'pregame line not restored from the games table'
 assert (sug['away_score'], sug['home_score']) == (sug['half_away'], sug['half_home']), 'a priced row must carry the halftime score as its live score'
-half_q = [q for q in c_on['quote_snapshots'] if q['phase'] != 'pre']
-pre_q = [q for q in c_on['quote_snapshots'] if q['phase'] == 'pre']
+half_q = [q for q in c_on['quote_snapshots'] if not q['phase'].startswith('pre')]
+pre_q = [q for q in c_on['quote_snapshots'] if q['phase'].startswith('pre')]
 assert half_q and all(q['taken_at'] == sug['taken_at'] and q['game_id'] == sug['game_id'] for q in half_q)
-# pregame line history: upcoming games only, no model numbers, and never for the game priced at the half
+# pregame line history: upcoming games only, no model numbers, and never for the game priced at the half; the
+# fixture's upcoming game is inside the hour before its listed start, so its whole ladder goes out once as pre60
 assert pre_q and all(q['p_over'] is None and q['game_id'] != sug['game_id'] for q in pre_q), 'pregame history rows look wrong'
+p60 = [q for q in pre_q if q['phase'] == 'pre60']
+assert p60 and len({(q['game_id'], q['taken_at']) for q in p60}) == len({q['game_id'] for q in p60}), 'one pre60 ladder per game'
+assert not [q for q in pre_q if q['phase'] == 'pre' and any(q['taken_at'] == r['taken_at'] and q['game_id'] == r['game_id'] and q['strike'] == r['strike'] for r in p60)], 'a pre row collided with the pre60 ladder'
 assert c_on['alerts'][0]['suggestion_at'] == sug['taken_at'] and c_on['alerts'][0]['body'] == p_on[0][1]
 assert c_on['results'][0]['game_id'] == sug['game_id'] and c_on['results'][0]['sheet']
 assert state['games'][sug['game_id']]['half_at'] == sug['taken_at'] and state['games'][sug['game_id']]['kalshi_total_event'] == sug['event_ticker']

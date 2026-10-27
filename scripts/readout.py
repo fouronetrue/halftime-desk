@@ -25,8 +25,8 @@ FILLED = ('touched', 'filled', 'partial')
 SHADOW_COLS = ['date_et', 'sport', 'mode', 'games', 'rest_orders', 'rest_cost', 'rest_touched', 'touched_break', 'touched_play',
                'tight_orders', 'tight_touched', 'wide_orders', 'wide_touched', 'other_orders', 'other_touched',
                'touch_under_60s', 'touch_1_5m', 'touch_5_15m', 'touch_later', 'touch_median_s',
-               'middles', 'middles_both', 'middles_one', 'graded', 'pnl', 'pnl_both', 'pnl_lone', 'pnl_cost',
-               'takes', 'takes_available', 'takes_pnl']
+               'middles', 'middles_both', 'middles_one', 'middles_both_break', 'graded', 'pnl', 'pnl_both', 'pnl_lone', 'pnl_break', 'pnl_play',
+               'pnl_both_break', 'pnl_cost', 'takes', 'takes_available', 'takes_pnl']
 # Every NBA play through this slate was a quarter-break misread (claude/breaks-oct25.md): ESPN's "period 2, 0:00"
 # priced as the half, "period 3, 0:00" as the end of the third. Fixed Oct 25 at 8:32 PM ET; a correctly read NBA
 # break has never produced a directional play, so the scorecard shows the NBA record with and without them.
@@ -75,9 +75,11 @@ def summarise(mine, date_et, sport, mode):
             pairs.setdefault((o.get('game_id'), o.get('stage'), o['pair'], o.get('reason')), []).append(o)
     both = [v for v in pairs.values() if sum(1 for o in v if is_filled(o)) >= 2]
     one = [v for v in pairs.values() if sum(1 for o in v if is_filled(o)) == 1]
+    both_break = [v for v in both if all(at_break(o) for o in v if is_filled(o))]   # the middle the market handed over at the break
     graded = [o for o in touched if num(o.get('pnl')) is not None]
-    pnl_both = sum(num(o.get('pnl')) or 0 for v in both for o in v if num(o.get('pnl')) is not None)
-    pnl_lone = sum(num(o.get('pnl')) or 0 for v in one for o in v if num(o.get('pnl')) is not None)
+    pnl_of = lambda os: sum(num(o.get('pnl')) or 0 for o in os if num(o.get('pnl')) is not None)
+    pnl_both = pnl_of(o for v in both for o in v)
+    pnl_lone = pnl_of(o for v in one for o in v)
     tg = [o for o in takes if is_filled(o) and num(o.get('pnl')) is not None]
     return dict(date_et=date_et, sport=sport, mode=mode, games=len({o.get('game_id') for o in mine}),
                 rest_orders=len(rest), rest_cost=round(sum(num(o.get('cost')) or 0 for o in rest), 2), rest_touched=len(touched),
@@ -88,8 +90,10 @@ def summarise(mine, date_et, sport, mode):
                 touch_under_60s=sum(1 for s in secs if s < 60), touch_1_5m=sum(1 for s in secs if 60 <= s < 300),
                 touch_5_15m=sum(1 for s in secs if 300 <= s < 900), touch_later=sum(1 for s in secs if s >= 900),
                 touch_median_s=secs[len(secs) // 2] if secs else '',
-                middles=len(pairs), middles_both=len(both), middles_one=len(one),
-                graded=len(graded), pnl=round(sum(num(o['pnl']) for o in graded), 2), pnl_both=round(pnl_both, 2), pnl_lone=round(pnl_lone, 2),
+                middles=len(pairs), middles_both=len(both), middles_one=len(one), middles_both_break=len(both_break),
+                graded=len(graded), pnl=round(pnl_of(graded), 2), pnl_both=round(pnl_both, 2), pnl_lone=round(pnl_lone, 2),
+                pnl_break=round(pnl_of(brk), 2), pnl_play=round(pnl_of(o for o in touched if o not in brk), 2),
+                pnl_both_break=round(pnl_of(o for v in both_break for o in v), 2),
                 pnl_cost=round(sum(num(o.get('cost')) or 0 for o in graded), 2),
                 takes=len(takes), takes_available=sum(1 for o in takes if is_filled(o)), takes_pnl=round(sum(num(o['pnl']) for o in tg), 2))
 
@@ -317,14 +321,15 @@ def auto_lines(orders):
     rows = shadow_rows(orders)
     if not rows:
         return ['- no auto orders recorded yet']
-    out = ['| sport | mode | nights | games | resting orders | would fill | at the break | middles both legs | one leg | P&L (both) | P&L (lone) |',
-           '|---|---|---|---|---|---|---|---|---|---|---|']
+    out = ['| sport | mode | nights | games | resting orders | would fill | at the break | middles both legs | both at the break | one leg | P&L all | P&L at the break | P&L in play | P&L (both) | P&L (lone) |',
+           '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|']
     for sport in sorted({r['sport'] for r in rows}):
         for mode in sorted({r['mode'] for r in rows if r['sport'] == sport}):
             rs = [r for r in rows if r['sport'] == sport and r['mode'] == mode]
             s = lambda k: sum(r[k] for r in rs)
             out.append(f"| {sport.upper()} | {mode} | {len(rs)} | {s('games')} | {s('rest_orders')} | {s('rest_touched')} | {s('touched_break')} | "
-                       f"{s('middles_both')} of {s('middles')} | {s('middles_one')} | ${s('pnl_both'):+,.0f} | ${s('pnl_lone'):+,.0f} |")
+                       f"{s('middles_both')} of {s('middles')} | {s('middles_both_break')} | {s('middles_one')} | ${s('pnl'):+,.0f} | ${s('pnl_break'):+,.0f} | "
+                       f"${s('pnl_play'):+,.0f} | ${s('pnl_both'):+,.0f} | ${s('pnl_lone'):+,.0f} |")
     return out
 
 
@@ -353,6 +358,7 @@ def scorecard_md(db_rows, csv_rows, orders, now=None):
     lines += ['', '## Mismatch lane (college 28+), shadow shots', ''] + shot_lines(rows)
     lines += ['', '## Came and went (cleared between pushes, not played)', ''] + flicker_lines(rows)
     lines += ['', '## Auto orders (shadow fill model: the ask touched the resting bid)', '',
-              'Per slate in data/desk/shadow/. A fill at the break is the market handing the middle over; a fill in play is the game moving against the leg.', '']
+              'Per slate in data/desk/shadow/. A fill at the break is the market handing the middle over; a fill in play is the game moving against the leg. '
+              'P&L at the break is what the night would have made with every resting order pulled when the break ended.', '']
     lines += auto_lines(orders)
     return '\n'.join(lines) + '\n'

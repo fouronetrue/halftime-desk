@@ -46,6 +46,13 @@ CENTER_2H_RANGE = {'nba': (70, 160), 'nfl': (6, 60), 'cfb': (8, 90)}   # a cente
 CENTER_Q4_RANGE = {'nba': (30, 95)}    # the same for the points left at the end of the third (a 4th quarter plus the overtime chance)
 
 
+def snap_row(ts, g, ev, strike, q, phase):
+    """One quote_snapshots row for a pregame read of a strike (no model numbers before the half)."""
+    return dict(taken_at=ts, game_id=g['id'], event_ticker=ev.get('event_ticker'), market_ticker=q.get('ticker'), strike=float(strike), phase=phase,
+                yes_bid=q.get('yb'), yes_ask=q.get('y'), no_bid=q.get('nb'), no_ask=q.get('n'),
+                p_over=None, p_push=None, over_take=None, over_rest=None, under_take=None, under_rest=None)
+
+
 def send_push(title, body, priority='default', tags='football', url=None):
     """notify.push with the market link; a stand-in push without the url argument (the tests') still works."""
     try:
@@ -240,7 +247,9 @@ class Desk:
                     self.next_kick = g['start_utc']
                 if ph == 'pre':
                     self.capture_pregame(g, rec)
-                elif ph in ('half', 'early3'):
+                elif rec.get('pre_ladder') or ('snap0' not in rec and rec.get('snap60')):
+                    self.close_ladder(g, rec)   # the first pass after the kick: the last pregame ladder is the close
+                if ph in ('half', 'early3'):
                     active = True
                     self.evaluate(g, rec)
                 elif ph in ('q3end', 'early4'):
@@ -262,7 +271,12 @@ class Desk:
         self.prune()
         self.db_games(seen)
         if self._pre_snaps and store.enabled():   # after db_games, so every game row exists first
-            store.write('quote_snapshots', self._pre_snaps, on_conflict='taken_at,game_id,strike')
+            # one row per (time, game, strike) in the batch: a pre60 ladder and the near-strike history read at the
+            # same instant would collide on the key, and the labelled row is the one to keep
+            uniq = {}
+            for r in sorted(self._pre_snaps, key=lambda r: r['phase'] != 'pre'):   # plain history first, the labelled rows win
+                uniq[(r['taken_at'], r['game_id'], r['strike'])] = r
+            store.write('quote_snapshots', list(uniq.values()), on_conflict='taken_at,game_id,strike')
         return active
 
     # ---- Supabase mirror: the same facts the CSVs and state.json hold, one request per table per pass ----
@@ -472,6 +486,8 @@ class Desk:
         if hi is not None:
             legs.append(dict(side='under', k=hi, c=q[hi]['n']))
         rec['mkt'] = dict(line=line, legs=legs, at=now_iso())
+        ts = now_iso()
+        self.pre_ladder(g, rec, ev, q, ts)
         # Pregame line history: the strikes within 6 points of the market line, saved to quote_snapshots with
         # phase 'pre' when they change (at most every 2 minutes) or every 10 minutes regardless.
         near = sorted(k for k in q if abs(k - line) <= 6)
@@ -481,11 +497,38 @@ class Desk:
         if last and ((last[0] == key and t - last[1] < 600) or t - last[1] < 120):
             return
         self._pre_last[g['id']] = (key, t)
-        ts = now_iso()
         for k in near:
-            self._pre_snaps.append(dict(taken_at=ts, game_id=g['id'], event_ticker=ev.get('event_ticker'), market_ticker=q[k].get('ticker'),
-                                        strike=k, phase='pre', yes_bid=q[k]['yb'], yes_ask=q[k]['y'], no_bid=q[k]['nb'], no_ask=q[k]['n'],
-                                        p_over=None, p_push=None, over_take=None, over_rest=None, under_take=None, under_rest=None))
+            self._pre_snaps.append(snap_row(ts, g, ev, k, q[k], 'pre'))
+
+    def pre_ladder(self, g, rec, ev, q, ts):
+        """The whole pregame ladder at two marks, so a move before kick can be graded strike by strike (picks-lessons
+        rule 7): once at T-60 (phase pre60, the first read inside the hour before the listed start), and the close
+        (phase pre0): the newest read inside the last 30 minutes is kept on the record, and the first pass that sees
+        the game kicked off writes it with the time it was read (see close_ladder). Every strike, not only the ones
+        near the line, since a pregame play sits anywhere on the ladder."""
+        m = feeds._minutes_since(g.get('start_utc'))
+        if m is None or not q:
+            return
+        if m >= -60 and not rec.get('snap60'):
+            rec['snap60'] = ts
+            self._pre_snaps += [snap_row(ts, g, ev, k, q[k], 'pre60') for k in sorted(q)]
+        if m >= -30:
+            rec['pre_ladder'] = dict(at=ts, event=ev.get('event_ticker'),
+                                     quotes={f'{k:g}': [q[k].get('ticker'), q[k]['yb'], q[k]['y'], q[k]['nb'], q[k]['n']] for k in sorted(q)})
+
+    def close_ladder(self, g, rec):
+        """The first pass after the kick: the ladder kept by pre_ladder becomes the close (phase pre0), written once,
+        at the time it was read. A game whose last pregame read was more than 30 minutes before the kick has no
+        close on record, and says so once."""
+        pl = rec.pop('pre_ladder', None)
+        if rec.get('snap0'):
+            return
+        rec['snap0'] = (pl or {}).get('at') or 'none'
+        if not pl:
+            return
+        ev = dict(event_ticker=pl.get('event'))
+        for k, v in pl['quotes'].items():
+            self._pre_snaps.append(snap_row(pl['at'], g, ev, float(k), dict(ticker=v[0], yb=v[1], y=v[2], nb=v[3], n=v[4]), 'pre0'))
 
     def sharp_2h(self, g, rec):
         """The sharp second-half total on this game at the half, read once from The Odds API (one credit) and

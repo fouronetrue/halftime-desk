@@ -19,8 +19,8 @@ Small tables (games, suggestions, alerts, results) are rewritten when a day's ro
 or a grade can land after the first export; the quote tables are written once and left alone.
 
 Two tables are thinned, or the repo would grow 70 MB a month: quote_snapshots keeps every row at a break
-(half, early3, q3end, early4) and, pregame, the first poll of each hour per game plus the last poll before
-tip (the close); suggestions keeps every row's numbers but the singles, mids and revs JSON only on the first
+(half, early3, q3end, early4), the two labelled pregame ladders (pre60 at T-60 and pre0, the close) and, from
+the plain pregame history, the first poll of each hour per game plus the last poll before tip; suggestions keeps every row's numbers but the singles, mids and revs JSON only on the first
 and last row of each game's break and on the row a push came from.
 
 Two readouts ride along (scripts/readout.py), since this job is where the Supabase keys are: the shadow
@@ -108,7 +108,8 @@ def fetch_orders(day=None):
 
 
 def thin_quotes(rows):
-    """Every row at a break; pregame, each game's first poll of the hour and its last poll (the close)."""
+    """Every row at a break and every labelled pregame ladder (pre60, pre0); from the plain pregame history, each
+    game's first poll of the hour and its last poll."""
     first, last = {}, {}                       # per game and hour, the poll kept; per game, the close
     for r in rows:
         if r.get('phase') == 'pre':
