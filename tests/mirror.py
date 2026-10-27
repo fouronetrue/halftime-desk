@@ -99,7 +99,7 @@ assert c_on['alerts'][0]['suggestion_at'] == sug['taken_at'] and c_on['alerts'][
 assert c_on['results'][0]['game_id'] == sug['game_id'] and c_on['results'][0]['sheet']
 assert state['games'][sug['game_id']]['half_at'] == sug['taken_at'] and state['games'][sug['game_id']]['kalshi_total_event'] == sug['event_ticker']
 csv_rows = list(csv.DictReader(open(watch.RESULTS_PATH)))
-assert len(csv_rows) == 2 and csv_rows[0]['game'] == c_on['results'][0]['game'], 'results.csv and the results row disagree'
+assert len(csv_rows) == 1 and csv_rows[0]['game'] == c_on['results'][0]['game'], 'results.csv and the results row disagree (one row a game: the second settle of the same game adds no row)'
 print(f"mirror: {len(c_on['games'])} games, {len(c_on['suggestions'])} suggestions, {len(half_q)} quotes, {len(pre_q)} pregame quotes, "
       f"{len(c_on['alerts'])} alerts, {len(c_on['results'])} results; push text identical with the mirror on and off")
 if '--dump' in sys.argv:

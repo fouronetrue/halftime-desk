@@ -1058,11 +1058,20 @@ class Desk:
         os.makedirs(os.path.dirname(RESULTS_PATH), exist_ok=True)
         upgrade_results_csv(RESULTS_PATH)
         newfile = not os.path.exists(RESULTS_PATH)
-        with open(RESULTS_PATH, 'a', newline='') as f:
-            wr = csv.writer(f)
-            if newfile:
-                wr.writerow(RESULTS_COLUMNS)
-            wr.writerow(row)
+        # the other watcher may have graded this game already (the row reached this copy through main): one row a game
+        already = False
+        if not newfile:
+            try:
+                already = any(r.get('sport') == g['sport'] and r.get('game') == g['short'] and r.get('date') == g['date_et']
+                              for r in csv.DictReader(open(RESULTS_PATH, newline='')))
+            except Exception:
+                already = False
+        if not already:
+            with open(RESULTS_PATH, 'a', newline='') as f:
+                wr = csv.writer(f)
+                if newfile:
+                    wr.writerow(RESULTS_COLUMNS)
+                wr.writerow(row)
         rec['settled'] = dict(at=now_iso(), final_total=T, plays_pnl=gr['pnl'] if gr else None, mid_pnl=gr['mid_pnl'] if gr else None,
                               q3_plays_pnl=gr3['pnl'] if gr3 else None, q3_mid_pnl=gr3['mid_pnl'] if gr3 else None)
         if store.enabled():
@@ -1243,9 +1252,20 @@ def results_rows(path=RESULTS_PATH):
             return rows
     try:
         # a header line that landed among the rows (a bad merge) is not a game
-        return [r for r in csv.DictReader(open(path, newline='')) if r.get('settled_utc') != 'settled_utc']
+        rows = [r for r in csv.DictReader(open(path, newline='')) if r.get('settled_utc') != 'settled_utc']
     except FileNotFoundError:
         return []
+    return dedupe_results(rows)
+
+
+def dedupe_results(rows):
+    """One row per game window: the worker and the GitHub backup each grade a game, and the backup's save merges
+    by row content, so the CSV carried the same game twice (53 of 201 rows on Oct 27, the scorecard read -$336
+    for a true -$48). The last graded row wins, in file order."""
+    out = {}
+    for r in rows:
+        out[(r.get('sport'), r.get('game'), r.get('date') or r.get('date_et'))] = r
+    return list(out.values())
 
 
 def drift_lines(rows):

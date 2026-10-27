@@ -24,6 +24,15 @@ def fake_write(t, rows, on_conflict=None, ignore_duplicates=False):
 store.enabled = lambda: True
 store.read, store.write = fake_read, fake_write
 now = dt.datetime.now(dt.timezone.utc)
+# the first sync stamps set_on with today's date; the Tuesday reset below is faked as Oct 27, 2026, so on a real
+# Oct 27 the test would see "already set today". Run the first sync on a faked Monday Oct 26 instead.
+mon = dt.datetime(2026, 10, 26, 9, 0, tzinfo=dt.timezone.utc)
+class MonDT(dt.datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return mon.astimezone(tz) if tz else mon.replace(tzinfo=None)
+real_dt0 = watch.dt.datetime
+watch.dt.datetime = MonDT
 
 cfg = dict(watch.load_json(watch.CONFIG_PATH, {}), bankroll=3590)
 d = watch.Desk(cfg, {})
@@ -46,6 +55,7 @@ class FakeDT(dt.datetime):
     @classmethod
     def now(cls, tz=None):
         return tue.astimezone(tz) if tz else tue.astimezone(dt.timezone.utc).replace(tzinfo=None)
+watch.dt.datetime = real_dt0
 real_dt = watch.dt.datetime
 watch.dt.datetime = FakeDT
 table['snap'] = dict(taken_at=(tue - dt.timedelta(hours=1)).astimezone(dt.timezone.utc).isoformat(), balance=5000, portfolio_value=100)
