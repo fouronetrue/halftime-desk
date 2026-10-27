@@ -64,23 +64,23 @@ assert len(ro.shadow_rows(ORDERS)) == 3
 print('readout: shadow summary counts fills by the stage that posted the order, pairs and timing, no order details')
 
 # 2. the scorecard
-def res(sport, game, date, cost, pnl, rest=None, final=None, mkt=None, model_err=None, mkt_err=None, sheet=None, q3=None, flick=None, src='db'):
-    r = dict(sport=sport, game=game, final_total=final, mkt=mkt, total=(mkt - 2) if mkt is not None else None, fair=(mkt + 1) if mkt is not None else None, model_err=model_err, mkt_err=mkt_err,
-             plays_cost=cost, plays_pnl=pnl, rest_mid_pnl=rest, sheet=sheet, flickers=flick)
+def res(sport, game, date, cost, pnl, rest=None, final=None, mkt=None, model_err=None, mkt_err=None, sheet=None, q3=None, flick=None, src='db', fair=None, q3_gap=1.0):
+    r = dict(sport=sport, game=game, final_total=final, mkt=mkt, total=(mkt - 2) if mkt is not None else None, fair=fair if fair is not None else (mkt + 1) if mkt is not None else None,
+             model_err=model_err, mkt_err=mkt_err, plays_cost=cost, plays_pnl=pnl, rest_mid_pnl=rest, sheet=sheet, flickers=flick)
     if src == 'db':
         r.update(date_et=date, game_id=game.replace(' ', ''))
     else:
         r.update(settled_utc=f'{date}T03:00:00+00:00', date=date)
     if q3:
-        r.update(q3_score='50-55', q3_plays_cost=q3[0], q3_plays_pnl=q3[1], q3_rest_mid_pnl=q3[2])
+        r.update(q3_score='50-55', q3_plays_cost=q3[0], q3_plays_pnl=q3[1], q3_rest_mid_pnl=q3[2], q3_fair=230.5 - q3_gap, q3_mkt=230.5)
     return r
 
 
 shot = dict(mu_model=25.0, h1a=10, h1h=20, shot=dict(picks=[dict(kind='under', line=63.5, price_c=83, contracts=106, cost=88.0)]))
 db = [res('cfb', 'MEM @ TULN', '2026-10-24', 79.4, -79.4, rest=-6.4, final=48, mkt=61.0, model_err=12.5, mkt_err=13.0, sheet=shot,
           flick=[dict(kind='single', pushed=False, win=True, pnl=40.0), dict(kind='mid', pushed=True, win=False, pnl=-9.0)]),
-      res('nba', 'MIA @ CHA', '2026-10-24', 132.0, -132.0, rest=12.0, final=222, mkt=231.0, model_err=50.5, mkt_err=9.0),     # a misread play
-      res('nba', 'GS @ PHX', '2026-10-24', 0.0, 0.0, rest=-5.0, final=236, mkt=224.0, model_err=71.5, mkt_err=12.0, q3=(132.0, -132.0, -4.0)),
+      res('nba', 'MIA @ CHA', '2026-10-24', 132.0, -132.0, rest=12.0, final=222, mkt=231.0, fair=172.5, model_err=50.5, mkt_err=9.0),     # a misread play, 58.5 off the market
+      res('nba', 'GS @ PHX', '2026-10-24', 0.0, 0.0, rest=-5.0, final=236, mkt=224.0, model_err=71.5, mkt_err=12.0, q3=(132.0, -132.0, -4.0), q3_gap=61.0),   # a misread at the end of the 3rd
       res('nba', 'DEN @ OKC', '2026-10-26', 0.0, 0.0, rest=30.0, final=210, mkt=228.0, model_err=20.0, mkt_err=18.0, q3=(100.0, 150.0, 20.0)),
       res('nfl', 'PIT VS NO', '2026-10-25', 64.9, 77.1, rest=-7.5, final=26, mkt=44.0, model_err=18.5, mkt_err=18.0)]
 csvr = [res('cfb', 'MEM @ TULN', '2026-10-24', 0.0, 0.0, src='csv'),                                     # the table's row wins
@@ -97,8 +97,8 @@ tbl = ro.play_table(wins)
 assert '| Oct 17 to Oct 18 | CFB | 1 | 0 | $79 | $-79 |' in tbl and '| Oct 17 to Oct 18 | NFL | 1 | 1 | $65 | $+77 |' in tbl, tbl   # the week's graded slates, plays or not
 assert '| Oct 24 to Oct 26 | NBA | 3 | 1 | $364 | $-114 |' in tbl, tbl                     # the half play and the two end-of-third plays
 assert '| all | all | 7 | 3 | $653 | $-119 |' in tbl, tbl
-assert '| all, without the NBA misreads | all | 5 | 3 | $389 | $+145 |' in tbl, tbl     # Oct 26 was after the fix and stays
-assert any(line.startswith('The NBA plays through the Oct 25 slate (2, $-264)') for line in tbl), tbl
+assert '| all, without the misreads | all | 5 | 3 | $389 | $+145 |' in tbl, tbl         # the Oct 26 end-of-third play sat a point off the market and stays
+assert any(line.startswith('Misreads: 2 plays ($-264)') and 'NBA GS @ PHX Oct 24 (end of 3rd) $-132, NBA MIA @ CHA Oct 24 $-132.' in line for line in tbl), tbl
 text = ro.scorecard_md(db, csvr, ORDERS, now=dt.datetime(2026, 10, 27, 12, tzinfo=dt.timezone.utc))
 assert 'from the Supabase results table (5 games' in text and 'plus the 2 games only log/results.csv has' in text and '9 windows on 7 games' in text, text
 assert 'End of 3rd (NBA): 2 windows graded, 2 with a play, $+18 on $232.' in text, text

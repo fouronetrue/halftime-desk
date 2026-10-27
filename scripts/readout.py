@@ -27,10 +27,12 @@ SHADOW_COLS = ['date_et', 'sport', 'mode', 'games', 'rest_orders', 'rest_cost', 
                'touch_under_60s', 'touch_1_5m', 'touch_5_15m', 'touch_later', 'touch_median_s',
                'middles', 'middles_both', 'middles_one', 'middles_both_break', 'graded', 'pnl', 'pnl_both', 'pnl_lone', 'pnl_break', 'pnl_play',
                'pnl_both_break', 'pnl_cost', 'takes', 'takes_available', 'takes_pnl']
-# Every NBA play through this slate was a quarter-break misread (claude/breaks-oct25.md): ESPN's "period 2, 0:00"
-# priced as the half, "period 3, 0:00" as the end of the third. Fixed Oct 25 at 8:32 PM ET; a correctly read NBA
-# break has never produced a directional play, so the scorecard shows the NBA record with and without them.
-NBA_MISREAD_THROUGH = '2026-10-25'
+# A quarter-break misread (claude/breaks-oct25.md: ESPN's "period 2, 0:00" priced as the half, "period 3, 0:00" as
+# the end of the third; fixed Oct 25 at 8:32 PM ET) prices a quarter's score as a break and lands the fair line
+# tens of points from the market. Every true read since Oct 16 sat within 3.5 points of the market, every misread
+# 18 or more (ARI @ LAR at 3-3 after the first quarter, the four NBA long shots), so a play from a window whose
+# fair line was this far from the market is shown apart from the record.
+MISREAD_GAP = 10.0
 
 
 def num(v):
@@ -163,17 +165,20 @@ def windows(rows):
     """Every graded game window as one record: the half (every row) and the NBA's end of the third (rows with
     q3_score). A window with plays_cost is a window the push led with a play."""
     out = []
+    gap = lambda a, b: abs(num(a) - num(b)) if num(a) is not None and num(b) is not None else None
     for r in rows:
         out.append(dict(sport=r.get('sport'), game=r.get('game'), date=r['date'], stage='half', cost=num(r.get('plays_cost')) or 0.0,
-                        pnl=num(r.get('plays_pnl')) or 0.0, rest=num(r.get('rest_mid_pnl')), mid=num(r.get('mid_pnl')), src=r.get('src')))
+                        pnl=num(r.get('plays_pnl')) or 0.0, rest=num(r.get('rest_mid_pnl')), mid=num(r.get('mid_pnl')), src=r.get('src'),
+                        gap=gap(r.get('fair'), r.get('mkt'))))
         if r.get('q3_score') not in (None, ''):
             out.append(dict(sport=r.get('sport'), game=r.get('game'), date=r['date'], stage='q3', cost=num(r.get('q3_plays_cost')) or 0.0,
-                            pnl=num(r.get('q3_plays_pnl')) or 0.0, rest=num(r.get('q3_rest_mid_pnl')), mid=num(r.get('q3_mid_pnl')), src=r.get('src')))
+                            pnl=num(r.get('q3_plays_pnl')) or 0.0, rest=num(r.get('q3_rest_mid_pnl')), mid=num(r.get('q3_mid_pnl')), src=r.get('src'),
+                            gap=gap(r.get('q3_fair'), r.get('q3_mkt'))))
     return out
 
 
 def misread(w):
-    return w['sport'] == 'nba' and w['date'] <= NBA_MISREAD_THROUGH
+    return w['gap'] is not None and w['gap'] >= MISREAD_GAP
 
 
 def play_table(wins):
@@ -205,11 +210,12 @@ def play_table(wins):
     bad = [w for w in wins if w['cost'] and misread(w)]
     if bad:
         bp = sum(w['pnl'] for w in bad)
-        lines.append(f"| all, without the NBA misreads | all | {tot['plays'] - len(bad)} | {tot['won'] - sum(1 for w in bad if w['pnl'] > 0)} | "
+        lines.append(f"| all, without the misreads | all | {tot['plays'] - len(bad)} | {tot['won'] - sum(1 for w in bad if w['pnl'] > 0)} | "
                      f"${tot['cost'] - sum(w['cost'] for w in bad):,.0f} | ${tot['pnl'] - bp:+,.0f} |")
         lines.append('')
-        lines.append(f"The NBA plays through the {md(NBA_MISREAD_THROUGH)} slate ({len(bad)}, ${bp:+,.0f}) were quarter-break misreads, fixed that night "
-                     f"(claude/breaks-oct25.md). Read the NBA record from the next slate on.")
+        lines.append(f"Misreads: {len(bad)} play{'s' if len(bad) != 1 else ''} (${bp:+,.0f}) from windows whose fair line sat {MISREAD_GAP:.0f}+ points from the market, "
+                     f"the quarter-break bug's signature (a quarter's score priced as a break; fixed Oct 25, claude/breaks-oct25.md): "
+                     + ', '.join(f"{w['sport'].upper()} {w['game']} {md(w['date'])}{' (end of 3rd)' if w['stage'] == 'q3' else ''} ${w['pnl']:+,.0f}" for w in bad) + '.')
     return lines
 
 
