@@ -74,50 +74,107 @@ def window(day):
     return start.astimezone(dt.timezone.utc).isoformat(), end.astimezone(dt.timezone.utc).isoformat()
 
 
-def query(table, where, order):
-    """Every row the filter matches, paged through PostgREST (1,000 a page). A page that fails (a timeout, a 5xx
-    while Supabase is busy) is asked for again twice before the slate is given up on."""
-    rows, offset = [], 0
+KEY = {'games': 'id', 'alerts': 'id', 'suggestions': 'id', 'results': 'id', 'quote_snapshots': 'id', 'orders': 'client_order_id'}
+HEAVY_BATCH = 100
+
+
+def get(table, params):
+    """One PostgREST read; a timeout or a 5xx (Supabase busy, a statement timeout, Cloudflare's 521) is tried
+    twice more before the slate is given up on. Not store.read: that swallows a failed read as "no rows", and
+    a failed export should fail the run."""
+    err = None
+    for attempt in range(3):
+        try:
+            r = requests.get(f'{store._url()}/rest/v1/{table}', headers=store._headers(), timeout=90, params=params)
+            if r.status_code < 300:
+                return r.json()
+            err = f'{table}: HTTP {r.status_code} {r.text[:200]}'
+            if r.status_code < 500:
+                break
+        except Exception as e:
+            err = f'{table}: {e}'
+        time.sleep(3 * (attempt + 1))
+    raise RuntimeError(err)
+
+
+def query(table, where, select='*'):
+    """Every row the filter matches, 1,000 a page. Tables with a single primary key are paged by it (order by
+    the key, then key > the last one seen), so a deep page never re-sorts and re-skips the whole slate, which
+    is what timed out on the suggestions table (Oct 27, 10,000 rows of JSON a slate). venue_quotes has a
+    composite key and is small, so it keeps offset paging on its order."""
+    key = KEY.get(table)
+    rows = []
+    if key:
+        last = None
+        while True:
+            params = dict(select=select, order=key, limit=PAGE, **where)
+            if last is not None:
+                params[key] = f'gt.{last}'
+            page = get(table, params)
+            rows.extend(page)
+            if len(page) < PAGE:
+                return rows
+            last = page[-1][key]
+    offset = 0
     while True:
-        # not store.read: that swallows a failed read as "no rows", and a failed export should fail the run
-        err = None
-        for attempt in range(3):
-            try:
-                r = requests.get(f'{store._url()}/rest/v1/{table}', headers=store._headers(), timeout=90,
-                                 params=dict(select='*', order=order, limit=PAGE, offset=offset, **where))
-                if r.status_code < 300:
-                    err = None
-                    break
-                err = f'{table} offset {offset}: HTTP {r.status_code} {r.text[:200]}'
-                if r.status_code < 500:
-                    break
-            except Exception as e:
-                err = f'{table} offset {offset}: {e}'
-            time.sleep(3 * (attempt + 1))
-        if err:
-            raise RuntimeError(err)
-        page = r.json()
+        page = get(table, dict(select=select, order=ORDER[table], limit=PAGE, offset=offset, **where))
         rows.extend(page)
         if len(page) < PAGE:
             return rows
         offset += PAGE
 
 
-def fetch(table, day):
-    """Every row of the table for the slate."""
+def sort_rows(table, rows):
+    """The file's row order (ORDER[table]), whatever order the pages came in, so an unchanged slate stays
+    byte-identical and git sees nothing."""
+    keys = ORDER[table].split(',')
+    val = lambda v: (0, v) if isinstance(v, (int, float)) and not isinstance(v, bool) else (1, '' if v is None else str(v))
+    return sorted(rows, key=lambda r: tuple(val(r.get(k)) for k in keys))
+
+
+def where_of(table, day):
     by, _, _ = TABLES[table]
     if by == 'date_et':
-        where = {'date_et': f'eq.{day.isoformat()}'}
-    else:
-        lo, hi = window(day)
-        where = {'and': f'({by}.gte.{lo},{by}.lt.{hi})'}
-    return query(table, where, ORDER[table])
+        return {'date_et': f'eq.{day.isoformat()}'}
+    lo, hi = window(day)
+    return {'and': f'({by}.gte.{lo},{by}.lt.{hi})'}
+
+
+def columns(table, where):
+    """The table's column names, from one row of the slate (PostgREST has no cheap schema call); [] when empty."""
+    probe = get(table, dict(select='*', limit=1, **where))
+    return list(probe[0].keys()) if probe else []
+
+
+def fetch(table, day):
+    """Every row of the table for the slate, in the file's order."""
+    return sort_rows(table, query(table, where_of(table, day)))
+
+
+def fetch_suggestions(day, alert_at):
+    """The suggestions rows for a slate in two steps, since a row's singles, mids and revs JSON can run 100 KB and
+    only a few rows keep it: every row without the heavy columns first, then the JSON for the rows that keep
+    it (thin_suggestions), a hundred ids a call. Rows come back with every column in the table's order, the
+    thinned ones with None in the heavy columns, exactly as the one-step read produced them."""
+    where = where_of('suggestions', day)
+    cols = columns('suggestions', where)
+    if not cols:
+        return []
+    light = [c for c in cols if c not in HEAVY]
+    rows = sort_rows('suggestions', query('suggestions', where, select=','.join(light)))
+    keep = thin_suggestions(rows, alert_at)
+    heavy = {}
+    ids = [r['id'] for r in rows if r['id'] in keep]
+    for i in range(0, len(ids), HEAVY_BATCH):
+        for h in query('suggestions', {'id': 'in.(' + ','.join(str(x) for x in ids[i:i + HEAVY_BATCH]) + ')'}, select=','.join(['id'] + [c for c in cols if c in HEAVY])):
+            heavy[h['id']] = h
+    return [{c: (heavy.get(r['id'], {}).get(c) if c in HEAVY else r.get(c)) for c in cols} for r in rows]
 
 
 def fetch_orders(day=None):
     """The orders table, one slate or all of it: read for the summaries only, never written out as rows."""
     where = {'date_et': f'eq.{day.isoformat()}'} if day else {}
-    return query('orders', where, 'created_at,client_order_id')
+    return query('orders', where)
 
 
 def thin_quotes(rows):
@@ -136,21 +193,14 @@ def thin_quotes(rows):
 
 
 def thin_suggestions(rows, alert_at):
-    """Every row's numbers; the singles, mids and revs JSON only on the first and last row of each game's
-    phase and on the rows pushes came from (alert_at: their suggestion_at values)."""
+    """The ids of the rows that keep their singles, mids and revs JSON: the first and last row of each game's
+    phase and the rows pushes came from (alert_at: their suggestion_at values). Every row keeps its numbers."""
     first, last = {}, {}
     for r in rows:
         k = (r['game_id'], r.get('phase'))
         first.setdefault(k, r['taken_at'])
         last[k] = r['taken_at']
-    out = []
-    for r in rows:
-        k = (r['game_id'], r.get('phase'))
-        if r['taken_at'] in (first[k], last[k]) or r['taken_at'] in alert_at:
-            out.append(r)
-        else:
-            out.append({c: (None if c in HEAVY else v) for c, v in r.items()})
-    return out
+    return {r['id'] for r in rows if r['taken_at'] in (first[(r['game_id'], r.get('phase'))], last[(r['game_id'], r.get('phase'))]) or r['taken_at'] in alert_at}
 
 
 def to_csv(table, rows):
@@ -204,15 +254,13 @@ def export(day, force=False):
         have = existing(path)
         if have is not None and not force and not rewrite:
             continue
-        rows = fetch(table, day)
+        rows = fetch_suggestions(day, alert_at) if table == 'suggestions' else fetch(table, day)
         if table == 'alerts':
             alert_at = {r.get('suggestion_at') for r in rows}
         if not rows:
             continue
         if table == 'quote_snapshots':
             rows = thin_quotes(rows)
-        elif table == 'suggestions':
-            rows = thin_suggestions(rows, alert_at)
         text = to_csv(table, rows)
         if have == text and not force:
             continue
@@ -244,7 +292,7 @@ def csv_results(path=None):
 def scorecard(force=False):
     """The honest scorecard from everything graded (the whole results table, the CSV's pre-mirror games, every
     auto order), written to data/desk/scorecard.md when it changed; the text is returned and printed either way."""
-    db_rows = query('results', {}, ORDER['results'])
+    db_rows = sort_rows('results', query('results', {}))
     text = readout.scorecard_md(db_rows, csv_results(), fetch_orders())
     path = os.path.join(OUT, 'scorecard.md')
     wrote = put_text(path, text, force)

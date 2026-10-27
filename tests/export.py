@@ -23,15 +23,37 @@ class R:
         return self._d
 
 
+SUG = [dict(id=i, taken_at=f'2026-10-22T23:5{i}:00+00:00', game_id='g1', phase='half', date_et='2026-10-22', mu=50 + i, bankroll=3210.5,
+            max_risk=80.26, max_cost=240.79, held=[{'ticker': 'KXNFLTOTAL-1'}], singles=[{'kind': 'over', 'cost': 12.5}], mids=[{'pairs': i}], revs=[])
+       for i in range(5)]   # g1 at the half, five polls; the push came from the third
+
+
+def serve(rows, params):
+    """A fake PostgREST: a select list, keyset paging (order by the key, key > last) and id=in.(...) filters."""
+    key = params.get('order') if params.get('order') in ('id', 'client_order_id') else None
+    out = list(rows)
+    if key and params.get(key, '').startswith('gt.'):
+        last = params[key][3:]
+        out = [r for r in out if (r[key] > last if isinstance(r[key], str) else int(r[key]) > int(last))]
+    if 'id' in params and params['id'].startswith('in.('):
+        want = {int(x) for x in params['id'][4:-1].split(',')}
+        out = [r for r in out if r['id'] in want]
+    if key:
+        out.sort(key=lambda r: r[key])
+    out = out[:params['limit']]
+    sel = params.get('select', '*')
+    if sel != '*':
+        cols = sel.split(',')
+        out = [{c: r.get(c) for c in cols} for r in out]
+    return out
+
+
 def fake_get(url, headers=None, timeout=None, params=None):
     table = url.rsplit('/', 1)[1]
     calls.append((table, dict(params)))
-    first = params['offset'] == 0
+    first = params.get('offset', 0) == 0 and not str(params.get(params.get('order') or '', '')).startswith('gt.')
     if table == 'suggestions':
-        # g1 at the half, five polls; the push came from the third
-        return R([dict(id=i, taken_at=f'2026-10-22T23:5{i}:00+00:00', game_id='g1', phase='half', date_et='2026-10-22', mu=50 + i, bankroll=3210.5,
-                       max_risk=80.26, max_cost=240.79, held=[{'ticker': 'KXNFLTOTAL-1'}], singles=[{'kind': 'over', 'cost': 12.5}], mids=[{'pairs': i}], revs=[])
-                  for i in range(5)] if first else [])
+        return R(serve(SUG, params))
     if table == 'alerts':
         return R([dict(id=1, sent_at='2026-10-23T01:00:00+00:00', game_id='g1', slot='half', kind='play', suggestion_at='2026-10-22T23:52:00+00:00',
                        sheet={'lead': 'mid', 'held': [{'t': 1}], 'held_miss': 9, 'mid': {'pairs': 3, 'notes': [{'held': 1, 'ok': True}]}})] if first else [])
@@ -52,7 +74,6 @@ def fake_get(url, headers=None, timeout=None, params=None):
                        final_total=214, model_err=14.5, mkt_err=16.0, plays_cost=0.0, plays_pnl=0.0, rest_mid_pnl=12.0, sheet={'held': [{'t': 1}], 'mu_model': 112.0, 'h1a': 50, 'h1h': 55},
                        flickers=[])] if first else [])
     if table == 'quote_snapshots':
-        n = params['offset']
         rows = []
         # pregame: g1 polled every 20 minutes for three hours, 4 strikes a poll; then the half, 3 polls
         for h in range(3):
@@ -61,9 +82,10 @@ def fake_get(url, headers=None, timeout=None, params=None):
         for m in (0, 5, 10):
             rows += [dict(id=0, taken_at=f'2026-10-23T01:{m:02d}:00+00:00', game_id='g1', strike=45.5 + k, phase='half', yes_ask=50) for k in range(4)]
         rows += [dict(id=0, taken_at='2026-10-22T20:00:00+00:00', game_id='g2', strike=200.5 + k, phase='pre', yes_ask=50) for k in range(1000 - len(rows))]
+        rows += [dict(id=0, taken_at='2026-10-22T23:00:00+00:00', game_id='g3', strike=45.5 + i, phase='half', yes_ask=50) for i in range(7)]
         for i, r in enumerate(rows):
-            r['id'] = n + i
-        return R(rows if first else [dict(id=n + i, taken_at='2026-10-22T23:00:00+00:00', game_id='g3', strike=45.5 + i, phase='half', yes_ask=50) for i in range(7)])
+            r['id'] = i
+        return R(serve(rows, params))
     return R([])
 
 
@@ -77,13 +99,21 @@ asked = {t for t, _ in calls}
 assert asked == set(ex.TABLES) | {'orders'}, asked        # orders is read for the counts, never written out as rows
 assert not (asked - {'orders'}) & set(ex.NEVER)
 assert not set(os.listdir(ex.OUT)) & set(ex.NEVER), os.listdir(ex.OUT)
-where = {t: p for t, p in calls if p['offset'] == 0}
+firsts = [(t, p) for t, p in calls if 'id' not in p and 'client_order_id' not in p]   # the first page of each read
+where = {t: p for t, p in firsts}
 assert where['games']['date_et'] == 'eq.2026-10-22' and where['results']['date_et'] == 'eq.2026-10-22'
 assert where['quote_snapshots']['and'] == '(taken_at.gte.2026-10-22T09:00:00+00:00,taken_at.lt.2026-10-23T09:00:00+00:00)', where['quote_snapshots']
 assert where['alerts']['and'].startswith('(sent_at.gte.2026-10-22T09:00:00+00:00')
-assert [p['offset'] for t, p in calls if t == 'quote_snapshots'] == [0, 1000]
-assert [t for t, p in calls if p['offset'] == 0].index('alerts') < [t for t, p in calls if p['offset'] == 0].index('suggestions')
-print('export: six tables asked for by slate, the private ones never')
+# keyset paging: the second quote page asks for ids past the last one seen, no offset
+qcalls = [p for t, p in calls if t == 'quote_snapshots']
+assert len(qcalls) == 2 and 'offset' not in qcalls[0] and qcalls[0]['order'] == 'id' and qcalls[1]['id'] == 'gt.999', qcalls
+assert [t for t, p in firsts].index('alerts') < [t for t, p in firsts].index('suggestions')
+# the suggestions read: one probe row, the slate without the heavy JSON, then the JSON for the kept rows only
+scalls = [p for t, p in calls if t == 'suggestions']
+assert scalls[0]['limit'] == 1 and scalls[0]['select'] == '*', scalls[0]
+assert scalls[1]['select'] == 'id,taken_at,game_id,phase,date_et,mu,bankroll,max_risk,max_cost,held' and 'offset' not in scalls[1], scalls[1]
+assert scalls[2]['select'] == 'id,singles,mids,revs' and scalls[2]['id'] == 'in.(0,2,4)', scalls[2]
+print('export: six tables asked for by slate, the private ones never, pages by key, the heavy JSON only for the rows that keep it')
 
 read = lambda t: gzip.open(os.path.join(ex.OUT, t, '2026-10-22.csv.gz'), 'rt', encoding='utf-8').read()
 sug = read('suggestions')
@@ -139,9 +169,9 @@ real = fake_get
 def grown(url, **kw):
     r = real(url, **kw)
     t = url.rsplit('/', 1)[1]
-    if t == 'suggestions' and kw['params']['offset'] == 0:
-        r._d[0]['n_plays'] = 2
-    if t == 'quote_snapshots' and kw['params']['offset'] == 1000:
+    if t == 'suggestions':
+        SUG[0]['n_plays'] = 2   # a column the table grew since the last export
+    if t == 'quote_snapshots' and kw['params'].get('id') == 'gt.999':
         r._d.append(dict(id=9999, taken_at='2026-10-23T02:00:00+00:00', game_id='g2', strike=200.5, phase='half', yes_ask=40))
     return r
 requests.get = grown
