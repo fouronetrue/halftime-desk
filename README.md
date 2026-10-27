@@ -159,6 +159,20 @@ bankroll), control or orders, drops bankroll, max_risk, max_cost and held from s
 block out of every JSON column; `tests/export.py` holds it to that. Once the files are in, old quote rows can be
 pruned from Supabase before the free tier fills (around March at the current rate).
 
+Two readouts ride along, since the export job is where the Supabase keys are (`scripts/readout.py`, `tests/readout.py`):
+`data/desk/shadow/DATE.csv` is the auto orders' night in counts and dollars (per sport and mode: resting orders
+posted, would-fills at the break and in play, tight and wide pairs, seconds to the fill, middles with both legs or
+one leg filled, P&L at the fill model split the same way, takes), never an order; a fill at the break is counted
+by the break of the stage that posted the order, so a half order touched at the end of the third is a fill in
+play. `data/desk/scorecard.md` is the honest scorecard: the results table (both watchers grade into it, one row a
+game) plus any game only `log/results.csv` has, the lead play per game window by week and sport with the
+quarter-break misreads (a window whose fair line sat 10+ points from the market) set apart, the end-of-third
+window, the model against the market, finals against the market at the break and the pregame total, the
+resting-middle what-if, drift, the mismatch lane's shadow shots, the lines that came and went, and the shadow
+totals. Pages are read by primary key and the suggestions JSON only for the rows that keep it (`supabase/015_export_indexes.sql`
+adds the indexes the slate filters need); a slate that still fails is written up in `data/desk/export_errors.txt`,
+the others land, and the run fails so the email still goes out.
+
 ## Kalshi portfolio sync (optional, 10 minutes)
 1. kalshi.com > profile > API Keys > Create New API Key. Ed25519 (the default) or RSA both work. Save the
    private key file; Kalshi shows it once.
