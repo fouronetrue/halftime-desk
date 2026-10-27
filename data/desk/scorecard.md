@@ -57,8 +57,8 @@ Miss is the distance from the final total. Finals vs a line is the final minus t
 
 ## Auto orders (shadow fill model: the ask touched the resting bid)
 
-Per slate in data/desk/shadow/. A fill at the break is the market handing the middle over; a fill in play is the game moving against the leg.
+Per slate in data/desk/shadow/. A fill at the break is the market handing the middle over; a fill in play is the game moving against the leg. P&L at the break is what the night would have made with every resting order pulled when the break ended.
 
-| sport | mode | nights | games | resting orders | would fill | at the break | middles both legs | one leg | P&L (both) | P&L (lone) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| NBA | shadow | 4 | 36 | 222 | 168 | 56 | 46 of 138 | 76 | $+579 | $-693 |
+| sport | mode | nights | games | resting orders | would fill | at the break | middles both legs | both at the break | one leg | P&L all | P&L at the break | P&L in play | P&L (both) | P&L (lone) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| NBA | shadow | 4 | 36 | 222 | 168 | 56 | 46 of 138 | 0 | 76 | $-114 | $+466 | $-580 | $+579 | $-693 |
