@@ -13,9 +13,9 @@ The play the push led with: the first single, or the middle when it led. The end
 | Oct 20 to Oct 26 | CFB | 3 | 1 | $209 | $-98 |
 | Oct 20 to Oct 26 | NBA | 4 | 1 | $486 | $-145 |
 | all | all | 18 | 8 | $1,427 | $+302 |
-| all, without the NBA misreads | all | 14 | 7 | $941 | $+447 |
+| all, without the misreads | all | 12 | 5 | $762 | $-68 |
 
-The NBA plays through the Oct 25 slate (4, $-145) were quarter-break misreads, fixed that night (claude/breaks-oct25.md). Read the NBA record from the next slate on.
+Misreads: 6 plays ($+370) from windows whose fair line sat 10+ points from the market, the quarter-break bug's signature (a quarter's score priced as a break; fixed Oct 25, claude/breaks-oct25.md): CFB WMU @ CMU Oct 17 $+106, NFL ARI @ LAR Oct 18 $+408, NBA DEN @ OKC Oct 22 (end of 3rd) $+251, NBA GS @ PHX Oct 24 (end of 3rd) $-132, NBA MIA @ CHA Oct 24 $-132, NBA LAC @ OKC Oct 25 (end of 3rd) $-132.
 
 End of 3rd (NBA): 38 windows graded, 3 with a play, $-13 on $354.
 
