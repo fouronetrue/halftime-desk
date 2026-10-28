@@ -78,3 +78,22 @@ g = dict(id='x', sport='nba', short='A @ B')
 captured.clear(); desk.close_ladder(g, other)
 assert other['snap0'] == 'none' and not captured.get('quote_snapshots')
 print('preladder: the close is written once at the time it was read; no read inside 30 minutes means no close')
+
+# a watcher that first sees the game inside the last 30 minutes (the GitHub backup starts at 7 PM) writes no pre60,
+# only the close; one that first sees it after the listed tip, while ESPN still says pregame, the same
+for f in os.listdir(FIX):
+    json.dump(json.load(open(os.path.join(FIX, f))), open(os.path.join(fx, f), 'w'))
+for first_look in (-20, 12):
+    late = watch.Desk(cfg, {}, fx)
+    clock(first_look); captured.clear(); late.run_pass()
+    r = late.state['games'][GID]
+    assert 'snap60' not in r and not snaps('pre60') and r.get('pre_ladder'), (first_look, r.keys())
+    ev = next(e for e in ESPN['events'] if e['id'] == GID)
+    ev['status'] = {'period': 1, 'displayClock': '10:12', 'type': {'state': 'in', 'name': 'STATUS_IN_PROGRESS', 'shortDetail': '10:12 - 1st'}}
+    json.dump(ESPN, open(os.path.join(fx, 'espn_nba.json'), 'w'))
+    clock(first_look + 15); captured.clear(); late.run_pass()
+    assert len(snaps('pre0')) == N and 'snap60' not in late.state['games'][GID], first_look
+    for f in os.listdir(FIX):
+        json.dump(json.load(open(os.path.join(FIX, f))), open(os.path.join(fx, f), 'w'))
+    ESPN = json.load(open(os.path.join(fx, 'espn_nba.json')))
+print('preladder: a first look inside 30 minutes, or after the listed tip, gets a close and no pre60')

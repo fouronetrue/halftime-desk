@@ -93,12 +93,12 @@ assert (sug['away_score'], sug['home_score']) == (sug['half_away'], sug['half_ho
 half_q = [q for q in c_on['quote_snapshots'] if not q['phase'].startswith('pre')]
 pre_q = [q for q in c_on['quote_snapshots'] if q['phase'].startswith('pre')]
 assert half_q and all(q['taken_at'] == sug['taken_at'] and q['game_id'] == sug['game_id'] for q in half_q)
-# pregame line history: upcoming games only, no model numbers, and never for the game priced at the half; the
-# fixture's upcoming game is inside the hour before its listed start, so its whole ladder goes out once as pre60
+# pregame line history: upcoming games only, no model numbers, and never for the game priced at the half. The
+# fixture's upcoming game is listed long past (its date is Oct 2026 and the clock is real), so no pre60 ladder is
+# written for it (that label needs a read 30 to 60 minutes before the start; tests/preladder.py moves the clock)
 assert pre_q and all(q['p_over'] is None and q['game_id'] != sug['game_id'] for q in pre_q), 'pregame history rows look wrong'
-p60 = [q for q in pre_q if q['phase'] == 'pre60']
-assert p60 and len({(q['game_id'], q['taken_at']) for q in p60}) == len({q['game_id'] for q in p60}), 'one pre60 ladder per game'
-assert not [q for q in pre_q if q['phase'] == 'pre' and any(q['taken_at'] == r['taken_at'] and q['game_id'] == r['game_id'] and q['strike'] == r['strike'] for r in p60)], 'a pre row collided with the pre60 ladder'
+assert {q['phase'] for q in pre_q} == {'pre'}, {q['phase'] for q in pre_q}
+assert len({(q['taken_at'], q['game_id'], q['strike']) for q in pre_q}) == len(pre_q), 'duplicate keys in the pregame rows'
 assert c_on['alerts'][0]['suggestion_at'] == sug['taken_at'] and c_on['alerts'][0]['body'] == p_on[0][1]
 assert c_on['results'][0]['game_id'] == sug['game_id'] and c_on['results'][0]['sheet']
 assert state['games'][sug['game_id']]['half_at'] == sug['taken_at'] and state['games'][sug['game_id']]['kalshi_total_event'] == sug['event_ticker']

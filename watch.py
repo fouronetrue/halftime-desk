@@ -247,7 +247,7 @@ class Desk:
                     self.next_kick = g['start_utc']
                 if ph == 'pre':
                     self.capture_pregame(g, rec)
-                elif rec.get('pre_ladder') or ('snap0' not in rec and rec.get('snap60')):
+                elif rec.get('pre_ladder'):
                     self.close_ladder(g, rec)   # the first pass after the kick: the last pregame ladder is the close
                 if ph in ('half', 'early3'):
                     active = True
@@ -502,14 +502,15 @@ class Desk:
 
     def pre_ladder(self, g, rec, ev, q, ts):
         """The whole pregame ladder at two marks, so a move before kick can be graded strike by strike (picks-lessons
-        rule 7): once at T-60 (phase pre60, the first read inside the hour before the listed start), and the close
-        (phase pre0): the newest read inside the last 30 minutes is kept on the record, and the first pass that sees
-        the game kicked off writes it with the time it was read (see close_ladder). Every strike, not only the ones
-        near the line, since a pregame play sits anywhere on the ladder."""
+        rule 7): once at T-60 (phase pre60, the first read between 60 and 30 minutes before the listed start; a
+        watcher that first sees the game later than that writes no pre60, the label means what it says), and the
+        close (phase pre0): the newest read inside the last 30 minutes is kept on the record, and the first pass
+        that sees the game kicked off writes it with the time it was read (see close_ladder). Every strike, not
+        only the ones near the line, since a pregame play sits anywhere on the ladder."""
         m = feeds._minutes_since(g.get('start_utc'))
         if m is None or not q:
             return
-        if m >= -60 and not rec.get('snap60'):
+        if -60 <= m < -30 and not rec.get('snap60'):
             rec['snap60'] = ts
             self._pre_snaps += [snap_row(ts, g, ev, k, q[k], 'pre60') for k in sorted(q)]
         if m >= -30:

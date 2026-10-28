@@ -29,16 +29,27 @@ SUG = [dict(id=i, taken_at=f'2026-10-22T23:5{i}:00+00:00', game_id='g1', phase='
 
 
 def serve(rows, params):
-    """A fake PostgREST: a select list, keyset paging (order by the key, key > last) and id=in.(...) filters."""
-    key = params.get('order') if params.get('order') in ('id', 'client_order_id') else None
+    """A fake PostgREST: a select list, keyset paging on a key (key > last) or on (time, key) through the or=
+    filter the export builds, and id=in.(...) filters."""
+    order = (params.get('order') or '').split(',')
+    key = order[-1] if order[-1] in ('id', 'client_order_id') else None
+    by = order[0] if len(order) == 2 else None
     out = list(rows)
     if key and params.get(key, '').startswith('gt.'):
         last = params[key][3:]
         out = [r for r in out if (r[key] > last if isinstance(r[key], str) else int(r[key]) > int(last))]
+    if by and params.get('or'):
+        import re as _re
+        m = _re.fullmatch(rf'\({by}\.gt\.(.+?),and\({by}\.eq\.(.+?),{key}\.gt\.(\d+)\)\)', params['or'])
+        assert m and m.group(1) == m.group(2), params['or']
+        t, n = m.group(1), int(m.group(3))
+        out = [r for r in out if r[by] > t or (r[by] == t and int(r[key]) > n)]
     if 'id' in params and params['id'].startswith('in.('):
         want = {int(x) for x in params['id'][4:-1].split(',')}
         out = [r for r in out if r['id'] in want]
-    if key:
+    if by:
+        out.sort(key=lambda r: (r[by], r[key]))
+    elif key:
         out.sort(key=lambda r: r[key])
     out = out[:params['limit']]
     sel = params.get('select', '*')
@@ -93,20 +104,24 @@ requests.get = fake_get
 ex.OUT = tempfile.mkdtemp()
 day = dt.date(2026, 10, 22)
 
-written = ex.export(day)
-assert sorted(p.split(os.sep)[-2] for p in written) == ['alerts', 'quote_snapshots', 'results', 'shadow', 'suggestions'], written
+written, errs = ex.export(day)
+assert not errs and sorted(p.split(os.sep)[-2] for p in written) == ['alerts', 'quote_snapshots', 'results', 'shadow', 'suggestions'], written
 asked = {t for t, _ in calls}
 assert asked == set(ex.TABLES) | {'orders'}, asked        # orders is read for the counts, never written out as rows
 assert not (asked - {'orders'}) & set(ex.NEVER)
 assert not set(os.listdir(ex.OUT)) & set(ex.NEVER), os.listdir(ex.OUT)
-firsts = [(t, p) for t, p in calls if 'id' not in p and 'client_order_id' not in p]   # the first page of each read
+firsts = [(t, p) for t, p in calls if 'id' not in p and 'client_order_id' not in p and 'or' not in p]   # the first page of each read
 where = {t: p for t, p in firsts}
 assert where['games']['date_et'] == 'eq.2026-10-22' and where['results']['date_et'] == 'eq.2026-10-22'
 assert where['quote_snapshots']['and'] == '(taken_at.gte.2026-10-22T09:00:00+00:00,taken_at.lt.2026-10-23T09:00:00+00:00)', where['quote_snapshots']
 assert where['alerts']['and'].startswith('(sent_at.gte.2026-10-22T09:00:00+00:00')
-# keyset paging: the second quote page asks for ids past the last one seen, no offset
+# keyset paging on (taken_at, id) for a window table: the second quote page asks for rows past the last (time, id)
+# seen, no offset, in the order the (taken_at, id) index serves
 qcalls = [p for t, p in calls if t == 'quote_snapshots']
-assert len(qcalls) == 2 and 'offset' not in qcalls[0] and qcalls[0]['order'] == 'id' and qcalls[1]['id'] == 'gt.999', qcalls
+assert len(qcalls) == 2 and 'offset' not in qcalls[0] and qcalls[0]['order'] == 'taken_at,id' and 'or' not in qcalls[0], qcalls
+assert qcalls[1]['or'] == '(taken_at.gt.2026-10-23T01:05:00+00:00,and(taken_at.eq.2026-10-23T01:05:00+00:00,id.gt.40))', qcalls[1]   # page one ends inside the 01:05 poll
+assert [p for t, p in calls if t == 'alerts'][0]['order'] == 'sent_at,id'
+assert [p for t, p in calls if t == 'results'][0]['order'] == 'id'
 assert [t for t, p in firsts].index('alerts') < [t for t, p in firsts].index('suggestions')
 # the suggestions read: one probe row, the slate without the heavy JSON, then the JSON for the kept rows only
 scalls = [p for t, p in calls if t == 'suggestions']
@@ -162,8 +177,8 @@ for word in ('held', 'KXNBA', 'deadbeef', '210.5'):
 assert ex.scorecard() is None, 'an unchanged scorecard is not rewritten'
 print('export: the shadow summary and the scorecard carry counts and dollars only')
 
-assert ex.export(day) == []
-assert len(ex.export(day, force=True)) == 5
+assert ex.export(day) == ([], [])
+assert len(ex.export(day, force=True)[0]) == 5
 # a changed small table is rewritten, a quote table is not
 real = fake_get
 def grown(url, **kw):
@@ -171,12 +186,12 @@ def grown(url, **kw):
     t = url.rsplit('/', 1)[1]
     if t == 'suggestions':
         SUG[0]['n_plays'] = 2   # a column the table grew since the last export
-    if t == 'quote_snapshots' and kw['params'].get('id') == 'gt.999':
+    if t == 'quote_snapshots' and kw['params'].get('or'):
         r._d.append(dict(id=9999, taken_at='2026-10-23T02:00:00+00:00', game_id='g2', strike=200.5, phase='half', yes_ask=40))
     return r
 requests.get = grown
 before = read('quote_snapshots')
-w = ex.export(day)
+w, _ = ex.export(day)
 assert [p.split(os.sep)[-2] for p in w] == ['suggestions'], w
 assert 'n_plays' in read('suggestions') and read('quote_snapshots') == before
 print('export: a changed small table is rewritten, the quote file stands')

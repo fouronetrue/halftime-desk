@@ -97,13 +97,26 @@ def get(table, params):
     raise RuntimeError(err)
 
 
-def query(table, where, select='*'):
-    """Every row the filter matches, 1,000 a page. Tables with a single primary key are paged by it (order by
-    the key, then key > the last one seen), so a deep page never re-sorts and re-skips the whole slate, which
-    is what timed out on the suggestions table (Oct 27, 10,000 rows of JSON a slate). venue_quotes has a
-    composite key and is small, so it keeps offset paging on its order."""
+def query(table, where, select='*', by=None):
+    """Every row the filter matches, 1,000 a page, paged by key so a deep page never re-sorts and re-skips the
+    whole slate (the OFFSET paging timed out on the suggestions table, Oct 27). A slate picked by a time window
+    (quote_snapshots by taken_at, alerts by sent_at) pages on (that column, id): the index on it serves the
+    window and the order together, where "order by id" sent Postgres walking the whole table in id order for
+    the newest slate (the Oct 28 timeout). A slate picked by date_et pages on id. venue_quotes has a composite
+    key and is small, so it keeps offset paging on its order."""
     key = KEY.get(table)
     rows = []
+    if key and by:
+        last = None   # (time, id) of the last row seen
+        while True:
+            params = dict(select=select, order=f'{by},{key}', limit=PAGE, **where)
+            if last is not None:
+                params['or'] = f'({by}.gt.{last[0]},and({by}.eq.{last[0]},{key}.gt.{last[1]}))'
+            page = get(table, params)
+            rows.extend(page)
+            if len(page) < PAGE:
+                return rows
+            last = (page[-1][by], page[-1][key])
     if key:
         last = None
         while True:
@@ -148,7 +161,8 @@ def columns(table, where):
 
 def fetch(table, day):
     """Every row of the table for the slate, in the file's order."""
-    return sort_rows(table, query(table, where_of(table, day)))
+    by = TABLES[table][0]
+    return sort_rows(table, query(table, where_of(table, day), by=by if by != 'date_et' else None))
 
 
 def fetch_suggestions(day, alert_at):
@@ -247,14 +261,20 @@ def put_text(path, text, force=False):
 
 
 def export(day, force=False):
-    """Write the slate's files; returns the list of paths written."""
-    written, alert_at = [], set()
+    """Write the slate's files; returns (the list of paths written, the list of errors). A table that fails is
+    written up and the others still land, the shadow summary with them."""
+    written, errors, alert_at = [], [], set()
     for table, (_, _, rewrite) in TABLES.items():
         path = os.path.join(OUT, table, f'{day.isoformat()}.csv.gz')
         have = existing(path)
         if have is not None and not force and not rewrite:
             continue
-        rows = fetch_suggestions(day, alert_at) if table == 'suggestions' else fetch(table, day)
+        try:
+            rows = fetch_suggestions(day, alert_at) if table == 'suggestions' else fetch(table, day)
+        except Exception as e:
+            errors.append(f'{day} {e}')
+            traceback.print_exc()
+            continue
         if table == 'alerts':
             alert_at = {r.get('suggestion_at') for r in rows}
         if not rows:
@@ -272,13 +292,18 @@ def export(day, force=False):
         print(f'{table} {day}: {len(rows)} rows')
     # the shadow summary: what the auto orders would have done this slate, as counts and dollars (never an order);
     # rewritten as touches and grades land, like the small tables
-    summary = readout.shadow_rows(fetch_orders(day))
+    try:
+        summary = readout.shadow_rows(fetch_orders(day))
+    except Exception as e:
+        errors.append(f'{day} {e}')
+        traceback.print_exc()
+        summary = []
     if summary:
         path = os.path.join(OUT, 'shadow', f'{day.isoformat()}.csv')
         if put_text(path, readout.shadow_csv(summary), force):
             written.append(path)
             print(f"shadow {day}: " + ', '.join(f"{r['sport']} {r['mode']} {r['rest_orders']} resting orders on {r['games']} games, {r['rest_touched']} would fill, ${r['pnl']:+.0f}" for r in summary))
-    return written
+    return written, errors
 
 
 def csv_results(path=None):
@@ -321,7 +346,9 @@ def main():
     n, errors = 0, []
     for day in days:
         try:
-            n += len(export(day, a.force))
+            w, errs = export(day, a.force)
+            n += len(w)
+            errors += errs
         except Exception as e:   # one bad slate does not cost the others their export
             errors.append(f'{day}: {e}')
             traceback.print_exc()
