@@ -667,24 +667,19 @@
    "date": "2026-10-31",
    "first_seen": "2026-10-26T04:06:55+00:00",
    "h2": {
-    "at": "2026-11-01T01:31:36+00:00",
-    "at_s": 1793496696.8719392,
+    "at": "2026-11-01T01:24:00+00:00",
+    "at_s": 1793496240.2658923,
     "books": {
-     "bovada": [
-      22.0,
-      -112,
-      -108
-     ],
      "draftkings": [
       23.5,
       -110,
       -125
      ]
     },
-    "calls": 2,
+    "calls": 1,
     "line": 23.5,
-    "n": 2,
-    "source": "median2"
+    "n": 1,
+    "source": "median1"
    },
    "half": {
     "away": 13,
@@ -692,8 +687,8 @@
    },
    "half_at": "2026-11-01T01:24:00+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31MIZZARK",
-   "last_eval": "2026-11-01T01:46:58+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_eval": "2026-11-01T01:25:08+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -763,8 +758,7 @@
     "3": true
    },
    "slots": {
-    "half": "elsewhere",
-    "q3": "elsewhere"
+    "half": "elsewhere"
    },
    "snap0": "2026-10-31T23:24:47+00:00",
    "snap60": "2026-10-31T22:57:17+00:00",
@@ -797,7 +791,7 @@
    "half_at": "2026-10-31T21:16:13+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31FLAUGA",
    "last_eval": "2026-10-31T21:39:51+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:45:42+00:00",
     "legs": [
@@ -910,7 +904,7 @@
    "half_at": "2026-10-31T18:17:34+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31AUBMISS",
    "last_eval": "2026-10-31T19:22:28+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T16:20:37+00:00",
     "legs": [
@@ -1029,7 +1023,7 @@
    "half_at": "2026-10-31T22:00:35+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31SCAROKLA",
    "last_eval": "2026-10-31T22:20:31+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T20:00:24+00:00",
     "legs": [
@@ -1146,7 +1140,7 @@
    "half_at": "2026-11-01T01:04:35+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31MSSTTEX",
    "last_eval": "2026-11-01T01:25:08+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -2172,7 +2166,7 @@
    "half_at": "2026-10-31T17:49:56+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31ARIZTTU",
    "last_eval": "2026-10-31T18:02:52+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T15:53:46+00:00",
     "legs": [
@@ -2285,7 +2279,7 @@
    "half_at": "2026-10-31T21:16:14+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31ASUBYU",
    "last_eval": "2026-10-31T22:25:55+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:35:20+00:00",
     "legs": [
@@ -2380,7 +2374,7 @@
    "date": "2026-10-30",
    "first_seen": "2026-10-26T04:06:55+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT30BAYUCF",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-30T23:29:03+00:00",
     "legs": [
@@ -2480,7 +2474,7 @@
    "half_at": "2026-10-31T21:13:05+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31KUTCU",
    "last_eval": "2026-10-31T21:35:34+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:35:20+00:00",
     "legs": [
@@ -2593,7 +2587,7 @@
    "half_at": "2026-10-31T19:18:21+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31KSUCOLO",
    "last_eval": "2026-10-31T19:42:31+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T18:01:50+00:00",
     "legs": [
@@ -2711,7 +2705,7 @@
    "half_at": "2026-11-01T01:02:27+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31OKSTISU",
    "last_eval": "2026-11-01T01:08:45+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
     "at": "2026-10-31T23:10:47+00:00",
     "legs": [
@@ -2837,7 +2831,7 @@
    "half_at": "2026-10-31T21:28:01+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31UTAHCIN",
    "last_eval": "2026-10-31T21:50:16+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:50:48+00:00",
     "legs": [
@@ -3862,7 +3856,7 @@
    "half_at": "2026-10-31T17:35:35+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31CALNCST",
    "last_eval": "2026-10-31T17:59:42+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T15:53:46+00:00",
     "legs": [
@@ -3980,7 +3974,7 @@
    "half_at": "2026-10-31T17:39:52+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31SMUSYR",
    "last_eval": "2026-10-31T18:40:17+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T15:53:46+00:00",
     "legs": [
@@ -4103,7 +4097,7 @@
    "half_at": "2026-10-31T17:49:58+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31BCDUKE",
    "last_eval": "2026-10-31T18:09:13+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T15:53:46+00:00",
     "legs": [
@@ -4221,7 +4215,7 @@
    "half_at": "2026-11-01T01:02:29+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31CLEMFSU",
    "last_eval": "2026-11-01T01:20:44+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
     "at": "2026-10-31T23:10:47+00:00",
     "legs": [
@@ -4288,7 +4282,8 @@
    "seen": {
     "1": true,
     "2": true,
-    "3": true
+    "3": true,
+    "4": true
    },
    "sheet": {
     "at": "2026-11-01T01:18:32+00:00",
@@ -4350,18 +4345,18 @@
    "clear": {
     "single under 40.5": {
      "first": "2026-11-01T01:15:14+00:00",
-     "last": "2026-11-01T01:35:41+00:00",
-     "n": 15
+     "last": "2026-11-01T01:25:08+00:00",
+     "n": 10
     },
     "single under 43.5": {
      "first": "2026-11-01T01:15:14+00:00",
-     "last": "2026-11-01T01:35:41+00:00",
-     "n": 15
+     "last": "2026-11-01T01:25:08+00:00",
+     "n": 10
     },
     "single under 46.5": {
      "first": "2026-11-01T01:15:14+00:00",
-     "last": "2026-11-01T01:35:41+00:00",
-     "n": 15
+     "last": "2026-11-01T01:25:08+00:00",
+     "n": 10
     }
    },
    "date": "2026-10-31",
@@ -4392,8 +4387,8 @@
    },
    "half_at": "2026-11-01T01:15:14+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31GTPITT",
-   "last_eval": "2026-11-01T01:39:47+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_eval": "2026-11-01T01:25:08+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -4410,11 +4405,6 @@
     ],
     "line": 55.0
    },
-   "moved": {
-    "away": 3,
-    "home": 17
-   },
-   "moved_at": "2026-11-01T01:36:43+00:00",
    "name": "Georgia Tech Yellow Jackets at Pittsburgh Panthers",
    "phase": "live",
    "pre": {
@@ -4499,8 +4489,8 @@
    },
    "half_at": "2026-11-01T01:10:53+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31MIAUNC",
-   "last_eval": "2026-11-01T01:33:39+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_eval": "2026-11-01T01:25:07+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -4567,11 +4557,11 @@
    "seen": {
     "1": true,
     "2": true,
-    "3": true
+    "3": true,
+    "4": true
    },
    "slots": {
-    "half": "elsewhere",
-    "q3": "elsewhere"
+    "half": "elsewhere"
    },
    "snap0": "2026-10-31T23:24:47+00:00",
    "snap60": "2026-10-31T22:57:17+00:00",
@@ -4604,7 +4594,7 @@
    "half_at": "2026-10-31T21:04:43+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31STANLOU",
    "last_eval": "2026-10-31T21:27:59+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:22:28+00:00",
     "legs": [
@@ -4713,7 +4703,7 @@
    "half_at": "2026-10-31T21:15:11+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31UVAWAKE",
    "last_eval": "2026-10-31T21:38:48+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:49:47+00:00",
     "legs": [
@@ -5473,7 +5463,7 @@
    "half_at": "2026-10-31T21:16:14+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31MINNIND",
    "last_eval": "2026-10-31T22:17:25+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:37:24+00:00",
     "legs": [
@@ -5596,7 +5586,7 @@
    "half_at": "2026-10-31T17:34:31+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31WISIOWA",
    "last_eval": "2026-10-31T18:00:45+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T15:53:46+00:00",
     "legs": [
@@ -5714,7 +5704,7 @@
    "half_at": "2026-10-31T17:31:20+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31ILLMD",
    "last_eval": "2026-10-31T18:35:08+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T15:53:46+00:00",
     "legs": [
@@ -5811,21 +5801,21 @@
    "date": "2026-10-31",
    "first_seen": "2026-10-26T04:06:55+00:00",
    "h2": {
-    "at": "2026-11-01T01:36:43+00:00",
-    "at_s": 1793497003.661428,
+    "at": "2026-11-01T01:54:25+00:00",
+    "at_s": 1793498065.6038873,
     "books": {
      "bovada": [
-      23.0,
-      -110,
-      -110
+      23.5,
+      -105,
+      -115
      ],
      "draftkings": [
       23.5,
-      -115,
-      -115
+      -110,
+      -120
      ]
     },
-    "calls": 2,
+    "calls": 1,
     "line": 23.5,
     "n": 2,
     "source": "median2"
@@ -5834,10 +5824,10 @@
     "away": 3,
     "home": 7
    },
-   "half_at": "2026-11-01T01:32:38+00:00",
+   "half_at": "2026-11-01T01:54:25+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31WASHNEB",
-   "last_eval": "2026-11-01T01:54:09+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_eval": "2026-11-01T01:56:32+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -5855,7 +5845,7 @@
     "line": 50.0
    },
    "name": "Washington Huskies at Nebraska Cornhuskers",
-   "phase": "half",
+   "phase": "live",
    "pre": {
     "at": "2026-10-31T23:24:47+00:00",
     "books": {
@@ -5903,10 +5893,58 @@
    },
    "seen": {
     "1": true,
-    "2": true
+    "2": true,
+    "3": true
+   },
+   "sheet": {
+    "at": "2026-11-01T01:54:27+00:00",
+    "center": 23.5,
+    "center_src": "sharp",
+    "center_w": 0.8,
+    "fair": 32.5,
+    "h1a": 3,
+    "h1h": 7,
+    "held_miss": 0,
+    "kind": "update",
+    "lead": "rest",
+    "mid": null,
+    "mkt": 32.0,
+    "mu": 23.72,
+    "mu_model": 23.6,
+    "pace": null,
+    "rest_mid": {
+     "a_line": 31.5,
+     "a_price": 52,
+     "b_line": 34.5,
+     "b_price": 52,
+     "cost": 29.12,
+     "pairs": 28
+    },
+    "sd": 10.61,
+    "sharp": 23.5,
+    "sharp_books": {
+     "bovada": [
+      23.5,
+      -105,
+      -115
+     ],
+     "draftkings": [
+      23.5,
+      -110,
+      -120
+     ]
+    },
+    "singles": [],
+    "slot": "q3",
+    "spot": "no strong lean",
+    "spread": -7.5,
+    "spread_half": null,
+    "stage": "half",
+    "title": "UPDATE: Washington 3, Nebraska 7 (Q3, CFB)",
+    "total": 49.5
    },
    "slots": {
-    "half": "elsewhere"
+    "q3": "read"
    },
    "snap60": "2026-10-31T23:00:22+00:00",
    "sport": "cfb"
@@ -5938,7 +5976,7 @@
    "half_at": "2026-10-31T21:03:40+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31NWORE",
    "last_eval": "2026-10-31T21:34:30+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:37:24+00:00",
     "legs": [
@@ -6067,7 +6105,7 @@
    "half_at": "2026-10-31T21:48:11+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31PURPSU",
    "last_eval": "2026-10-31T22:11:13+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T20:00:24+00:00",
     "legs": [
@@ -6179,7 +6217,7 @@
    "half_at": "2026-10-31T18:01:50+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31MICHRUTG",
    "last_eval": "2026-10-31T18:29:58+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T16:20:37+00:00",
     "legs": [
@@ -6296,7 +6334,7 @@
    "half_at": "2026-10-31T21:58:29+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31NEVUCLA",
    "last_eval": "2026-10-31T22:12:14+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T20:00:24+00:00",
     "legs": [
@@ -6412,8 +6450,8 @@
    },
    "half_at": "2026-11-01T01:10:54+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31OSUUSC",
-   "last_eval": "2026-11-01T01:33:39+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_eval": "2026-11-01T01:25:08+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -6482,8 +6520,7 @@
     "3": true
    },
    "slots": {
-    "half": "elsewhere",
-    "q3": "elsewhere"
+    "half": "elsewhere"
    },
    "snap0": "2026-10-31T23:24:47+00:00",
    "snap60": "2026-10-31T22:57:17+00:00",
@@ -6521,7 +6558,7 @@
    "half_at": "2026-10-31T17:31:18+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31NDNAVY",
    "last_eval": "2026-10-31T17:55:25+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T15:53:46+00:00",
     "legs": [
@@ -6955,27 +6992,27 @@
    "date": "2026-10-31",
    "first_seen": "2026-10-26T04:06:55+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31TXSTBSU",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:09+00:00",
+    "at": "2026-11-01T02:07:53+00:00",
     "legs": [
      {
-      "c": 52,
+      "c": 53,
       "k": 63.5,
       "side": "over"
      },
      {
-      "c": 51,
-      "k": 64.5,
+      "c": 54,
+      "k": 65.5,
       "side": "under"
      }
     ],
-    "line": 64.0
+    "line": 64.5
    },
    "name": "Texas State Bobcats at Boise State Broncos",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:09+00:00",
+    "at": "2026-11-01T02:07:53+00:00",
     "books": {
      "betmgm": [
       -10.5,
@@ -7020,49 +7057,49 @@
     "total": 63.5
    },
    "pre_ladder": {
-    "at": "2026-11-01T01:54:09+00:00",
+    "at": "2026-11-01T02:07:53+00:00",
     "event": "KXNCAAFTOTAL-26OCT31TXSTBSU",
     "quotes": {
      "44.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-45",
-      88,
       89,
-      11,
-      12
+      90,
+      10,
+      11
      ],
      "47.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-48",
-      83,
       85,
-      15,
-      17
+      86,
+      14,
+      15
      ],
      "50.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-51",
-      79,
+      80,
       81,
       19,
-      21
+      20
      ],
      "53.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-54",
-      73,
       74,
-      26,
-      27
+      75,
+      25,
+      26
      ],
      "56.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-57",
-      67,
       68,
-      32,
-      33
+      69,
+      31,
+      32
      ],
      "59.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-60",
       61,
-      62,
-      38,
+      63,
+      37,
       39
      ],
      "62.5": [
@@ -7074,10 +7111,10 @@
      ],
      "63.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-64",
-      51,
       52,
-      48,
-      49
+      53,
+      47,
+      48
      ],
      "64.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-65",
@@ -7095,58 +7132,58 @@
      ],
      "66.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-67",
-      42,
       43,
-      57,
-      58
+      44,
+      56,
+      57
      ],
      "67.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-68",
+      43,
+      44,
+      56,
+      57
+     ],
+     "68.5": [
+      "KXNCAAFTOTAL-26OCT31TXSTBSU-69",
       41,
       42,
       58,
       59
      ],
-     "68.5": [
-      "KXNCAAFTOTAL-26OCT31TXSTBSU-69",
-      39,
-      40,
-      60,
-      61
-     ],
      "71.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-72",
-      32,
       33,
-      67,
-      68
+      34,
+      66,
+      67
      ],
      "74.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-75",
-      24,
-      25,
-      75,
-      76
+      27,
+      28,
+      72,
+      73
      ],
      "77.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-78",
-      20,
+      19,
       22,
       78,
-      80
+      81
      ],
      "80.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-81",
-      16,
       17,
-      83,
-      84
+      18,
+      82,
+      83
      ],
      "83.5": [
       "KXNCAAFTOTAL-26OCT31TXSTBSU-84",
       12,
-      13,
-      87,
+      14,
+      86,
       88
      ],
      "86.5": [
@@ -7193,7 +7230,7 @@
    "half_at": "2026-11-01T00:24:05+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31WSUSDSU",
    "last_eval": "2026-11-01T01:21:48+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
     "at": "2026-10-31T23:02:28+00:00",
     "legs": [
@@ -7216,7 +7253,7 @@
    },
    "moved_at": "2026-11-01T01:20:44+00:00",
    "name": "Washington State Cougars at San Diego State Aztecs",
-   "phase": "live",
+   "phase": "post",
    "pre": {
     "at": "2026-10-31T23:02:28+00:00",
     "books": {
@@ -7268,6 +7305,14 @@
     "3": true,
     "4": true
    },
+   "settled": {
+    "at": "2026-11-01T02:07:53+00:00",
+    "final_total": 46,
+    "mid_pnl": null,
+    "plays_pnl": 0.0,
+    "q3_mid_pnl": null,
+    "q3_plays_pnl": null
+   },
    "slots": {
     "half": "elsewhere"
    },
@@ -7307,7 +7352,7 @@
    "half_at": "2026-10-31T20:59:30+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31CSUUSU",
    "last_eval": "2026-10-31T21:19:25+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:34:19+00:00",
     "legs": [
@@ -7396,27 +7441,27 @@
    "date": "2026-10-31",
    "first_seen": "2026-10-26T04:06:55+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31ORSTFRES",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:09+00:00",
+    "at": "2026-11-01T02:07:53+00:00",
     "legs": [
      {
-      "c": 53,
-      "k": 56.5,
+      "c": 54,
+      "k": 55.5,
       "side": "over"
      },
      {
-      "c": 52,
+      "c": 53,
       "k": 57.5,
       "side": "under"
      }
     ],
-    "line": 57.0
+    "line": 56.5
    },
    "name": "Oregon State Beavers at Fresno State Bulldogs",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:09+00:00",
+    "at": "2026-11-01T02:07:53+00:00",
     "books": {
      "betmgm": [
       6.0,
@@ -7458,8 +7503,9 @@
     "home_spread": 6.0,
     "odds_event": "d0126c335a51772c70c76e17ca06afb3",
     "source": "espn",
-    "total": 57.5
+    "total": 56.5
    },
+   "snap60": "2026-11-01T02:00:42+00:00",
    "sport": "cfb"
   },
   "401861965": {
@@ -7544,7 +7590,7 @@
    "half_at": "2026-10-31T20:27:29+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31CONNAFA",
    "last_eval": "2026-10-31T20:46:27+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:05:01+00:00",
     "legs": [
@@ -8185,7 +8231,7 @@
    "date": "2026-10-29",
    "first_seen": "2026-10-26T04:06:55+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT29FAUUNT",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-29T23:27:46+00:00",
     "legs": [
@@ -8285,7 +8331,7 @@
    "half_at": "2026-10-31T00:46:13+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT30TULNCHAR",
    "last_eval": "2026-10-31T01:09:02+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-30T07:40:17+00:00",
     "legs": [
@@ -8375,22 +8421,22 @@
    "date": "2026-10-31",
    "first_seen": "2026-10-26T04:06:55+00:00",
    "h2": {
-    "at": "2026-11-01T01:39:47+00:00",
-    "at_s": 1793497187.6987572,
+    "at": "2026-11-01T01:58:38+00:00",
+    "at_s": 1793498318.2034647,
     "books": {
      "bovada": [
-      30.0,
-      -110,
-      -110
+      30.5,
+      -115,
+      -105
      ],
      "draftkings": [
-      29.5,
+      30.5,
       -115,
-      -115
+      -120
      ]
     },
     "calls": 2,
-    "line": 30.0,
+    "line": 30.5,
     "n": 2,
     "source": "median2"
    },
@@ -8398,10 +8444,10 @@
     "away": 14,
     "home": 28
    },
-   "half_at": "2026-11-01T01:35:42+00:00",
+   "half_at": "2026-11-01T01:54:27+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31ARMYMEM",
-   "last_eval": "2026-11-01T01:54:09+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_eval": "2026-11-01T02:00:42+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -8419,7 +8465,7 @@
     "line": 59.5
    },
    "name": "Army Black Knights at Memphis Tigers",
-   "phase": "half",
+   "phase": "live",
    "pre": {
     "at": "2026-10-31T23:24:47+00:00",
     "books": {
@@ -8467,10 +8513,12 @@
    },
    "seen": {
     "1": true,
-    "2": true
+    "2": true,
+    "3": true
    },
    "slots": {
-    "half": "elsewhere"
+    "half": "elsewhere",
+    "q3": "elsewhere"
    },
    "snap60": "2026-10-31T23:00:22+00:00",
    "sport": "cfb"
@@ -8502,7 +8550,7 @@
    "half_at": "2026-10-31T20:29:37+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31TEMECU",
    "last_eval": "2026-10-31T20:49:36+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:01:55+00:00",
     "legs": [
@@ -8662,7 +8710,7 @@
    "half_at": "2026-10-31T17:49:59+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31UABUSF",
    "last_eval": "2026-10-31T18:01:50+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T15:53:46+00:00",
     "legs": [
@@ -9215,7 +9263,7 @@
    "half_at": "2026-10-31T21:38:48+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31UNMSJSU",
    "last_eval": "2026-10-31T22:12:14+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T20:00:24+00:00",
     "legs": [
@@ -9309,9 +9357,9 @@
    "date": "2026-10-31",
    "first_seen": "2026-10-26T04:06:55+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31NIUUNLV",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:09+00:00",
+    "at": "2026-11-01T02:07:53+00:00",
     "legs": [
      {
       "c": 53,
@@ -9329,7 +9377,7 @@
    "name": "Northern Illinois Huskies at UNLV Rebels",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:09+00:00",
+    "at": "2026-11-01T02:07:53+00:00",
     "books": {
      "betmgm": [
       -22.0,
@@ -9373,7 +9421,146 @@
     "source": "espn",
     "total": 55.5
    },
-   "snap60": "2026-11-01T01:31:37+00:00",
+   "pre_ladder": {
+    "at": "2026-11-01T02:07:53+00:00",
+    "event": "KXNCAAFTOTAL-26OCT31NIUUNLV",
+    "quotes": {
+     "32.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-33",
+      94,
+      95,
+      5,
+      6
+     ],
+     "35.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-36",
+      91,
+      92,
+      8,
+      9
+     ],
+     "38.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-39",
+      87,
+      88,
+      12,
+      13
+     ],
+     "41.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-42",
+      81,
+      82,
+      18,
+      19
+     ],
+     "44.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-45",
+      78,
+      79,
+      21,
+      22
+     ],
+     "47.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-48",
+      72,
+      73,
+      27,
+      28
+     ],
+     "50.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-51",
+      66,
+      67,
+      33,
+      34
+     ],
+     "51.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-52",
+      62,
+      63,
+      37,
+      38
+     ],
+     "52.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-53",
+      59,
+      60,
+      40,
+      41
+     ],
+     "53.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-54",
+      57,
+      58,
+      42,
+      43
+     ],
+     "54.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-55",
+      54,
+      55,
+      45,
+      46
+     ],
+     "55.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-56",
+      52,
+      53,
+      47,
+      48
+     ],
+     "56.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-57",
+      49,
+      50,
+      50,
+      51
+     ],
+     "59.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-60",
+      41,
+      42,
+      58,
+      59
+     ],
+     "62.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-63",
+      33,
+      34,
+      66,
+      67
+     ],
+     "65.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-66",
+      27,
+      28,
+      72,
+      73
+     ],
+     "68.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-69",
+      22,
+      23,
+      77,
+      78
+     ],
+     "71.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-72",
+      17,
+      18,
+      82,
+      83
+     ],
+     "74.5": [
+      "KXNCAAFTOTAL-26OCT31NIUUNLV-75",
+      12,
+      13,
+      87,
+      88
+     ]
+    }
+   },
+   "snap60": "2026-11-01T01:54:28+00:00",
    "sport": "cfb"
   },
   "401864531": {
@@ -9408,7 +9595,7 @@
    "half_at": "2026-10-31T20:59:30+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31UTEPNDSU",
    "last_eval": "2026-10-31T21:46:06+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:35:20+00:00",
     "legs": [
@@ -10131,7 +10318,7 @@
    "half_at": "2026-10-31T04:30:58+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT30KENTSAC",
    "last_eval": "2026-10-31T04:40:20+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T02:29:03+00:00",
     "legs": [
@@ -10248,7 +10435,7 @@
    "half_at": "2026-10-31T17:31:21+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31BGSUWMU",
    "last_eval": "2026-10-31T18:19:38+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T15:53:46+00:00",
     "legs": [
@@ -10516,7 +10703,7 @@
    "half_at": "2026-11-01T00:16:41+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31APPGASO",
    "last_eval": "2026-11-01T00:32:28+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T22:26:57+00:00",
     "legs": [
@@ -10548,7 +10735,7 @@
     "4": true
    },
    "settled": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T01:54:25+00:00",
     "final_total": 22,
     "mid_pnl": null,
     "plays_pnl": 0.0,
@@ -10694,7 +10881,7 @@
    "half_at": "2026-10-31T19:35:20+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31CCARGAST",
    "last_eval": "2026-10-31T19:53:53+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T18:02:53+00:00",
     "legs": [
@@ -10783,7 +10970,7 @@
    "date": "2026-10-29",
    "first_seen": "2026-10-26T04:06:55+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT29TROYJMU",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-29T23:27:46+00:00",
     "legs": [
@@ -11075,7 +11262,7 @@
    "half_at": "2026-10-29T01:36:53+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT28JVSTNMSU",
    "last_eval": "2026-10-29T01:51:39+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-29T00:06:49+00:00",
     "legs": [
@@ -11192,7 +11379,7 @@
    "half_at": "2026-10-29T00:37:01+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT28KENNMTU",
    "last_eval": "2026-10-29T01:45:20+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-28T05:57:26+00:00",
     "legs": [
@@ -11313,7 +11500,7 @@
    "half_at": "2026-10-31T20:59:31+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31FIULIB",
    "last_eval": "2026-10-31T21:20:29+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:33:17+00:00",
     "legs": [
@@ -11556,7 +11743,7 @@
    "half_at": "2026-10-28T00:52:59+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT27DELWKU",
    "last_eval": "2026-10-28T00:55:07+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-27T07:33:29+00:00",
     "legs": [
@@ -11627,7 +11814,7 @@
    "half_at": "2026-10-28T01:38:38+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT27SHSUMOSU",
    "last_eval": "2026-10-28T01:58:15+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-27T23:57:42+00:00",
     "legs": [
@@ -12023,7 +12210,7 @@
    "half_at": "2026-10-31T20:59:31+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31USMULM",
    "last_eval": "2026-10-31T21:31:18+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:32:15+00:00",
     "legs": [
@@ -12107,7 +12294,7 @@
    "half_at": "2026-10-31T18:59:51+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31MRSHODU",
    "last_eval": "2026-10-31T19:46:43+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T16:55:45+00:00",
     "legs": [
@@ -12230,7 +12417,7 @@
    "half_at": "2026-10-31T20:42:14+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26OCT31LTUSA",
    "last_eval": "2026-10-31T21:36:36+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:01:55+00:00",
     "legs": [
@@ -15381,7 +15568,7 @@
    "half_at": "2026-10-30T01:55:09+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26OCT29CARGB",
    "last_eval": "2026-10-30T02:05:46+00:00",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
     "at": "2026-10-30T00:03:56+00:00",
     "legs": [
@@ -15486,9 +15673,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01ARIDAL",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 55,
@@ -15506,7 +15693,7 @@
    "name": "Arizona Cardinals at Dallas Cowboys",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -7.0,
@@ -15556,9 +15743,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01ATLTB",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 53,
@@ -15576,7 +15763,7 @@
    "name": "Atlanta Falcons at Tampa Bay Buccaneers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -2.5,
@@ -15626,9 +15813,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01BALBUF",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 53,
@@ -15646,7 +15833,7 @@
    "name": "Baltimore Ravens at Buffalo Bills",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -3.0,
@@ -15696,9 +15883,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01CLEPIT",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 53,
@@ -15716,7 +15903,7 @@
    "name": "Cleveland Browns at Pittsburgh Steelers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -3.5,
@@ -15766,9 +15953,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01INDJAC",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 53,
@@ -15786,7 +15973,7 @@
    "name": "Indianapolis Colts at Jacksonville Jaguars",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -10.0,
@@ -15836,9 +16023,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01LVNYJ",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 53,
@@ -15856,7 +16043,7 @@
    "name": "Las Vegas Raiders at New York Jets",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -1.5,
@@ -15906,9 +16093,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01MINDET",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 54,
@@ -15926,7 +16113,7 @@
    "name": "Minnesota Vikings at Detroit Lions",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -3.5,
@@ -15976,9 +16163,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01TENCIN",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 54,
@@ -15996,7 +16183,7 @@
    "name": "Tennessee Titans at Cincinnati Bengals",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -11.5,
@@ -16046,9 +16233,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01LACLAR",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 54,
@@ -16066,7 +16253,7 @@
    "name": "Los Angeles Chargers at Los Angeles Rams",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -6.5,
@@ -16116,9 +16303,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01KCDEN",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 55,
@@ -16136,7 +16323,7 @@
    "name": "Kansas City Chiefs at Denver Broncos",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       1.5,
@@ -16186,9 +16373,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01NEMIA",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 54,
@@ -16206,7 +16393,7 @@
    "name": "New England Patriots at Miami Dolphins",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       7.0,
@@ -16256,9 +16443,9 @@
    "date": "2026-11-01",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV01PHIWAS",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 53,
@@ -16276,7 +16463,7 @@
    "name": "Philadelphia Eagles at Washington Commanders",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -6.0,
@@ -16326,9 +16513,9 @@
    "date": "2026-11-02",
    "first_seen": "2026-10-28T04:27:29+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV02CHISEA",
-   "last_seen": "2026-11-01T01:54:08+00:00",
+   "last_seen": "2026-11-01T02:07:52+00:00",
    "mkt": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "legs": [
      {
       "c": 54,
@@ -16346,7 +16533,7 @@
    "name": "Chicago Bears at Seattle Seahawks",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-01T01:54:08+00:00",
+    "at": "2026-11-01T02:07:52+00:00",
     "books": {
      "betmgm": [
       -3.0,
@@ -33726,7 +33913,7 @@
    "half_at_q3": "2026-10-31T20:59:32+00:00",
    "kalshi_total_event": "KXNBATOTAL-26OCT31PORUTA",
    "last_eval": "2026-10-31T21:00:35+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T19:11:11+00:00",
     "legs": [
@@ -34096,7 +34283,7 @@
    "half_at": "2026-10-31T23:07:40+00:00",
    "kalshi_total_event": "KXNBATOTAL-26OCT31PHICHA",
    "last_eval": "2026-10-31T23:20:10+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T22:10:10+00:00",
     "legs": [
@@ -34484,7 +34671,7 @@
    "half_at": "2026-11-01T00:16:45+00:00",
    "kalshi_total_event": "KXNBATOTAL-26OCT31ATLNOP",
    "last_eval": "2026-11-01T00:27:15+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:10:48+00:00",
     "legs": [
@@ -34798,7 +34985,7 @@
     "4": true
    },
    "settled": {
-    "at": "2026-11-01T01:35:42+00:00",
+    "at": "2026-11-01T01:54:29+00:00",
     "final_total": 220,
     "mid_pnl": null,
     "plays_pnl": 0.0,
@@ -34823,8 +35010,9 @@
    }
   },
   "401909899": {
-   "center_src": "sharp",
+   "center_src": "kalshi",
    "clear": {},
+   "clear_q3": {},
    "date": "2026-10-31",
    "first_seen": "2026-10-31T15:20:51+00:00",
    "h2": {
@@ -34862,9 +35050,10 @@
     "home": 66
    },
    "half_at": "2026-11-01T01:15:17+00:00",
+   "half_at_q3": "2026-11-01T02:03:46+00:00",
    "kalshi_total_event": "KXNBATOTAL-26OCT31SACMEM",
-   "last_eval": "2026-11-01T01:25:09+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_eval": "2026-11-01T02:06:52+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -34880,6 +35069,11 @@
      }
     ],
     "line": 229.0
+   },
+   "moved_at_q3": "2026-11-01T02:04:49+00:00",
+   "moved_q3": {
+    "away": 80,
+    "home": 108
    },
    "name": "Sacramento Kings at Memphis Grizzlies",
    "pace": {
@@ -34910,226 +35104,191 @@
     "poss": 54.28
    },
    "pace_asked": true,
-   "phase": "approaching3",
+   "phase": "live",
    "poly": {
-    "at": "2026-11-01T01:25:09+00:00",
+    "at": "2026-11-01T02:03:46+00:00",
     "event": "nba-sac-mem-2026-10-31",
     "quotes": {
-     "206.5": {
+     "216.5": {
+      "n": 2,
+      "nb": 1,
+      "ticker": "nba-sac-mem-2026-10-31-total-216pt5",
+      "y": 99,
+      "yb": 98
+     },
+     "218.5": {
       "n": 3,
       "nb": 1,
-      "ticker": "nba-sac-mem-2026-10-31-total-206pt5",
+      "ticker": "nba-sac-mem-2026-10-31-total-218pt5",
       "y": 99,
       "yb": 97
      },
-     "208.5": {
-      "n": 4,
-      "nb": 2,
-      "ticker": "nba-sac-mem-2026-10-31-total-208pt5",
-      "y": 98,
-      "yb": 96
-     },
-     "210.5": {
-      "n": 5,
-      "nb": 3,
-      "ticker": "nba-sac-mem-2026-10-31-total-210pt5",
-      "y": 97,
-      "yb": 95
-     },
-     "212.5": {
-      "n": 7,
-      "nb": 5,
-      "ticker": "nba-sac-mem-2026-10-31-total-212pt5",
-      "y": 95,
-      "yb": 93
-     },
-     "214.5": {
-      "n": 8,
-      "nb": 6,
-      "ticker": "nba-sac-mem-2026-10-31-total-214pt5",
-      "y": 94,
-      "yb": 92
-     },
-     "216.5": {
-      "n": 11,
-      "nb": 9,
-      "ticker": "nba-sac-mem-2026-10-31-total-216pt5",
-      "y": 91,
-      "yb": 89
-     },
-     "218.5": {
-      "n": 14,
-      "nb": 12,
-      "ticker": "nba-sac-mem-2026-10-31-total-218pt5",
-      "y": 88,
-      "yb": 86
-     },
      "220.5": {
-      "n": 18,
-      "nb": 15,
+      "n": 6,
+      "nb": 1,
       "ticker": "nba-sac-mem-2026-10-31-total-220pt5",
-      "y": 85,
-      "yb": 82
+      "y": 99,
+      "yb": 94
      },
      "222.5": {
-      "n": 21,
-      "nb": 19,
+      "n": 7,
+      "nb": 2,
       "ticker": "nba-sac-mem-2026-10-31-total-222pt5",
-      "y": 81,
-      "yb": 79
+      "y": 98,
+      "yb": 93
      },
      "224.5": {
-      "n": 26,
-      "nb": 23,
+      "n": 8,
+      "nb": 4,
       "ticker": "nba-sac-mem-2026-10-31-total-224pt5",
-      "y": 77,
-      "yb": 74
+      "y": 96,
+      "yb": 92
      },
      "226.5": {
-      "n": 31,
-      "nb": 30,
+      "n": 9,
+      "nb": 5,
       "ticker": "nba-sac-mem-2026-10-31-total-226pt5",
-      "y": 70,
-      "yb": 69
+      "y": 95,
+      "yb": 91
      },
      "228.5": {
-      "n": 36,
-      "nb": 35,
+      "n": 13,
+      "nb": 8,
       "ticker": "nba-sac-mem-2026-10-31-total-228pt5",
-      "y": 65,
-      "yb": 64
+      "y": 92,
+      "yb": 87
      },
      "229.5": {
-      "n": 40,
-      "nb": 37,
+      "n": 45,
+      "nb": 3,
       "ticker": "nba-sac-mem-2026-10-31-total-229pt5",
-      "y": 63,
-      "yb": 60
+      "y": 97,
+      "yb": 55
      },
      "230.5": {
-      "n": 43,
-      "nb": 41,
+      "n": 17,
+      "nb": 14,
       "ticker": "nba-sac-mem-2026-10-31-total-230pt5",
-      "y": 59,
-      "yb": 57
+      "y": 86,
+      "yb": 83
      },
      "232.5": {
-      "n": 49,
-      "nb": 48,
+      "n": 23,
+      "nb": 21,
       "ticker": "nba-sac-mem-2026-10-31-total-232pt5",
-      "y": 52,
-      "yb": 51
+      "y": 79,
+      "yb": 77
      },
      "233.5": {
-      "n": 52,
-      "nb": 49,
+      "n": 32,
+      "nb": 15,
       "ticker": "nba-sac-mem-2026-10-31-total-233pt5",
-      "y": 51,
-      "yb": 48
+      "y": 85,
+      "yb": 68
      },
      "234.5": {
-      "n": 56,
-      "nb": 54,
+      "n": 34,
+      "nb": 26,
       "ticker": "nba-sac-mem-2026-10-31-total-234pt5",
-      "y": 46,
-      "yb": 44
+      "y": 74,
+      "yb": 66
      },
      "236.5": {
-      "n": 62,
-      "nb": 60,
+      "n": 39,
+      "nb": 35,
       "ticker": "nba-sac-mem-2026-10-31-total-236pt5",
-      "y": 40,
-      "yb": 38
+      "y": 65,
+      "yb": 61
      },
      "238.5": {
-      "n": 67,
-      "nb": 66,
+      "n": 50,
+      "nb": 46,
       "ticker": "nba-sac-mem-2026-10-31-total-238pt5",
-      "y": 34,
-      "yb": 33
+      "y": 54,
+      "yb": 50
      },
      "240.5": {
+      "n": 63,
+      "nb": 51,
+      "ticker": "nba-sac-mem-2026-10-31-total-240pt5",
+      "y": 49,
+      "yb": 37
+     },
+     "242.5": {
+      "n": 67,
+      "nb": 64,
+      "ticker": "nba-sac-mem-2026-10-31-total-242pt5",
+      "y": 36,
+      "yb": 33
+     },
+     "244.5": {
       "n": 73,
       "nb": 72,
-      "ticker": "nba-sac-mem-2026-10-31-total-240pt5",
+      "ticker": "nba-sac-mem-2026-10-31-total-244pt5",
       "y": 28,
       "yb": 27
      },
-     "242.5": {
-      "n": 79,
-      "nb": 76,
-      "ticker": "nba-sac-mem-2026-10-31-total-242pt5",
-      "y": 24,
-      "yb": 21
-     },
-     "244.5": {
-      "n": 83,
-      "nb": 80,
-      "ticker": "nba-sac-mem-2026-10-31-total-244pt5",
-      "y": 20,
-      "yb": 17
-     },
      "246.5": {
-      "n": 87,
-      "nb": 84,
+      "n": 82,
+      "nb": 78,
       "ticker": "nba-sac-mem-2026-10-31-total-246pt5",
-      "y": 16,
-      "yb": 13
+      "y": 22,
+      "yb": 18
      },
      "248.5": {
-      "n": 90,
-      "nb": 88,
+      "n": 88,
+      "nb": 84,
       "ticker": "nba-sac-mem-2026-10-31-total-248pt5",
-      "y": 12,
-      "yb": 10
+      "y": 16,
+      "yb": 12
      },
      "250.5": {
-      "n": 92,
-      "nb": 90,
-      "ticker": "nba-sac-mem-2026-10-31-total-250pt5",
-      "y": 10,
-      "yb": 8
-     },
-     "252.5": {
       "n": 94,
-      "nb": 92,
-      "ticker": "nba-sac-mem-2026-10-31-total-252pt5",
-      "y": 8,
+      "nb": 87,
+      "ticker": "nba-sac-mem-2026-10-31-total-250pt5",
+      "y": 13,
       "yb": 6
      },
+     "252.5": {
+      "n": 97,
+      "nb": 90,
+      "ticker": "nba-sac-mem-2026-10-31-total-252pt5",
+      "y": 10,
+      "yb": 3
+     },
      "254.5": {
-      "n": 96,
-      "nb": 93,
+      "n": 98,
+      "nb": 92,
       "ticker": "nba-sac-mem-2026-10-31-total-254pt5",
-      "y": 7,
-      "yb": 4
+      "y": 8,
+      "yb": 2
      },
      "256.5": {
       "n": 99,
-      "nb": 96,
+      "nb": 94,
       "ticker": "nba-sac-mem-2026-10-31-total-256pt5",
-      "y": 4,
+      "y": 6,
       "yb": 1
      },
      "258.5": {
       "n": 99,
-      "nb": 97,
+      "nb": 95,
       "ticker": "nba-sac-mem-2026-10-31-total-258pt5",
-      "y": 3,
+      "y": 5,
       "yb": 1
      },
      "260.5": {
       "n": 99,
-      "nb": 98,
+      "nb": 96,
       "ticker": "nba-sac-mem-2026-10-31-total-260pt5",
-      "y": 2,
+      "y": 4,
       "yb": 1
      },
      "262.5": {
       "n": 99,
-      "nb": 98,
+      "nb": 97,
       "ticker": "nba-sac-mem-2026-10-31-total-262pt5",
-      "y": 2,
+      "y": 3,
       "yb": 1
      }
     }
@@ -35182,10 +35341,12 @@
    "seen": {
     "1": true,
     "2": true,
-    "3": true
+    "3": true,
+    "4": true
    },
    "slots": {
-    "half": "elsewhere"
+    "half": "elsewhere",
+    "q3": "elsewhere"
    },
    "snap60": "2026-10-31T23:00:22+00:00",
    "sport": "nba",
@@ -35198,12 +35359,15 @@
     "model_home_margin": 12.75,
     "naive_home_margin": 15.25,
     "pregame_home_spread": -8.5
+   },
+   "third": {
+    "away": 78,
+    "home": 108
    }
   },
   "401909900": {
-   "center_src": "kalshi",
+   "center_src": "sharp",
    "clear": {},
-   "clear_q3": {},
    "date": "2026-10-31",
    "first_seen": "2026-10-31T15:20:51+00:00",
    "h2": {
@@ -35241,10 +35405,9 @@
     "home": 46
    },
    "half_at": "2026-11-01T01:08:46+00:00",
-   "half_at_q3": "2026-11-01T01:50:02+00:00",
    "kalshi_total_event": "KXNBATOTAL-26OCT31CLEMIL",
-   "last_eval": "2026-11-01T01:53:07+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_eval": "2026-11-01T01:22:57+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -35260,11 +35423,6 @@
      }
     ],
     "line": 235.5
-   },
-   "moved_at_q3": "2026-11-01T01:53:07+00:00",
-   "moved_q3": {
-    "away": 112,
-    "home": 76
    },
    "name": "Cleveland Cavaliers at Milwaukee Bucks",
    "pace": {
@@ -35297,176 +35455,225 @@
    "pace_asked": true,
    "phase": "live",
    "poly": {
-    "at": "2026-11-01T01:52:05+00:00",
+    "at": "2026-11-01T01:22:56+00:00",
     "event": "nba-cle-mil-2026-10-31",
     "quotes": {
-     "222.5": {
-      "n": 5,
+     "208.5": {
+      "n": 4,
       "nb": 1,
-      "ticker": "nba-cle-mil-2026-10-31-total-222pt5",
+      "ticker": "nba-cle-mil-2026-10-31-total-208pt5",
       "y": 99,
-      "yb": 95
+      "yb": 96
      },
-     "224.5": {
-      "n": 5,
+     "210.5": {
+      "n": 4,
+      "nb": 1,
+      "ticker": "nba-cle-mil-2026-10-31-total-210pt5",
+      "y": 99,
+      "yb": 96
+     },
+     "212.5": {
+      "n": 4,
       "nb": 2,
-      "ticker": "nba-cle-mil-2026-10-31-total-224pt5",
+      "ticker": "nba-cle-mil-2026-10-31-total-212pt5",
       "y": 98,
-      "yb": 95
+      "yb": 96
      },
-     "226.5": {
-      "n": 7,
-      "nb": 4,
-      "ticker": "nba-cle-mil-2026-10-31-total-226pt5",
-      "y": 96,
-      "yb": 93
+     "214.5": {
+      "n": 6,
+      "nb": 2,
+      "ticker": "nba-cle-mil-2026-10-31-total-214pt5",
+      "y": 98,
+      "yb": 94
      },
-     "228.5": {
+     "216.5": {
+      "n": 8,
+      "nb": 5,
+      "ticker": "nba-cle-mil-2026-10-31-total-216pt5",
+      "y": 95,
+      "yb": 92
+     },
+     "218.5": {
+      "n": 9,
+      "nb": 6,
+      "ticker": "nba-cle-mil-2026-10-31-total-218pt5",
+      "y": 94,
+      "yb": 91
+     },
+     "220.5": {
       "n": 11,
-      "nb": 7,
-      "ticker": "nba-cle-mil-2026-10-31-total-228pt5",
-      "y": 93,
+      "nb": 8,
+      "ticker": "nba-cle-mil-2026-10-31-total-220pt5",
+      "y": 92,
       "yb": 89
      },
+     "222.5": {
+      "n": 14,
+      "nb": 12,
+      "ticker": "nba-cle-mil-2026-10-31-total-222pt5",
+      "y": 88,
+      "yb": 86
+     },
+     "224.5": {
+      "n": 18,
+      "nb": 14,
+      "ticker": "nba-cle-mil-2026-10-31-total-224pt5",
+      "y": 86,
+      "yb": 82
+     },
+     "226.5": {
+      "n": 21,
+      "nb": 20,
+      "ticker": "nba-cle-mil-2026-10-31-total-226pt5",
+      "y": 80,
+      "yb": 79
+     },
+     "228.5": {
+      "n": 25,
+      "nb": 23,
+      "ticker": "nba-cle-mil-2026-10-31-total-228pt5",
+      "y": 77,
+      "yb": 75
+     },
      "230.5": {
-      "n": 15,
-      "nb": 11,
+      "n": 30,
+      "nb": 28,
       "ticker": "nba-cle-mil-2026-10-31-total-230pt5",
-      "y": 89,
-      "yb": 85
+      "y": 72,
+      "yb": 70
      },
      "232.5": {
-      "n": 19,
-      "nb": 16,
+      "n": 35,
+      "nb": 33,
       "ticker": "nba-cle-mil-2026-10-31-total-232pt5",
-      "y": 84,
-      "yb": 81
+      "y": 67,
+      "yb": 65
      },
      "234.5": {
-      "n": 24,
-      "nb": 22,
+      "n": 41,
+      "nb": 39,
       "ticker": "nba-cle-mil-2026-10-31-total-234pt5",
-      "y": 78,
-      "yb": 76
+      "y": 61,
+      "yb": 59
      },
      "235.5": {
-      "n": 34,
-      "nb": 20,
+      "n": 45,
+      "nb": 41,
       "ticker": "nba-cle-mil-2026-10-31-total-235pt5",
-      "y": 80,
-      "yb": 66
+      "y": 59,
+      "yb": 55
      },
      "236.5": {
-      "n": 32,
-      "nb": 29,
+      "n": 47,
+      "nb": 45,
       "ticker": "nba-cle-mil-2026-10-31-total-236pt5",
-      "y": 71,
-      "yb": 68
+      "y": 55,
+      "yb": 53
      },
      "237.5": {
-      "n": 38,
-      "nb": 29,
+      "n": 49,
+      "nb": 47,
       "ticker": "nba-cle-mil-2026-10-31-total-237pt5",
-      "y": 71,
-      "yb": 62
+      "y": 53,
+      "yb": 51
      },
      "238.5": {
-      "n": 39,
-      "nb": 35,
+      "n": 53,
+      "nb": 52,
       "ticker": "nba-cle-mil-2026-10-31-total-238pt5",
-      "y": 65,
-      "yb": 61
+      "y": 48,
+      "yb": 47
      },
      "240.5": {
-      "n": 48,
-      "nb": 44,
+      "n": 59,
+      "nb": 57,
       "ticker": "nba-cle-mil-2026-10-31-total-240pt5",
-      "y": 56,
-      "yb": 52
+      "y": 43,
+      "yb": 41
      },
      "242.5": {
-      "n": 57,
-      "nb": 53,
-      "ticker": "nba-cle-mil-2026-10-31-total-242pt5",
-      "y": 47,
-      "yb": 43
-     },
-     "244.5": {
       "n": 65,
-      "nb": 60,
-      "ticker": "nba-cle-mil-2026-10-31-total-244pt5",
-      "y": 40,
+      "nb": 63,
+      "ticker": "nba-cle-mil-2026-10-31-total-242pt5",
+      "y": 37,
       "yb": 35
      },
+     "244.5": {
+      "n": 71,
+      "nb": 68,
+      "ticker": "nba-cle-mil-2026-10-31-total-244pt5",
+      "y": 32,
+      "yb": 29
+     },
      "246.5": {
-      "n": 73,
-      "nb": 69,
+      "n": 76,
+      "nb": 74,
       "ticker": "nba-cle-mil-2026-10-31-total-246pt5",
-      "y": 31,
-      "yb": 27
+      "y": 26,
+      "yb": 24
      },
      "248.5": {
-      "n": 79,
-      "nb": 75,
+      "n": 80,
+      "nb": 77,
       "ticker": "nba-cle-mil-2026-10-31-total-248pt5",
-      "y": 25,
-      "yb": 21
+      "y": 23,
+      "yb": 20
      },
      "250.5": {
       "n": 84,
-      "nb": 80,
+      "nb": 81,
       "ticker": "nba-cle-mil-2026-10-31-total-250pt5",
-      "y": 20,
+      "y": 19,
       "yb": 16
      },
      "252.5": {
-      "n": 89,
-      "nb": 86,
+      "n": 88,
+      "nb": 84,
       "ticker": "nba-cle-mil-2026-10-31-total-252pt5",
-      "y": 14,
-      "yb": 11
+      "y": 16,
+      "yb": 12
      },
      "254.5": {
-      "n": 93,
-      "nb": 89,
+      "n": 92,
+      "nb": 88,
       "ticker": "nba-cle-mil-2026-10-31-total-254pt5",
-      "y": 11,
-      "yb": 7
+      "y": 12,
+      "yb": 8
      },
      "256.5": {
-      "n": 96,
-      "nb": 92,
+      "n": 93,
+      "nb": 90,
       "ticker": "nba-cle-mil-2026-10-31-total-256pt5",
-      "y": 8,
-      "yb": 4
+      "y": 10,
+      "yb": 7
      },
      "258.5": {
-      "n": 98,
-      "nb": 96,
+      "n": 95,
+      "nb": 92,
       "ticker": "nba-cle-mil-2026-10-31-total-258pt5",
-      "y": 4,
-      "yb": 2
+      "y": 8,
+      "yb": 5
      },
      "260.5": {
-      "n": 99,
-      "nb": 96,
+      "n": 97,
+      "nb": 94,
       "ticker": "nba-cle-mil-2026-10-31-total-260pt5",
-      "y": 4,
-      "yb": 1
+      "y": 6,
+      "yb": 3
      },
      "262.5": {
-      "n": 99,
-      "nb": 97,
+      "n": 98,
+      "nb": 94,
       "ticker": "nba-cle-mil-2026-10-31-total-262pt5",
-      "y": 3,
-      "yb": 1
+      "y": 6,
+      "yb": 2
      },
      "264.5": {
-      "n": 99,
-      "nb": 98,
+      "n": 98,
+      "nb": 96,
       "ticker": "nba-cle-mil-2026-10-31-total-264pt5",
-      "y": 2,
-      "yb": 1
+      "y": 4,
+      "yb": 2
      }
     }
    },
@@ -35522,8 +35729,7 @@
     "4": true
    },
    "slots": {
-    "half": "elsewhere",
-    "q3": "elsewhere"
+    "half": "elsewhere"
    },
    "snap60": "2026-10-31T23:00:22+00:00",
    "sport": "nba",
@@ -35536,15 +35742,12 @@
     "model_home_margin": -25.42,
     "naive_home_margin": -30.75,
     "pregame_home_spread": 9.5
-   },
-   "third": {
-    "away": 109,
-    "home": 76
    }
   },
   "401909901": {
-   "center_src": "sharp",
+   "center_src": "kalshi",
    "clear": {},
+   "clear_q3": {},
    "date": "2026-10-31",
    "first_seen": "2026-10-31T15:20:51+00:00",
    "h2": {
@@ -35582,9 +35785,10 @@
     "home": 60
    },
    "half_at": "2026-11-01T01:09:51+00:00",
+   "half_at_q3": "2026-11-01T01:56:33+00:00",
    "kalshi_total_event": "KXNBATOTAL-26OCT31MINSAS",
-   "last_eval": "2026-11-01T01:24:05+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_eval": "2026-11-01T01:59:41+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-10-31T23:24:47+00:00",
     "legs": [
@@ -35600,6 +35804,11 @@
      }
     ],
     "line": 230.0
+   },
+   "moved_at_q3": "2026-11-01T01:59:41+00:00",
+   "moved_q3": {
+    "away": 88,
+    "home": 96
    },
    "name": "Minnesota Timberwolves at San Antonio Spurs",
    "pace": {
@@ -35630,220 +35839,206 @@
     "poss": 51.72
    },
    "pace_asked": true,
-   "phase": "approaching3",
+   "phase": "live",
    "poly": {
-    "at": "2026-11-01T01:24:04+00:00",
+    "at": "2026-11-01T01:58:38+00:00",
     "event": "nba-min-sas-2026-10-31",
     "quotes": {
-     "200.5": {
-      "n": 1,
-      "nb": 1,
-      "ticker": "nba-min-sas-2026-10-31-total-200pt5",
-      "y": 99,
-      "yb": 99
-     },
      "202.5": {
-      "n": 1,
+      "n": 2,
       "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-202pt5",
       "y": 99,
-      "yb": 99
+      "yb": 98
      },
      "204.5": {
-      "n": 2,
+      "n": 3,
       "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-204pt5",
       "y": 99,
-      "yb": 98
+      "yb": 97
      },
      "206.5": {
-      "n": 2,
+      "n": 3,
       "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-206pt5",
       "y": 99,
-      "yb": 98
+      "yb": 97
      },
      "208.5": {
-      "n": 2,
+      "n": 3,
       "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-208pt5",
       "y": 99,
-      "yb": 98
+      "yb": 97
      },
      "210.5": {
-      "n": 2,
+      "n": 35,
       "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-210pt5",
       "y": 99,
-      "yb": 98
+      "yb": 65
      },
      "212.5": {
       "n": 3,
-      "nb": 2,
+      "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-212pt5",
-      "y": 98,
+      "y": 99,
       "yb": 97
      },
      "214.5": {
-      "n": 4,
-      "nb": 2,
+      "n": 3,
+      "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-214pt5",
-      "y": 98,
-      "yb": 96
-     },
-     "216.5": {
-      "n": 6,
-      "nb": 4,
-      "ticker": "nba-min-sas-2026-10-31-total-216pt5",
-      "y": 96,
-      "yb": 94
+      "y": 99,
+      "yb": 97
      },
      "218.5": {
-      "n": 8,
-      "nb": 5,
+      "n": 4,
+      "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-218pt5",
-      "y": 95,
-      "yb": 92
+      "y": 99,
+      "yb": 96
      },
      "220.5": {
-      "n": 10,
-      "nb": 7,
+      "n": 5,
+      "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-220pt5",
-      "y": 93,
-      "yb": 90
+      "y": 99,
+      "yb": 95
      },
      "222.5": {
-      "n": 13,
-      "nb": 11,
+      "n": 6,
+      "nb": 2,
       "ticker": "nba-min-sas-2026-10-31-total-222pt5",
-      "y": 89,
-      "yb": 87
+      "y": 98,
+      "yb": 94
      },
      "224.5": {
-      "n": 15,
-      "nb": 13,
+      "n": 8,
+      "nb": 3,
       "ticker": "nba-min-sas-2026-10-31-total-224pt5",
-      "y": 87,
-      "yb": 85
+      "y": 97,
+      "yb": 92
      },
      "226.5": {
-      "n": 19,
-      "nb": 16,
+      "n": 27,
+      "nb": 2,
       "ticker": "nba-min-sas-2026-10-31-total-226pt5",
-      "y": 84,
-      "yb": 81
+      "y": 98,
+      "yb": 73
      },
      "227.5": {
-      "n": 21,
-      "nb": 17,
+      "n": 42,
+      "nb": 1,
       "ticker": "nba-min-sas-2026-10-31-total-227pt5",
-      "y": 83,
-      "yb": 79
+      "y": 99,
+      "yb": 58
      },
      "228.5": {
-      "n": 23,
-      "nb": 21,
+      "n": 12,
+      "nb": 9,
       "ticker": "nba-min-sas-2026-10-31-total-228pt5",
-      "y": 79,
-      "yb": 77
+      "y": 91,
+      "yb": 88
      },
      "229.5": {
-      "n": 25,
-      "nb": 21,
+      "n": 16,
+      "nb": 11,
       "ticker": "nba-min-sas-2026-10-31-total-229pt5",
-      "y": 79,
-      "yb": 75
+      "y": 89,
+      "yb": 84
      },
      "230.5": {
-      "n": 28,
-      "nb": 26,
+      "n": 21,
+      "nb": 15,
       "ticker": "nba-min-sas-2026-10-31-total-230pt5",
-      "y": 74,
-      "yb": 72
+      "y": 85,
+      "yb": 79
      },
      "232.5": {
-      "n": 33,
-      "nb": 31,
+      "n": 26,
+      "nb": 22,
       "ticker": "nba-min-sas-2026-10-31-total-232pt5",
-      "y": 69,
-      "yb": 67
+      "y": 78,
+      "yb": 74
      },
      "234.5": {
-      "n": 39,
-      "nb": 38,
+      "n": 31,
+      "nb": 29,
       "ticker": "nba-min-sas-2026-10-31-total-234pt5",
-      "y": 62,
-      "yb": 61
+      "y": 71,
+      "yb": 69
      },
      "236.5": {
-      "n": 43,
-      "nb": 42,
+      "n": 41,
+      "nb": 36,
       "ticker": "nba-min-sas-2026-10-31-total-236pt5",
-      "y": 58,
-      "yb": 57
+      "y": 64,
+      "yb": 59
      },
      "238.5": {
-      "n": 50,
-      "nb": 47,
+      "n": 46,
+      "nb": 36,
       "ticker": "nba-min-sas-2026-10-31-total-238pt5",
-      "y": 53,
-      "yb": 50
+      "y": 64,
+      "yb": 54
      },
      "240.5": {
-      "n": 56,
-      "nb": 54,
+      "n": 58,
+      "nb": 53,
       "ticker": "nba-min-sas-2026-10-31-total-240pt5",
-      "y": 46,
-      "yb": 44
+      "y": 47,
+      "yb": 42
      },
      "242.5": {
-      "n": 63,
-      "nb": 60,
+      "n": 68,
+      "nb": 61,
       "ticker": "nba-min-sas-2026-10-31-total-242pt5",
-      "y": 40,
-      "yb": 37
+      "y": 39,
+      "yb": 32
      },
      "244.5": {
-      "n": 69,
-      "nb": 67,
+      "n": 73,
+      "nb": 64,
       "ticker": "nba-min-sas-2026-10-31-total-244pt5",
-      "y": 33,
-      "yb": 31
+      "y": 36,
+      "yb": 27
      },
      "246.5": {
-      "n": 74,
-      "nb": 72,
+      "n": 91,
+      "nb": 64,
       "ticker": "nba-min-sas-2026-10-31-total-246pt5",
-      "y": 28,
-      "yb": 26
+      "y": 36,
+      "yb": 9
      },
      "248.5": {
-      "n": 79,
-      "nb": 76,
+      "n": 84,
+      "nb": 80,
       "ticker": "nba-min-sas-2026-10-31-total-248pt5",
-      "y": 24,
-      "yb": 21
+      "y": 20,
+      "yb": 16
      },
      "250.5": {
-      "n": 83,
-      "nb": 81,
+      "n": 89,
+      "nb": 84,
       "ticker": "nba-min-sas-2026-10-31-total-250pt5",
-      "y": 19,
-      "yb": 17
+      "y": 16,
+      "yb": 11
      },
      "252.5": {
-      "n": 87,
-      "nb": 85,
+      "n": 92,
+      "nb": 89,
       "ticker": "nba-min-sas-2026-10-31-total-252pt5",
-      "y": 15,
-      "yb": 13
+      "y": 11,
+      "yb": 8
      },
      "254.5": {
-      "n": 90,
-      "nb": 88,
+      "n": 96,
+      "nb": 91,
       "ticker": "nba-min-sas-2026-10-31-total-254pt5",
-      "y": 12,
-      "yb": 10
+      "y": 9,
+      "yb": 4
      }
     }
    },
@@ -35895,10 +36090,12 @@
    "seen": {
     "1": true,
     "2": true,
-    "3": true
+    "3": true,
+    "4": true
    },
    "slots": {
-    "half": "elsewhere"
+    "half": "elsewhere",
+    "q3": "elsewhere"
    },
    "snap60": "2026-10-31T23:00:22+00:00",
    "sport": "nba",
@@ -35911,51 +36108,17 @@
     "model_home_margin": 6.42,
     "naive_home_margin": 5.25,
     "pregame_home_spread": -12.5
+   },
+   "third": {
+    "away": 88,
+    "home": 93
    }
   },
   "401909902": {
-   "center_src": "sharp",
-   "clear": {},
    "date": "2026-10-31",
    "first_seen": "2026-10-31T15:20:51+00:00",
-   "h2": {
-    "at": "2026-11-01T01:42:52+00:00",
-    "at_s": 1793497372.8493073,
-    "books": {
-     "betrivers": [
-      106.5,
-      -130,
-      -115
-     ],
-     "bovada": [
-      107.5,
-      -110,
-      -110
-     ],
-     "draftkings": [
-      107.5,
-      -115,
-      -115
-     ],
-     "fanduel": [
-      107.5,
-      -114,
-      -114
-     ]
-    },
-    "calls": 2,
-    "line": 107.5,
-    "n": 4,
-    "source": "median4"
-   },
-   "half": {
-    "away": 51,
-    "home": 62
-   },
-   "half_at": "2026-11-01T01:38:46+00:00",
    "kalshi_total_event": "KXNBATOTAL-26OCT31OKCHOU",
-   "last_eval": "2026-11-01T01:53:07+00:00",
-   "last_seen": "2026-11-01T01:54:09+00:00",
+   "last_seen": "2026-11-01T02:07:53+00:00",
    "mkt": {
     "at": "2026-11-01T00:38:43+00:00",
     "legs": [
@@ -35973,258 +36136,7 @@
     "line": 220.5
    },
    "name": "Oklahoma City Thunder at Houston Rockets",
-   "pace": {
-    "at": "2026-11-01T01:38:46+00:00",
-    "away": {
-     "fga": 46,
-     "fgm": 20,
-     "fouls": 12,
-     "fta": 8,
-     "ftm": 7,
-     "oreb": 6,
-     "poss": 48.52,
-     "tov": 5,
-     "tpa": 16
-    },
-    "half": "51-62",
-    "home": {
-     "fga": 45,
-     "fgm": 20,
-     "fouls": 6,
-     "fta": 16,
-     "ftm": 14,
-     "oreb": 8,
-     "poss": 49.04,
-     "tov": 5,
-     "tpa": 19
-    },
-    "poss": 48.78
-   },
-   "pace_asked": true,
    "phase": "live",
-   "poly": {
-    "at": "2026-11-01T01:53:07+00:00",
-    "event": "nba-okc-hou-2026-10-31",
-    "quotes": {
-     "190.5": {
-      "n": 1,
-      "nb": 1,
-      "ticker": "nba-okc-hou-2026-10-31-total-190pt5",
-      "y": 99,
-      "yb": 99
-     },
-     "192.5": {
-      "n": 2,
-      "nb": 1,
-      "ticker": "nba-okc-hou-2026-10-31-total-192pt5",
-      "y": 99,
-      "yb": 98
-     },
-     "194.5": {
-      "n": 2,
-      "nb": 1,
-      "ticker": "nba-okc-hou-2026-10-31-total-194pt5",
-      "y": 99,
-      "yb": 98
-     },
-     "196.5": {
-      "n": 3,
-      "nb": 1,
-      "ticker": "nba-okc-hou-2026-10-31-total-196pt5",
-      "y": 99,
-      "yb": 97
-     },
-     "198.5": {
-      "n": 5,
-      "nb": 2,
-      "ticker": "nba-okc-hou-2026-10-31-total-198pt5",
-      "y": 98,
-      "yb": 95
-     },
-     "200.5": {
-      "n": 6,
-      "nb": 4,
-      "ticker": "nba-okc-hou-2026-10-31-total-200pt5",
-      "y": 96,
-      "yb": 94
-     },
-     "202.5": {
-      "n": 8,
-      "nb": 6,
-      "ticker": "nba-okc-hou-2026-10-31-total-202pt5",
-      "y": 94,
-      "yb": 92
-     },
-     "204.5": {
-      "n": 11,
-      "nb": 8,
-      "ticker": "nba-okc-hou-2026-10-31-total-204pt5",
-      "y": 92,
-      "yb": 89
-     },
-     "206.5": {
-      "n": 13,
-      "nb": 11,
-      "ticker": "nba-okc-hou-2026-10-31-total-206pt5",
-      "y": 89,
-      "yb": 87
-     },
-     "208.5": {
-      "n": 17,
-      "nb": 15,
-      "ticker": "nba-okc-hou-2026-10-31-total-208pt5",
-      "y": 85,
-      "yb": 83
-     },
-     "210.5": {
-      "n": 23,
-      "nb": 19,
-      "ticker": "nba-okc-hou-2026-10-31-total-210pt5",
-      "y": 81,
-      "yb": 77
-     },
-     "212.5": {
-      "n": 27,
-      "nb": 25,
-      "ticker": "nba-okc-hou-2026-10-31-total-212pt5",
-      "y": 75,
-      "yb": 73
-     },
-     "214.5": {
-      "n": 33,
-      "nb": 31,
-      "ticker": "nba-okc-hou-2026-10-31-total-214pt5",
-      "y": 69,
-      "yb": 67
-     },
-     "216.5": {
-      "n": 38,
-      "nb": 35,
-      "ticker": "nba-okc-hou-2026-10-31-total-216pt5",
-      "y": 65,
-      "yb": 62
-     },
-     "217.5": {
-      "n": 42,
-      "nb": 39,
-      "ticker": "nba-okc-hou-2026-10-31-total-217pt5",
-      "y": 61,
-      "yb": 58
-     },
-     "218.5": {
-      "n": 44,
-      "nb": 43,
-      "ticker": "nba-okc-hou-2026-10-31-total-218pt5",
-      "y": 57,
-      "yb": 56
-     },
-     "219.5": {
-      "n": 48,
-      "nb": 46,
-      "ticker": "nba-okc-hou-2026-10-31-total-219pt5",
-      "y": 54,
-      "yb": 52
-     },
-     "220.5": {
-      "n": 50,
-      "nb": 49,
-      "ticker": "nba-okc-hou-2026-10-31-total-220pt5",
-      "y": 51,
-      "yb": 50
-     },
-     "222.5": {
-      "n": 57,
-      "nb": 54,
-      "ticker": "nba-okc-hou-2026-10-31-total-222pt5",
-      "y": 46,
-      "yb": 43
-     },
-     "224.5": {
-      "n": 64,
-      "nb": 61,
-      "ticker": "nba-okc-hou-2026-10-31-total-224pt5",
-      "y": 39,
-      "yb": 36
-     },
-     "226.5": {
-      "n": 69,
-      "nb": 67,
-      "ticker": "nba-okc-hou-2026-10-31-total-226pt5",
-      "y": 33,
-      "yb": 31
-     },
-     "228.5": {
-      "n": 75,
-      "nb": 73,
-      "ticker": "nba-okc-hou-2026-10-31-total-228pt5",
-      "y": 27,
-      "yb": 25
-     },
-     "230.5": {
-      "n": 80,
-      "nb": 77,
-      "ticker": "nba-okc-hou-2026-10-31-total-230pt5",
-      "y": 23,
-      "yb": 20
-     },
-     "232.5": {
-      "n": 84,
-      "nb": 81,
-      "ticker": "nba-okc-hou-2026-10-31-total-232pt5",
-      "y": 19,
-      "yb": 16
-     },
-     "234.5": {
-      "n": 87,
-      "nb": 84,
-      "ticker": "nba-okc-hou-2026-10-31-total-234pt5",
-      "y": 16,
-      "yb": 13
-     },
-     "236.5": {
-      "n": 90,
-      "nb": 88,
-      "ticker": "nba-okc-hou-2026-10-31-total-236pt5",
-      "y": 12,
-      "yb": 10
-     },
-     "238.5": {
-      "n": 93,
-      "nb": 91,
-      "ticker": "nba-okc-hou-2026-10-31-total-238pt5",
-      "y": 9,
-      "yb": 7
-     },
-     "240.5": {
-      "n": 95,
-      "nb": 93,
-      "ticker": "nba-okc-hou-2026-10-31-total-240pt5",
-      "y": 7,
-      "yb": 5
-     },
-     "242.5": {
-      "n": 98,
-      "nb": 94,
-      "ticker": "nba-okc-hou-2026-10-31-total-242pt5",
-      "y": 6,
-      "yb": 2
-     },
-     "244.5": {
-      "n": 97,
-      "nb": 95,
-      "ticker": "nba-okc-hou-2026-10-31-total-244pt5",
-      "y": 5,
-      "yb": 3
-     },
-     "246.5": {
-      "n": 99,
-      "nb": 97,
-      "ticker": "nba-okc-hou-2026-10-31-total-246pt5",
-      "y": 3,
-      "yb": 1
-     }
-    }
-   },
    "pre": {
     "at": "2026-11-01T00:38:42+00:00",
     "books": {
@@ -36275,21 +36187,8 @@
     "2": true,
     "3": true
    },
-   "slots": {
-    "half": "elsewhere"
-   },
    "snap0": "2026-11-01T00:38:43+00:00",
-   "sport": "nba",
-   "spread_asked": true,
-   "spread_half": {
-    "at": "2026-11-01T01:38:46+00:00",
-    "event_ticker": "KXNBASPREAD-26OCT31OKCHOU",
-    "half_home_margin": 11,
-    "mkt_home_spread": -9.0,
-    "model_home_margin": 9.07,
-    "naive_home_margin": 12.25,
-    "pregame_home_spread": -2.5
-   }
+   "sport": "nba"
   }
  },
  "odds_api": {
@@ -36311,8 +36210,8 @@
    "day": "2026-10-29",
    "games": 29
   },
-  "remaining": 99928,
-  "usage_at": "2026-11-01T01:42:52+00:00",
-  "used": 72
+  "remaining": 99925,
+  "usage_at": "2026-11-01T01:58:38+00:00",
+  "used": 75
  }
 }
