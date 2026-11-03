@@ -28,14 +28,14 @@ export function ago(iso, now = Date.now()) {
 export const feePer = (p) => 0.07 * p * (1 - p);
 export const orderFee = (n, p) => Math.ceil(n * feePer(p) * 100 - 1e-9) / 100;
 
-// Middle breakeven from the project rules: pair cost under 0.97 plus 3.5c per winning number (NFL), 2.4c (CFB), 2.9c (NBA)
-export const perNumber = (sport) => (sport === 'nfl' ? 0.035 : sport === 'nba' ? 0.029 : 0.024);
+// Middle breakeven from the project rules: pair cost under 0.97 plus 3.5c per winning number (NFL), 2.4c (CFB), 2.9c (NBA), 3.4c (college basketball)
+export const perNumber = (sport) => (sport === 'nfl' ? 0.035 : sport === 'nba' ? 0.029 : sport === 'cbb' ? 0.034 : 0.024);
 
 export function phaseLabel(g) {
   switch (g.phase) {
     case 'half': return 'HALF';
     case 'early3': return 'Q3';
-    case 'approaching': return 'Q2 late';
+    case 'approaching': return g.sport === 'cbb' ? '1H late' : 'Q2 late';
     case 'approaching3': return 'Q3 late';
     case 'q3end': return 'END 3RD';
     case 'early4': return 'Q4';
@@ -72,7 +72,7 @@ export function kalshiUrl(eventTicker) {
 }
 
 // How long a break lasts from the watcher's first look at it, by sport: the halftime window the push prices.
-export const BREAK_MIN = { nfl: 13, cfb: 20, nba: 15 };
+export const BREAK_MIN = { nfl: 13, cfb: 20, nba: 15, cbb: 15 };
 
 export function money(x) {
   const v = Number(x || 0);
@@ -161,7 +161,7 @@ export function tickerInfo(ticker, position) {
   const m = /^(KX[A-Z]+)-(\d\d)([A-Z]{3})(\d\d)([A-Z0-9]+)-(.+)$/.exec(ticker || '');
   if (!m) return { what: ticker || '', game: '', sport: '', date: '' };
   const [, series, yy, mon, dd, teams, tail] = m;
-  const sport = series.includes('NCAAF') ? 'cfb' : series.includes('NFL') ? 'nfl' : series.includes('NBA') ? 'nba' : '';
+  const sport = series.includes('NCAAF') ? 'cfb' : series.includes('NCAAMB') ? 'cbb' : series.includes('NFL') ? 'nfl' : series.includes('NBA') ? 'nba' : '';
   const date = MONTHS[mon] ? `20${yy}-${String(MONTHS[mon]).padStart(2, '0')}-${dd}` : '';
   const yes = Number(position) >= 0;
   if (series.endsWith('TOTAL') && /^\d+$/.test(tail)) {
@@ -345,7 +345,11 @@ export function gradeSheet(sh, T) {
     const o = options[0];
     play = { what: `${o.kind === 'over' ? 'Over' : 'Under'} ${Number(o.line)} at ${o.price_c}c, ${o.contracts} shares`, win: o.win, pnl: o.pnl, cost: o.cost, label: o.win ? 'WIN' : 'LOSS' };
   } else if (lead === 'rev' && rev) play = { what: `Reverse middle U${Number(rev.a_line)} at ${rev.a_price}c + O${Number(rev.b_line)} at ${rev.b_price}c, ${rev.pairs} pairs`, win: !rev.hole, pnl: rev.pnl, cost: rev.cost, label: rev.hole ? 'HOLE' : 'WIN' };
-  return { lead, play, options, mid, rev, rest, T };
+  // a shadow play (a sport in its shadow week; the watcher pushed it silently and nothing was bought) is graded
+  // like any play and flagged, so the screens keep its money out of the live totals
+  const shadow = Boolean(sh.shadow);
+  if (play && shadow) play = { ...play, shadow: true };
+  return { lead, play, options, mid, rev, rest, T, shadow };
 }
 
 // The plays a push named, for an alert sent before sheets were kept: the first three cleared singles (one per

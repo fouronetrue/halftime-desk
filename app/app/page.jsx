@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { etDate, etDay, etTime, ago, phaseLabel, isHalfish, scoreMoved, spreadText, kalshiUrl, BREAK_MIN } from '@/lib/desk';
 import { middleOpen, freeOpen } from '@/components/HeldTotals';
 
-const SPORTS = [['all', 'All'], ['nfl', 'NFL'], ['cfb', 'College'], ['nba', 'NBA']];
+const SPORTS = [['all', 'All'], ['nfl', 'NFL'], ['cfb', 'CFB'], ['nba', 'NBA'], ['cbb', 'CBB']];
 
 function Heartbeat({ beat }) {
   const age = beat?.last_beat ? (Date.now() - new Date(beat.last_beat).getTime()) / 1000 : null;

@@ -8,7 +8,7 @@ import { etTime, gradeSheet, money } from '@/lib/desk';
 // the sizes the push suggested (the first single is the play, the rest are backups; a middle is graded on its
 // own). "You" is what your Kalshi positions on that game's total market actually settled for, after fees.
 const GATE = 250;
-const SPORTS = [['all', 'All'], ['nfl', 'NFL'], ['cfb', 'College'], ['nba', 'NBA']];
+const SPORTS = [['all', 'All'], ['nfl', 'NFL'], ['cfb', 'CFB'], ['nba', 'NBA'], ['cbb', 'CBB']];
 
 const num = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
 const signed = (v) => `${v >= 0 ? '+' : '-'}$${Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 2)}`;
@@ -80,10 +80,14 @@ export default function Record() {
   const shown = only === 'plays' ? inSport.filter(({ g }) => g.played) : inSport;
 
   // the scorecard, over the sport filter
-  const plays = inSport.filter(({ g }) => g.play);
+  const plays = inSport.filter(({ g }) => g.play && !g.play.shadow);
   const wins = plays.filter(({ g }) => g.play.win).length;
   const cost = plays.reduce((s, { g }) => s + Number(g.play.cost || 0), 0);
   const pnl = plays.reduce((s, { g }) => s + Number(g.play.pnl || 0), 0);
+  // shadow plays: pushed silently in a sport's shadow week, graded, never bought
+  const shadows = inSport.filter(({ g }) => g.play && g.play.shadow);
+  const shadowWins = shadows.filter(({ g }) => g.play.win).length;
+  const shadowPnl = shadows.reduce((s, { g }) => s + Number(g.play.pnl || 0), 0);
   const mids = inSport.filter(({ g }) => g.mid);
   const midHits = mids.filter(({ g }) => g.mid.hit).length;
   const midPnl = mids.reduce((s, { g }) => s + (g.mid.pnl || 0), 0);
@@ -151,6 +155,7 @@ export default function Record() {
         <>
           <div className="board rec">
             <div><span>Plays</span><b>{wins}-{plays.length - wins}</b><small className={pnl >= 0 ? 'pos' : 'neg'}>{signed(pnl)} on {money(cost)}{cost ? `, ${((100 * pnl) / cost).toFixed(1)}%` : ''}</small></div>
+            {shadows.length > 0 && <div><span>Shadow plays</span><b>{shadowWins}-{shadows.length - shadowWins}</b><small className={shadowPnl >= 0 ? 'pos' : 'neg'}>{signed(shadowPnl)} graded, never bought</small></div>}
             <div><span>Middles called</span><b>{midHits} of {mids.length}</b><small className={midPnl >= 0 ? 'pos' : 'neg'}>{mids.length ? signed(midPnl) : 'none yet'}</small></div>
             <div><span>Model closer</span><b>{both.length ? `${closer} of ${both.length}` : 'n/a'}</b><small>than Kalshi, at the final</small></div>
           </div>
@@ -208,8 +213,8 @@ export default function Record() {
           const head = date !== lastDate;
           lastDate = date;
           const day = head ? inSport.filter((x) => x.r.date_et === date) : [];
-          const dayPnl = day.reduce((s, x) => s + (x.g.play ? x.g.play.pnl : 0), 0);
-          const dayPlays = day.filter((x) => x.g.played).length;
+          const dayPnl = day.reduce((s, x) => s + (x.g.play && !x.g.play.shadow ? x.g.play.pnl : 0), 0);
+          const dayPlays = day.filter((x) => x.g.played && !x.g.play.shadow).length;
           const play = g.lead === 'single' ? g.singles[0] : null;
           const yours = you[r.game_id];
           return (
@@ -222,11 +227,11 @@ export default function Record() {
               )}
               <div className={`rec ${g.played ? 'played' : 'quiet'}`}>
                 <button className="rechead" onClick={() => setOpen(open === r.game_id ? null : r.game_id)} aria-expanded={open === r.game_id}>
-                  <span className="game">{r.game}<small>{r.sport === 'nfl' ? 'NFL' : r.sport === 'nba' ? 'NBA' : 'CFB'}</small></span>
+                  <span className="game">{r.game}<small>{r.sport === 'nfl' ? 'NFL' : r.sport === 'nba' ? 'NBA' : r.sport === 'cbb' ? 'CBB' : 'CFB'}</small></span>
                   <span className="recscore">Half {r.half}. Final {r.final}, {g.T} points.</span>
                   {play ? (
                     <span className={`call ${play.win ? 'win' : 'loss'}`}>
-                      <b>{play.win ? 'WIN' : 'LOSS'}</b> {play.kind === 'over' ? 'Over' : 'Under'} {Number(play.line)} at {play.price_c}c, {play.contracts} shares
+                      <b>{g.shadow ? 'SHADOW ' : ''}{play.win ? 'WIN' : 'LOSS'}</b> {play.kind === 'over' ? 'Over' : 'Under'} {Number(play.line)} at {play.price_c}c, {play.contracts} shares
                       <em className={play.pnl >= 0 ? 'pos' : 'neg'}>{signed(play.pnl)}</em>
                     </span>
                   ) : g.mid || g.rev ? null : (

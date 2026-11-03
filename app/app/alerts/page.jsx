@@ -17,7 +17,7 @@ function Grade({ a, g, final }) {
   if (!g.play) return <span className="grade">Final {final.text}. Nothing to grade.</span>;
   return (
     <span className={`grade call ${g.play.win ? 'win' : 'loss'}`}>
-      <b>{g.play.label}</b> {signed(g.play.pnl)} on {g.play.what}. Final {final.text}.
+      <b>{g.play.shadow ? 'SHADOW ' : ''}{g.play.label}</b> {signed(g.play.pnl)} on {g.play.what}. Final {final.text}.{g.play.shadow ? ' Graded only, nothing was bought.' : ''}
     </span>
   );
 }
@@ -82,7 +82,7 @@ export default function Alerts() {
     const sheet = a.sheet || sheetFromSuggestion(sugs[`${a.game_id}|${a.suggestion_at}`]);
     return { a, final, g: final && sheet ? gradeSheet(sheet, final.T) : null };
   });
-  const plays = graded.filter((x) => x.a.kind === 'play' && x.g?.play);
+  const plays = graded.filter((x) => x.a.kind === 'play' && x.g?.play && !x.g.play.shadow);
   const wins = plays.filter((x) => x.g.play.win).length;
   const pnl = plays.reduce((s, x) => s + x.g.play.pnl, 0);
   return (
