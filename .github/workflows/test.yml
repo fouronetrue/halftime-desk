@@ -19,6 +19,7 @@ jobs:
       - run: python tests/held.py
       - run: python tests/fixes.py
       - run: python tests/nba.py
+      - run: python tests/cbb.py
       - run: python tests/grading.py
       - run: python tests/reverse.py
       - run: python tests/flickers.py

@@ -1,0 +1,421 @@
+{
+ "events": [
+  {
+   "event_ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN",
+   "series_ticker": "KXNCAAMBTOTAL",
+   "title": "Wofford vs Tennessee: Point Total",
+   "markets": [
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-132",
+     "title": "Full Game: Over 131.5 points scored",
+     "yes_sub_title": "Over 131.5 points",
+     "floor_strike": 131.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.8600",
+     "yes_ask_dollars": "0.9800",
+     "no_bid_dollars": "0.0200",
+     "no_ask_dollars": "0.1400"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-137",
+     "title": "Full Game: Over 136.5 points scored",
+     "yes_sub_title": "Over 136.5 points",
+     "floor_strike": 136.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.8300",
+     "yes_ask_dollars": "0.9600",
+     "no_bid_dollars": "0.0400",
+     "no_ask_dollars": "0.1700"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-141",
+     "title": "Full Game: Over 140.5 points scored",
+     "yes_sub_title": "Over 140.5 points",
+     "floor_strike": 140.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.6800",
+     "yes_ask_dollars": "0.7000",
+     "no_bid_dollars": "0.3000",
+     "no_ask_dollars": "0.3200"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-145",
+     "title": "Full Game: Over 144.5 points scored",
+     "yes_sub_title": "Over 144.5 points",
+     "floor_strike": 144.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.7400",
+     "yes_ask_dollars": "0.8100",
+     "no_bid_dollars": "0.1900",
+     "no_ask_dollars": "0.2600"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-148",
+     "title": "Full Game: Over 147.5 points scored",
+     "yes_sub_title": "Over 147.5 points",
+     "floor_strike": 147.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.6600",
+     "yes_ask_dollars": "0.7200",
+     "no_bid_dollars": "0.2800",
+     "no_ask_dollars": "0.3400"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-151",
+     "title": "Full Game: Over 150.5 points scored",
+     "yes_sub_title": "Over 150.5 points",
+     "floor_strike": 150.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.5500",
+     "yes_ask_dollars": "0.6100",
+     "no_bid_dollars": "0.3900",
+     "no_ask_dollars": "0.4500"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-153",
+     "title": "Full Game: Over 152.5 points scored",
+     "yes_sub_title": "Over 152.5 points",
+     "floor_strike": 152.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.4800",
+     "yes_ask_dollars": "0.5300",
+     "no_bid_dollars": "0.4700",
+     "no_ask_dollars": "0.5200"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-155",
+     "title": "Full Game: Over 154.5 points scored",
+     "yes_sub_title": "Over 154.5 points",
+     "floor_strike": 154.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.4200",
+     "yes_ask_dollars": "0.4600",
+     "no_bid_dollars": "0.5400",
+     "no_ask_dollars": "0.5800"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-158",
+     "title": "Full Game: Over 157.5 points scored",
+     "yes_sub_title": "Over 157.5 points",
+     "floor_strike": 157.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.3400",
+     "yes_ask_dollars": "0.3800",
+     "no_bid_dollars": "0.6200",
+     "no_ask_dollars": "0.6600"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-161",
+     "title": "Full Game: Over 160.5 points scored",
+     "yes_sub_title": "Over 160.5 points",
+     "floor_strike": 160.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.2600",
+     "yes_ask_dollars": "0.3000",
+     "no_bid_dollars": "0.7000",
+     "no_ask_dollars": "0.7400"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-165",
+     "title": "Full Game: Over 164.5 points scored",
+     "yes_sub_title": "Over 164.5 points",
+     "floor_strike": 164.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.1800",
+     "yes_ask_dollars": "0.2600",
+     "no_bid_dollars": "0.7400",
+     "no_ask_dollars": "0.8200"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-169",
+     "title": "Full Game: Over 168.5 points scored",
+     "yes_sub_title": "Over 168.5 points",
+     "floor_strike": 168.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.1000",
+     "yes_ask_dollars": "0.2000",
+     "no_bid_dollars": "0.8000",
+     "no_ask_dollars": "0.9000"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-174",
+     "title": "Full Game: Over 173.5 points scored",
+     "yes_sub_title": "Over 173.5 points",
+     "floor_strike": 173.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.0500",
+     "yes_ask_dollars": "0.1500",
+     "no_bid_dollars": "0.8500",
+     "no_ask_dollars": "0.9500"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02WOFTENN-176",
+     "title": "Full Game: Over 175.5 points scored",
+     "yes_sub_title": "Over 175.5 points",
+     "floor_strike": 175.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.0100",
+     "yes_ask_dollars": "0.0800",
+     "no_bid_dollars": "0.9200",
+     "no_ask_dollars": "0.9900"
+    }
+   ]
+  },
+  {
+   "event_ticker": "KXNCAAMBTOTAL-26NOV02MANUK",
+   "series_ticker": "KXNCAAMBTOTAL",
+   "title": "Manhattan vs Kentucky: Point Total",
+   "markets": [
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-137",
+     "title": "Full Game: Over 136.5 points scored",
+     "yes_sub_title": "Over 136.5 points",
+     "floor_strike": 136.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.9000",
+     "yes_ask_dollars": "0.9600",
+     "no_bid_dollars": "0.0400",
+     "no_ask_dollars": "0.1000"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-142",
+     "title": "Full Game: Over 141.5 points scored",
+     "yes_sub_title": "Over 141.5 points",
+     "floor_strike": 141.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.8200",
+     "yes_ask_dollars": "0.9000",
+     "no_bid_dollars": "0.1000",
+     "no_ask_dollars": "0.1800"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-146",
+     "title": "Full Game: Over 145.5 points scored",
+     "yes_sub_title": "Over 145.5 points",
+     "floor_strike": 145.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.7000",
+     "yes_ask_dollars": "0.7800",
+     "no_bid_dollars": "0.2200",
+     "no_ask_dollars": "0.3000"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-149",
+     "title": "Full Game: Over 148.5 points scored",
+     "yes_sub_title": "Over 148.5 points",
+     "floor_strike": 148.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.6000",
+     "yes_ask_dollars": "0.6600",
+     "no_bid_dollars": "0.3400",
+     "no_ask_dollars": "0.4000"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-151",
+     "title": "Full Game: Over 150.5 points scored",
+     "yes_sub_title": "Over 150.5 points",
+     "floor_strike": 150.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.5200",
+     "yes_ask_dollars": "0.5600",
+     "no_bid_dollars": "0.4400",
+     "no_ask_dollars": "0.4800"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-153",
+     "title": "Full Game: Over 152.5 points scored",
+     "yes_sub_title": "Over 152.5 points",
+     "floor_strike": 152.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.4400",
+     "yes_ask_dollars": "0.4800",
+     "no_bid_dollars": "0.5200",
+     "no_ask_dollars": "0.5600"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-155",
+     "title": "Full Game: Over 154.5 points scored",
+     "yes_sub_title": "Over 154.5 points",
+     "floor_strike": 154.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.3600",
+     "yes_ask_dollars": "0.4000",
+     "no_bid_dollars": "0.6000",
+     "no_ask_dollars": "0.6400"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-158",
+     "title": "Full Game: Over 157.5 points scored",
+     "yes_sub_title": "Over 157.5 points",
+     "floor_strike": 157.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.2600",
+     "yes_ask_dollars": "0.3200",
+     "no_bid_dollars": "0.6800",
+     "no_ask_dollars": "0.7400"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-161",
+     "title": "Full Game: Over 160.5 points scored",
+     "yes_sub_title": "Over 160.5 points",
+     "floor_strike": 160.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.1800",
+     "yes_ask_dollars": "0.2400",
+     "no_bid_dollars": "0.7600",
+     "no_ask_dollars": "0.8200"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-165",
+     "title": "Full Game: Over 164.5 points scored",
+     "yes_sub_title": "Over 164.5 points",
+     "floor_strike": 164.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.1000",
+     "yes_ask_dollars": "0.1600",
+     "no_bid_dollars": "0.8400",
+     "no_ask_dollars": "0.9000"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02MANUK-169",
+     "title": "Full Game: Over 168.5 points scored",
+     "yes_sub_title": "Over 168.5 points",
+     "floor_strike": 168.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.0400",
+     "yes_ask_dollars": "0.1000",
+     "no_bid_dollars": "0.9000",
+     "no_ask_dollars": "0.9600"
+    }
+   ]
+  },
+  {
+   "event_ticker": "KXNCAAMBTOTAL-26NOV02DREXUVA",
+   "series_ticker": "KXNCAAMBTOTAL",
+   "title": "Drexel vs Virginia: Point Total",
+   "markets": [
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02DREXUVA-122",
+     "title": "Full Game: Over 121.5 points scored",
+     "yes_sub_title": "Over 121.5 points",
+     "floor_strike": 121.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.8400",
+     "yes_ask_dollars": "0.9200",
+     "no_bid_dollars": "0.0800",
+     "no_ask_dollars": "0.1600"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02DREXUVA-126",
+     "title": "Full Game: Over 125.5 points scored",
+     "yes_sub_title": "Over 125.5 points",
+     "floor_strike": 125.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.7400",
+     "yes_ask_dollars": "0.8200",
+     "no_bid_dollars": "0.1800",
+     "no_ask_dollars": "0.2600"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02DREXUVA-129",
+     "title": "Full Game: Over 128.5 points scored",
+     "yes_sub_title": "Over 128.5 points",
+     "floor_strike": 128.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.6200",
+     "yes_ask_dollars": "0.7000",
+     "no_bid_dollars": "0.3000",
+     "no_ask_dollars": "0.3800"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02DREXUVA-132",
+     "title": "Full Game: Over 131.5 points scored",
+     "yes_sub_title": "Over 131.5 points",
+     "floor_strike": 131.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.4800",
+     "yes_ask_dollars": "0.5400",
+     "no_bid_dollars": "0.4600",
+     "no_ask_dollars": "0.5200"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02DREXUVA-135",
+     "title": "Full Game: Over 134.5 points scored",
+     "yes_sub_title": "Over 134.5 points",
+     "floor_strike": 134.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.3600",
+     "yes_ask_dollars": "0.4200",
+     "no_bid_dollars": "0.5800",
+     "no_ask_dollars": "0.6400"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02DREXUVA-138",
+     "title": "Full Game: Over 137.5 points scored",
+     "yes_sub_title": "Over 137.5 points",
+     "floor_strike": 137.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.2600",
+     "yes_ask_dollars": "0.3200",
+     "no_bid_dollars": "0.6800",
+     "no_ask_dollars": "0.7400"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02DREXUVA-142",
+     "title": "Full Game: Over 141.5 points scored",
+     "yes_sub_title": "Over 141.5 points",
+     "floor_strike": 141.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.1400",
+     "yes_ask_dollars": "0.2200",
+     "no_bid_dollars": "0.7800",
+     "no_ask_dollars": "0.8600"
+    },
+    {
+     "ticker": "KXNCAAMBTOTAL-26NOV02DREXUVA-146",
+     "title": "Full Game: Over 145.5 points scored",
+     "yes_sub_title": "Over 145.5 points",
+     "floor_strike": 145.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.0600",
+     "yes_ask_dollars": "0.1400",
+     "no_bid_dollars": "0.8600",
+     "no_ask_dollars": "0.9400"
+    }
+   ]
+  }
+ ]
+}

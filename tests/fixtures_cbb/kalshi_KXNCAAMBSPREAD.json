@@ -1,0 +1,83 @@
+{
+ "events": [
+  {
+   "event_ticker": "KXNCAAMBSPREAD-26NOV02MANUK",
+   "series_ticker": "KXNCAAMBSPREAD",
+   "title": "Manhattan vs Kentucky: Spread",
+   "markets": [
+    {
+     "ticker": "KXNCAAMBSPREAD-26NOV02MANUK-UK16",
+     "title": "Kentucky wins by over 15.5 points",
+     "yes_sub_title": "Kentucky wins by over 15.5 points",
+     "floor_strike": 15.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.8000",
+     "yes_ask_dollars": "0.8400",
+     "no_bid_dollars": "0.1600",
+     "no_ask_dollars": "0.2000"
+    },
+    {
+     "ticker": "KXNCAAMBSPREAD-26NOV02MANUK-UK21",
+     "title": "Kentucky wins by over 20.5 points",
+     "yes_sub_title": "Kentucky wins by over 20.5 points",
+     "floor_strike": 20.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.6600",
+     "yes_ask_dollars": "0.7000",
+     "no_bid_dollars": "0.3000",
+     "no_ask_dollars": "0.3400"
+    },
+    {
+     "ticker": "KXNCAAMBSPREAD-26NOV02MANUK-UK25",
+     "title": "Kentucky wins by over 24.5 points",
+     "yes_sub_title": "Kentucky wins by over 24.5 points",
+     "floor_strike": 24.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.5000",
+     "yes_ask_dollars": "0.5400",
+     "no_bid_dollars": "0.4600",
+     "no_ask_dollars": "0.5000"
+    },
+    {
+     "ticker": "KXNCAAMBSPREAD-26NOV02MANUK-UK29",
+     "title": "Kentucky wins by over 28.5 points",
+     "yes_sub_title": "Kentucky wins by over 28.5 points",
+     "floor_strike": 28.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.3400",
+     "yes_ask_dollars": "0.3800",
+     "no_bid_dollars": "0.6200",
+     "no_ask_dollars": "0.6600"
+    },
+    {
+     "ticker": "KXNCAAMBSPREAD-26NOV02MANUK-UK33",
+     "title": "Kentucky wins by over 32.5 points",
+     "yes_sub_title": "Kentucky wins by over 32.5 points",
+     "floor_strike": 32.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.2000",
+     "yes_ask_dollars": "0.2400",
+     "no_bid_dollars": "0.7600",
+     "no_ask_dollars": "0.8000"
+    },
+    {
+     "ticker": "KXNCAAMBSPREAD-26NOV02MANUK-MAN1",
+     "title": "Manhattan wins by over 0.5 points",
+     "yes_sub_title": "Manhattan wins by over 0.5 points",
+     "floor_strike": 0.5,
+     "strike_type": "greater",
+     "status": "active",
+     "yes_bid_dollars": "0.0200",
+     "yes_ask_dollars": "0.0500",
+     "no_bid_dollars": "0.9500",
+     "no_ask_dollars": "0.9800"
+    }
+   ]
+  }
+ ]
+}

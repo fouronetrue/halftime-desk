@@ -6,7 +6,7 @@ a lower total plus No on a higher one) clears the edge, it sends a push notifica
 how many shares or pairs, and the resting limits for every strike near fair.
 
 ## What it does each run
-1. Reads ESPN's scoreboards (NFL, FBS, NBA). For games not yet kicked off it stores the pregame spread and total
+1. Reads ESPN's scoreboards (NFL, FBS, NBA, men's college basketball). For games not yet kicked off it stores the pregame spread and total
    (ESPN's odds block, then ESPN's odds endpoint, then Kalshi's 50-50 strikes). That stored line is the only
    line a game is ever priced off. Once a game has kicked off nothing read from a feed is accepted as its
    pregame line (by then the feeds show the live line); a watcher that lost its record of the line takes it
@@ -219,6 +219,41 @@ in a close game and 0.3 percent at 18+), centered on the ladder the same way, an
 grades it on the game's results row in the q3_ columns (`supabase/007_q3.sql`); `log/results.csv` upgrades its
 own header the first time. `python scripts/fit_nba_q3.py` reprints the fit and its calibration.
 
+## College basketball
+Same loop, same ladder, same rules, added Nov 3, 2026 (the season's second day) and run in a shadow week first.
+Kalshi lists men's college totals under `KXNCAAMBTOTAL` (spreads `KXNCAAMBSPREAD`), 20 to 60 games a night, each
+on a 12 to 14 strike ladder spaced 2 to 5 points apart, thinner than the NBA's. ESPN's college scoreboard plays
+two 20-minute halves numbered 1 and 2, so the half is the end of period 1, "approaching" is the last five minutes
+of the first half, and the second half at a full clock before the first basket still counts as the half (the
+score-moved rule stops the pricing at the first basket). There is no second window (no quarter break after the
+half), the early-half floor is 35 minutes after the listed tip (the first half runs about 45), and the
+NBA-only reads (the first-half box, the spread ladder) stay NBA-only.
+
+The `cbb` block is fit on 38,737 games, 2015-16 through 2023-24 (the 30-second shot clock seasons), from
+`data/cbb_games.csv`: 63,329 lined games 2007-08 on, halftime scores from ESPN's schedules (2022-23 on) and
+the hoopR play by play (`data/cbb_half_scores.csv`, 2011-12 through 2021-22), closing lines from covers.com
+(zachmayer/point_spreads) and the SBR archive for 2007-11, which also carries the market's second-half line.
+Expected second-half points are 8.0 + 0.428 x the total + 0.115 x the first-half points, minus a little per
+point of halftime margin; sd 1.42 x sqrt(mu), about 12.5 points, calibrated within half a cent from fair-9 to
+fair+9. On the 12,855 games with a 2H line the model and the market are a dead heat (MAE 9.78 vs 9.74, the model
+closer in 48 percent, every blend within 0.03 of each other), so the ladder centers on the market with
+`center_model_pct` 50 (a sharp 2H line from The Odds API, `basketball_ncaab`, the same 50), and unlike the NBA
+it can price on the model alone when Kalshi's ladder gives no center. The spots: the second half runs within
+half a point of the model nearly everywhere, blowouts included; a 20+ point favorite that has not pulled away
+by the half runs 2 under the model (and 1.5 under the market's own 2H line, n 973), and a first half well over
+the pregame pace runs a point over. A number near fair is worth 3.4c a pair in the middle breakeven rule.
+`python scripts/fit_cbb.py data/cbb_games.csv` reprints the study (`--write` refits the block);
+`scripts/build_cbb_half_scores.py` and `scripts/build_cbb_games.py` rebuild the tables. The study is in
+`claude/cbb-halftime.md`. Run `supabase/016_cbb.sql` once so the games table accepts the sport.
+
+The shadow week: `config.json` sets `read_push.cbb` and `play_push.cbb` to `min`, so every college push is
+silent (it shows in the app's Alerts list, the phone does not buzz) and a PLAY goes out marked SHADOW, is graded
+like any play (the results row's detail starts with "shadow", the sheet carries `shadow: true`), never counts
+against the day's cap, and sits in its own line on the scorecard, the readout's play table and the Record and
+Alerts screens, apart from the live record. College priced rows are written to Supabase a minute apart at most
+(`EVAL_WRITE_GAP`), since the thin ladders change on most passes. Dropping the `play_push` entry makes the
+college PLAYs live (high priority, counted); that is the decision after about 100 graded halftimes.
+
 ## Football models
 The `nfl` block (2,290 games, SBR archive) was checked on Oct 22 against 5,496 nflverse games 2006-2026
 (`data/nfl_games.csv`, 7,058 games 2000-2026 with roof, temp and wind, built by `scripts/build_nfl_games.py`):
@@ -363,7 +398,7 @@ sign of a bad read and the NBA model alone is a ruler, not a compass.
 
 ## Files
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
-state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (13,127 games, 2006-2025, halftime scores from play by play), how it is built, and the second-half fit with the blowout study; `data/nfl_games.csv`, `scripts/build_nfl_games.py` and `scripts/fit_nfl.py` the same for the NFL (7,058 games, 2000-2026). `worker.py` the always-on loop. `weather.py` the venue weather read and the bad-weather call. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
+state and alerts. `data/nba_games.csv` and `scripts/fit_nba.py` the NBA history and its fit. `data/cbb_games.csv`, `data/cbb_half_scores.csv`, `scripts/build_cbb_half_scores.py`, `scripts/build_cbb_games.py` and `scripts/fit_cbb.py` the college basketball history (63,329 lined games, 2007-2024), how it is built and its fit. `data/cfb_games.csv`, `scripts/build_cfb_games.py` and `scripts/fit_cfb.py` the FBS history (13,127 games, 2006-2025, halftime scores from play by play), how it is built, and the second-half fit with the blowout study; `data/nfl_games.csv`, `scripts/build_nfl_games.py` and `scripts/fit_nfl.py` the same for the NFL (7,058 games, 2000-2026). `worker.py` the always-on loop. `weather.py` the venue weather read and the bad-weather call. `notify.py` push. `store.py` Supabase writer. `portfolio.py`
 read-only Kalshi sync. `held.py` open-position watch. `trade.py` the order executor (shadow by default). `cli.py` manual desk. `model.json` fitted coefficients and
 residual quantiles. `data/nfl_features.csv.gz` and `data/cfb_features.csv.gz` (`scripts/build_nfl_features.py`,
 `scripts/build_cfb_features.py`) per-game play-by-play features by half (yards, plays, turnovers, missed kicks,
@@ -371,4 +406,4 @@ return TDs, red zone, fourth downs, late and garbage-time points, kickoff time, 
 `scripts/study_tails.py` the tail study that reads them (claude/tail-study-oct24.md). `supabase/` the tables, in order. `scripts/save_run.py` commits a run's state and log rows
 without ever committing a conflict. `scripts/export_desk.py` the nightly Supabase export to `data/desk/`. `tests/` parity check against the ledger artifact, the read-only proof, the
 mirror check, the worker and held-position checks, the Oct 17 fixes (`fixes.py`), the NBA path (`nba.py`, on
-`fixtures_nba/`), reverse middles and held positions at the half (`reverse.py`), the football model blocks and game tables (`football.py`), what moves the worker branch (`release.py`), and an offline run on fixtures.
+`fixtures_nba/`), the college basketball path (`cbb.py`, on `fixtures_cbb/`), reverse middles and held positions at the half (`reverse.py`), the football model blocks and game tables (`football.py`), what moves the worker branch (`release.py`), and an offline run on fixtures.

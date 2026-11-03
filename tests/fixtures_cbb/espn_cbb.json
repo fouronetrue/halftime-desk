@@ -1,0 +1,266 @@
+{
+ "events": [
+  {
+   "id": "601",
+   "name": "Wofford Terriers at Tennessee Volunteers",
+   "shortName": "WOF @ TENN",
+   "date": "2026-11-02T23:00Z",
+   "status": {
+    "period": 2,
+    "displayClock": "0:00",
+    "type": {
+     "state": "in",
+     "name": "STATUS_HALFTIME",
+     "shortDetail": "STATUS_HALFTIME"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "TENN",
+        "displayName": "Tennessee Volunteers",
+        "location": "Tennessee",
+        "shortDisplayName": "Volunteers"
+       },
+       "score": "41",
+       "linescores": [
+        {
+         "value": 41
+        }
+       ]
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "WOF",
+        "displayName": "Wofford Terriers",
+        "location": "Wofford",
+        "shortDisplayName": "Terriers"
+       },
+       "score": "30",
+       "linescores": [
+        {
+         "value": 30
+        }
+       ]
+      }
+     ],
+     "neutralSite": false,
+     "venue": {
+      "fullName": "Food City Center",
+      "address": {
+       "city": "Knoxville",
+       "state": "TN"
+      },
+      "indoor": true
+     },
+     "odds": [
+      {
+       "details": "TENN -17.5",
+       "overUnder": 150.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "602",
+   "name": "Manhattan Jaspers at Kentucky Wildcats",
+   "shortName": "MAN @ UK",
+   "date": "2026-11-03T00:00Z",
+   "status": {
+    "period": 0,
+    "displayClock": "20:00",
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED",
+     "shortDetail": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "UK",
+        "displayName": "Kentucky Wildcats",
+        "location": "Kentucky",
+        "shortDisplayName": "Wildcats"
+       },
+       "score": "0",
+       "linescores": []
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "MAN",
+        "displayName": "Manhattan Jaspers",
+        "location": "Manhattan",
+        "shortDisplayName": "Jaspers"
+       },
+       "score": "0",
+       "linescores": []
+      }
+     ],
+     "neutralSite": false,
+     "venue": {
+      "fullName": "Food City Center",
+      "address": {
+       "city": "Knoxville",
+       "state": "TN"
+      },
+      "indoor": true
+     },
+     "odds": [
+      {
+       "details": "UK -25.5",
+       "overUnder": 151.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "603",
+   "name": "Stetson Hatters at South Carolina Gamecocks",
+   "shortName": "STET @ SCAR",
+   "date": "2026-11-02T23:00Z",
+   "status": {
+    "period": 2,
+    "displayClock": "12:30",
+    "type": {
+     "state": "in",
+     "name": "STATUS_IN_PROGRESS",
+     "shortDetail": "STATUS_IN_PROGRESS"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "SCAR",
+        "displayName": "South Carolina Gamecocks",
+        "location": "South Carolina",
+        "shortDisplayName": "Gamecocks"
+       },
+       "score": "55",
+       "linescores": [
+        {
+         "value": 38
+        },
+        {
+         "value": 17
+        }
+       ]
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "STET",
+        "displayName": "Stetson Hatters",
+        "location": "Stetson",
+        "shortDisplayName": "Hatters"
+       },
+       "score": "40",
+       "linescores": [
+        {
+         "value": 31
+        },
+        {
+         "value": 9
+        }
+       ]
+      }
+     ],
+     "neutralSite": false,
+     "venue": {
+      "fullName": "Food City Center",
+      "address": {
+       "city": "Knoxville",
+       "state": "TN"
+      },
+      "indoor": true
+     },
+     "odds": [
+      {
+       "details": "SCAR -16.5",
+       "overUnder": 146.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "604",
+   "name": "Drexel Dragons at Virginia Cavaliers",
+   "shortName": "DREX @ UVA",
+   "date": "2026-11-02T23:00Z",
+   "status": {
+    "period": 2,
+    "displayClock": "20:00",
+    "type": {
+     "state": "in",
+     "name": "STATUS_IN_PROGRESS",
+     "shortDetail": "STATUS_IN_PROGRESS"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "UVA",
+        "displayName": "Virginia Cavaliers",
+        "location": "Virginia",
+        "shortDisplayName": "Cavaliers"
+       },
+       "score": "33",
+       "linescores": [
+        {
+         "value": 33
+        }
+       ]
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "DREX",
+        "displayName": "Drexel Dragons",
+        "location": "Drexel",
+        "shortDisplayName": "Dragons"
+       },
+       "score": "24",
+       "linescores": [
+        {
+         "value": 24
+        }
+       ]
+      }
+     ],
+     "neutralSite": false,
+     "venue": {
+      "fullName": "Food City Center",
+      "address": {
+       "city": "Knoxville",
+       "state": "TN"
+      },
+      "indoor": true
+     },
+     "odds": [
+      {
+       "details": "UVA -9.5",
+       "overUnder": 131.5
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
