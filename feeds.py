@@ -26,7 +26,7 @@ SERIES = {'nfl': {'total': 'KXNFLTOTAL', 'spread': 'KXNFLSPREAD'}, 'cfb': {'tota
 # these are the ones seen in Kalshi's Nov 2-3, 2026 tickers.
 KALSHI_CODES = {'nba': {'GS': 'GSW', 'NY': 'NYK', 'SA': 'SAS', 'NO': 'NOP', 'UTAH': 'UTA', 'WSH': 'WAS'},
                 'cbb': {'TA&M': 'TXAM', 'MIZ': 'MIZZ', 'CSUF': 'CSF', 'TOW': 'TOWS', 'SPU': 'SPC', 'UL': 'ULL', 'NU': 'NW', 'LUC': 'LCHI',
-                        'OU': 'OKLA', 'LIN': 'LINW', 'KC': 'UMKC', 'UIW': 'IW', 'GCU': 'GC'}}
+                        'OU': 'OKLA', 'LIN': 'LINW', 'KC': 'UMKC', 'UIW': 'IW', 'GCU': 'GC', 'SC': 'SCAR'}}
 # Seconds left in Q3 above which the game still counts as 'early3' (the Q3 push slot): the first minute of football,
 # the first 30 seconds of an NBA quarter (a basket comes in seconds, and the score-moved check then stops pricing).
 EARLY3_SECONDS = {'nfl': 12 * 60, 'cfb': 13 * 60, 'nba': 11 * 60 + 30}
