@@ -21,11 +21,11 @@ import engine, feeds, store, notify
 
 MAX_LOSS = 15.0                                        # dollars a miss may cost on the paired shares
 BREAKEVEN_BASE = 0.97
-PER_NUMBER = {'nfl': 0.035, 'cfb': 0.024, 'nba': 0.029}  # project rule, same numbers as app/lib/desk.js (NBA: 2.9c, a number at fair lands 2.9% of the time)
+PER_NUMBER = {'nfl': 0.035, 'cfb': 0.024, 'nba': 0.029, 'cbb': 0.034}  # project rule, same numbers as app/lib/desk.js (NBA: 2.9c, a number at fair lands 2.9% of the time; college basketball 3.4c, scripts/fit_cbb.py section G)
 BAND = (15, 85)                                        # cents; outside it the book is too thin to trust
 IMPROVE_C = 2.0                                        # cents a pair better before a repeat push
 MIN_ROOM_C = 1.0                                       # a pair must sit at least this far under the breakeven
-SPORT_OF = {'KXNFLTOTAL': 'nfl', 'KXNCAAFTOTAL': 'cfb', 'KXNBATOTAL': 'nba'}
+SPORT_OF = {'KXNFLTOTAL': 'nfl', 'KXNCAAFTOTAL': 'cfb', 'KXNBATOTAL': 'nba', 'KXNCAAMBTOTAL': 'cbb'}
 
 
 def holdings():

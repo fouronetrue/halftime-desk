@@ -167,13 +167,15 @@ def windows(rows):
     out = []
     gap = lambda a, b: abs(num(a) - num(b)) if num(a) is not None and num(b) is not None else None
     for r in rows:
-        out.append(dict(sport=r.get('sport'), game=r.get('game'), date=r['date'], stage='half', cost=num(r.get('plays_cost')) or 0.0,
+        # a shadow play (a sport in its shadow week) is shown as its own sport line and kept out of the totals
+        shadow = str(r.get('plays') or '').startswith('shadow')
+        out.append(dict(sport=(r.get('sport') or '') + (' shadow' if shadow else ''), game=r.get('game'), date=r['date'], stage='half', cost=num(r.get('plays_cost')) or 0.0,
                         pnl=num(r.get('plays_pnl')) or 0.0, rest=num(r.get('rest_mid_pnl')), mid=num(r.get('mid_pnl')), src=r.get('src'),
-                        gap=gap(r.get('fair'), r.get('mkt'))))
+                        gap=gap(r.get('fair'), r.get('mkt')), shadow=shadow))
         if r.get('q3_score') not in (None, ''):
             out.append(dict(sport=r.get('sport'), game=r.get('game'), date=r['date'], stage='q3', cost=num(r.get('q3_plays_cost')) or 0.0,
                             pnl=num(r.get('q3_plays_pnl')) or 0.0, rest=num(r.get('q3_rest_mid_pnl')), mid=num(r.get('q3_mid_pnl')), src=r.get('src'),
-                            gap=gap(r.get('q3_fair'), r.get('q3_mkt'))))
+                            gap=gap(r.get('q3_fair'), r.get('q3_mkt')), shadow=False))
     return out
 
 
@@ -204,10 +206,12 @@ def play_table(wins):
             if w0 != wk:
                 continue
             lines.append(f"| {span} | {sport.upper()} | {t['plays']} | {t['won']} | ${t['cost']:,.0f} | ${t['pnl']:+,.0f} |")
+            if sport.endswith(' shadow'):
+                continue   # never risked, never in the totals
             for k2 in tot:
                 tot[k2] += t[k2]
     lines.append(f"| all | all | {tot['plays']} | {tot['won']} | ${tot['cost']:,.0f} | ${tot['pnl']:+,.0f} |")
-    bad = [w for w in wins if w['cost'] and misread(w)]
+    bad = [w for w in wins if w['cost'] and misread(w) and not w.get('shadow')]
     if bad:
         bp = sum(w['pnl'] for w in bad)
         lines.append(f"| all, without the misreads | all | {tot['plays'] - len(bad)} | {tot['won'] - sum(1 for w in bad if w['pnl'] > 0)} | "

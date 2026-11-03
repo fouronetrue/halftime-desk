@@ -8,12 +8,17 @@
   "sports": [
     "nfl",
     "cfb",
-    "nba"
+    "nba",
+    "cbb"
   ],
   "read_push": {
     "nfl": "default",
     "cfb": "default",
-    "nba": "default"
+    "nba": "default",
+    "cbb": "min"
+  },
+  "play_push": {
+    "cbb": "min"
   },
   "poll_seconds": 60,
   "max_poll_minutes": 22,
@@ -23,12 +28,14 @@
   "day_cost_pct": 20,
   "mid_loss_cap": 15,
   "center_model_pct": {
-    "nba": 25
+    "nba": 25,
+    "cbb": 50
   },
   "sharp_model_pct": {
     "nfl": 50,
     "cfb": 80,
-    "nba": 0
+    "nba": 0,
+    "cbb": 50
   },
   "auto": {
     "mode": "shadow",
@@ -63,5 +70,9 @@
   },
   "require_center": [
     "nba"
-  ]
+  ],
+  "rest_near_pts": {
+    "nba": 6.5,
+    "cbb": 6.0
+  }
 }

@@ -109,7 +109,7 @@ def write(table, rows, on_conflict=None, ignore_duplicates=False):
             if 400 <= r.status_code < 500:
                 if 'games_sport_check' in r.text and 'sport_check' not in _missing:
                     _missing.add('sport_check')
-                    print('supabase games: the sport check does not accept this sport yet (run supabase/004_nba.sql once); until then its games, suggestions, alerts and results rows are not mirrored, the CSVs and pushes are unaffected')
+                    print('supabase games: the sport check does not accept this sport yet (run the newest sport migration in supabase/, 016_cbb.sql, once); until then its games, suggestions, alerts and results rows are not mirrored, the CSVs and pushes are unaffected')
                 break  # a rejected row will not get better on retry
         except Exception as e:  # network hiccup, retry
             err = str(e)

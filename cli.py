@@ -7,7 +7,7 @@ import engine
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ap = argparse.ArgumentParser()
-ap.add_argument('--sport', default='nfl', choices=['nfl', 'cfb', 'nba'])
+ap.add_argument('--sport', default='nfl', choices=['nfl', 'cfb', 'nba', 'cbb'])
 ap.add_argument('--away', default='Away'); ap.add_argument('--home', default='Home')
 ap.add_argument('--spread', type=float, required=True, help='home line at kickoff, minus = home favored')
 ap.add_argument('--total', type=float, required=True)
@@ -31,7 +31,7 @@ for part in [p for p in a.quotes.split(',') if p.strip()]:
     line, side, c = float(mm.group(1)), mm.group(2), int(mm.group(3))
     quotes.setdefault(line, {})[side] = c
 fair = engine.fair_line(m, a.mode)
-step = 2 if a.sport == 'nba' else 1   # Kalshi's NBA ladder runs every 2 points
+step = 2 if a.sport == 'nba' else 3 if a.sport == 'cbb' else 1   # Kalshi's NBA ladder runs every 2 points, its college one every 3 or so
 lines = sorted(set(list(quotes) + [fair + step * k for k in range(-5, 6)]))
 rows = engine.price_lines(m, lines, a.mode, cfg['margin_c'] / 100)
 bank = float(cfg['bankroll'])

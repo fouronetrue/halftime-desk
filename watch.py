@@ -27,13 +27,16 @@ DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct
                 # Sports whose pushes lead with the middle and always carry the resting middles (tight and wide), and
                 # how far from fair a resting strike may sit: Kalshi's NBA ladder runs every 2 points and the second
                 # half has a 13.6-point sd, so 6.5 points of room gives a 4-wide and an 8-wide window to post.
-                middle_focus=['nba'], rest_near_pts={'nba': 6.5},
+                middle_focus=['nba'], rest_near_pts={'nba': 6.5, 'cbb': 6.0},
                 read_push={'nfl': 'default', 'cfb': 'default'}, poll_seconds=75, max_poll_minutes=22, keep_days=10, min_price_c=15, max_price_c=85, day_cost_pct=20,
                 mid_loss_cap=None,
                 # Per sport, the weight the model's own second-half number keeps against the market's center (Kalshi's
                 # implied total at the half minus the first-half points). Football keeps its own center (100). The NBA
                 # model's center never beats the market, so it keeps 25 and the ladder is shaped around the market's number.
-                center_model_pct={'nba': 25},
+                # College basketball keeps 50: on 12,855 halftimes with a 2H line (the SBR archive, 2007-11) the model
+                # and the market are a dead heat (MAE 9.78 vs 9.74, the model closer in 48 percent), and Kalshi's
+                # college ladder is thinner than its NBA one, so neither side gets the whole say (claude/cbb-halftime.md).
+                center_model_pct={'nba': 25, 'cbb': 50},
                 # Per sport, the weight the model keeps when a sharp second-half line is in hand at the half (The Odds
                 # API, Pinnacle else the median of the books, one credit a game). On 944 NFL halftimes the model and
                 # DraftKings' 2H line are a dead heat and agree within a point in 99 percent of games, so 50 halves the
@@ -41,9 +44,11 @@ DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct
                 # 472 to 401, best blend 0.9), so it keeps 80. On 3,579 NBA halftimes the book's line beats the model at
                 # every weight (closer 2,028 to 1,551, best blend 0.0), so the NBA keeps 0: the line is the center, the
                 # model the shape. Without a sharp line the NBA falls back to Kalshi's center at center_model_pct.
-                sharp_model_pct={'nfl': 50, 'cfb': 80, 'nba': 0})
-CENTER_2H_RANGE = {'nba': (70, 160), 'nfl': (6, 60), 'cfb': (8, 90)}   # a center outside this (per sport, second-half points) is a bad read and is ignored
+                # College basketball: a dead heat on the archive's 2H lines (above), so 50 like the NFL.
+                sharp_model_pct={'nfl': 50, 'cfb': 80, 'nba': 0, 'cbb': 50})
+CENTER_2H_RANGE = {'nba': (70, 160), 'nfl': (6, 60), 'cfb': (8, 90), 'cbb': (45, 115)}   # a center outside this (per sport, second-half points) is a bad read and is ignored
 CENTER_Q4_RANGE = {'nba': (30, 95)}    # the same for the points left at the end of the third (a 4th quarter plus the overtime chance)
+EVAL_WRITE_GAP = {'cbb': 60}           # seconds between priced rows written to Supabase for a sport, whatever the quotes do (see db_eval)
 
 
 def snap_row(ts, g, ev, strike, q, phase):
@@ -236,7 +241,7 @@ class Desk:
                 ph = feeds.phase(g)
                 # a break ESPN reports before it could have happened (the end of the first as the half, the start
                 # of the third as its end) is not a break: the label and the pacing stay with the quarter
-                if ph == 'half' and (feeds.break_too_early(g, rec, 'half') or not feeds.period_played(g, 2, rec)):
+                if ph == 'half' and (feeds.break_too_early(g, rec, 'half') or not feeds.period_played(g, feeds.half_period(sport), rec)):
                     ph = 'approaching'
                 elif ph == 'q3end' and (feeds.break_too_early(g, rec, 'q3') or not feeds.period_played(g, 3, rec)):
                     ph = 'approaching3'
@@ -372,6 +377,11 @@ class Desk:
         last = self._db_evals.get(g['id'])
         now = time.time()
         if last and last[0] == key and now - last[1] < 30:
+            return
+        # College basketball runs 20 to 60 halftimes a night on thin ladders whose quotes change on most passes, so
+        # its priced rows are written a minute apart at most (a row carries up to 100 KB of JSON); the other
+        # sports keep every change.
+        if last and now - last[1] < EVAL_WRITE_GAP.get(g['sport'], 0):
             return
         self._db_evals[g['id']] = (key, now)
         best_mid = sug['mids'][0] if sug['mids'] else None
@@ -872,25 +882,34 @@ class Desk:
         title = f"{head} ({when}, {g['sport'].upper()})"
         rp = self.cfg['read_push']
         read_pri = (rp.get(g['sport']) if isinstance(rp, dict) else ('default' if g['sport'] in rp else 'off')) or 'off'
+        # A sport in its shadow week (config play_push <sport>: min) sends its PLAYs silently: the push and its
+        # sheet are recorded and graded like any play, the phone does not buzz, and the cost does not count
+        # against the day's cap (nothing was bought).
+        play_pri = ((self.cfg.get('play_push') or {}).get(g['sport']) if isinstance(self.cfg.get('play_push'), dict) else None) or 'high'
+        shadow_play = play_pri == 'min'
         sheet.update(slot=slot, kind='play' if plays else 'update', title=title)
+        if plays and shadow_play:
+            sheet['shadow'] = True
         if plays:
             if remaining < 20:
                 text += f"\nDaily cap reached (${spent:.0f} suggested today): sizes above are scaled down."
+            if shadow_play:
+                text = 'SHADOW (not live yet, graded only)\n' + text
             body = text + f"\n\n{ev.get('event_ticker')}"
-            if not self.claim_alert(ts, g, slot, 'play', 'high', title, body, ev, sheet):
+            if not self.claim_alert(ts, g, slot, 'play', play_pri, title, body, ev, sheet):
                 slots[slot] = 'elsewhere'
                 rec['last_eval'] = now_iso()
                 return
-            sent = send_push(title, body, priority='high', tags='moneybag', url=feeds.kalshi_url(ev.get('event_ticker')))
+            sent = send_push(title, body, priority=play_pri, tags='moneybag', url=feeds.kalshi_url(ev.get('event_ticker')))
             slots[slot] = 'play'
             self.pushed.append(title)
-            self.db_alert(ts, g, slot, 'play', 'high', title, body, ev, sent, sheet)
+            self.db_alert(ts, g, slot, 'play', play_pri, title, body, ev, sent, sheet)
             # The game's record is the first PLAY push (the half, or Q3 when the half was a read). The alerts
             # table holds the same for both watchers; these are the fallback when it cannot be reached.
             rec.setdefault(K('play_sheet'), sheet)
             rec.setdefault(K('sheet'), sheet)
             top = ([x for x in sug['mids'] if x['ok']][:1] or [x for x in sug['singles'] if x['ok']][:1] or [x for x in sug.get('revs') or [] if x['ok']][:1])
-            if top and not rec.get(K('counted_day')):
+            if top and not rec.get(K('counted_day')) and not shadow_play:
                 day[g['date_et']] = round(spent + top[0]['cost'], 2)
                 rec[K('counted_day')] = True
         elif read_pri != 'off' or held_act:
@@ -1216,8 +1235,13 @@ def grade_sheet(sh, T):
         pnl, cost, win = rev_pnl, round(rv['cost'], 2), not rev_hole
     else:
         pnl, cost, win = 0.0, 0.0, None
+    # a shadow play (a sport in its shadow week, config play_push <sport>: min) is graded like any play and marked
+    # in the detail, so the scorecard and the readout keep its money apart from the live plays'
+    shadow = bool(sh.get('shadow'))
+    if shadow and detail:
+        detail[0] = 'shadow ' + detail[0]
     return dict(lead=lead, pnl=round(pnl, 2), cost=cost, win=win, options=options, mid_pnl=mid_pnl, mid_hit=mid_hit,
-                rev_pnl=rev_pnl, rev_hole=rev_hole, shot_pnl=shot_pnl, shot_win=shot_win,
+                rev_pnl=rev_pnl, rev_hole=rev_hole, shot_pnl=shot_pnl, shot_win=shot_win, shadow=shadow,
                 rest_pnl=rest_pnl, rest_hit=rest_hit, n_plays=len(singles) + (1 if m else 0) + (1 if rv else 0), detail='; '.join(detail),
                 rest_text=f"over {rm['a_line']:g}@{rm['a_price']} / under {rm['b_line']:g}@{rm['b_price']} x{rm['pairs']}" if rm else '')
 
@@ -1349,10 +1373,12 @@ def scorecard(path=RESULTS_PATH, rows=None):
     if not rows:
         return 'scorecard: nothing settled yet'
     f = lambda r, k: float(r[k]) if r.get(k) not in (None, '') else None
-    played = [r for r in rows if f(r, 'plays_cost')]
+    is_shadow = lambda r: str(r.get('plays') or '').startswith('shadow')
+    played = [r for r in rows if f(r, 'plays_cost') and not is_shadow(r)]
+    shadow = [r for r in rows if f(r, 'plays_cost') and is_shadow(r)]
     cost = sum(f(r, 'plays_cost') or 0 for r in played)
     pnl = sum(f(r, 'plays_pnl') or 0 for r in played)
-    mids = [r for r in rows if f(r, 'mid_pnl') is not None]
+    mids = [r for r in rows if f(r, 'mid_pnl') is not None and not is_shadow(r)]
     mid_pnl = sum(f(r, 'mid_pnl') for r in mids)
     both = [r for r in rows if f(r, 'model_err') is not None and f(r, 'mkt_err') is not None]
     closer = sum(1 for r in both if f(r, 'model_err') < f(r, 'mkt_err'))
@@ -1361,6 +1387,9 @@ def scorecard(path=RESULTS_PATH, rows=None):
     rest_pnl = sum(f(r, 'rest_mid_pnl') for r in rest)
     out = [f"scorecard: {len(rows)} halftimes graded, {len(played)} with a play: ${pnl:+.0f} on ${cost:.0f} risked ({100 * pnl / cost:+.1f}%)" if cost else
            f"scorecard: {len(rows)} halftimes graded, none with a play"]
+    if shadow:
+        sc, sp = sum(f(r, 'plays_cost') or 0 for r in shadow), sum(f(r, 'plays_pnl') or 0 for r in shadow)
+        out.append(f"shadow plays (not live, graded only): {len(shadow)}, ${sp:+.0f} on ${sc:.0f} that was never risked" + (f" ({100 * sp / sc:+.1f}%)" if sc else ''))
     if mids:
         out.append(f"middles called: {len(mids)}, ${mid_pnl:+.0f}")
     if both:

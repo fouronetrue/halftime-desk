@@ -42,6 +42,7 @@ class HalfModel:
         predictable than the block says; same study). Both default to no change."""
         m = MODEL.get(sport) or MODEL['nfl']
         self.sport = sport
+        self.total = total
         self.shift, self.width = float(shift or 0.0), float(width or 1.0)
         home_fav_by = -(home_spread or 0)
         self.fav_by = abs(home_fav_by)
@@ -101,6 +102,18 @@ class HalfModel:
     def spot(self):
         """Plain-language label for the game state, from the halftime study."""
         fm, fb = self.favm, self.fav_by
+        if self.sport == 'cbb':
+            # 38,737 games (scripts/fit_cbb.py, section E): the second half runs within half a point of the model in
+            # nearly every spot, blowouts included. The two cells a point or two off it: a 20+ point favorite that has
+            # not pulled away by the half (second half 2 under the model and 1.5 under the market's own 2H line,
+            # n 973), and a first half well over the pregame pace (about a point over the model).
+            if fb >= 20 and fm < 10:
+                return 'mismatch, favorite not away: second half runs 2 under the model'
+            if self.h1 - (self.total or 0) / 2 >= 6:
+                return 'fast first half: second half runs a point over the model'
+            if abs(fm) >= 20:
+                return 'blowout: pace holds, no lean'
+            return 'no strong lean: second half runs at the model'
         if self.sport == 'nba':
             # 24,437 games: the NBA second half runs at the pregame pace whatever the half looks like. No spot
             # leans over or under against the market's 2H line (every cell 47 to 53 percent), blowouts included

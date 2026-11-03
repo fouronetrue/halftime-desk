@@ -13,16 +13,28 @@ ESPN = {
     'nfl': 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
     'cfb': 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&limit=300',
     'nba': 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+    # men's college basketball: groups=50 is Division I, and a Saturday in January has 150-odd games
+    'cbb': 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?groups=50&limit=400',
 }
-ESPN_LEAGUE = {'nfl': 'football/leagues/nfl', 'cfb': 'football/leagues/college-football', 'nba': 'basketball/leagues/nba'}
+ESPN_LEAGUE = {'nfl': 'football/leagues/nfl', 'cfb': 'football/leagues/college-football', 'nba': 'basketball/leagues/nba',
+               'cbb': 'basketball/leagues/mens-college-basketball'}
 KALSHI = 'https://api.elections.kalshi.com/trade-api/v2'
 SERIES = {'nfl': {'total': 'KXNFLTOTAL', 'spread': 'KXNFLSPREAD'}, 'cfb': {'total': 'KXNCAAFTOTAL', 'spread': 'KXNCAAFSPREAD'},
-          'nba': {'total': 'KXNBATOTAL', 'spread': 'KXNBASPREAD'}}
+          'nba': {'total': 'KXNBATOTAL', 'spread': 'KXNBASPREAD'}, 'cbb': {'total': 'KXNCAAMBTOTAL', 'spread': 'KXNCAAMBSPREAD'}}
 # Kalshi's team codes where they differ from ESPN's abbreviation (ticker KXNBATOTAL-26OCT20PHINYK is PHI at NYK; ESPN says NY).
-KALSHI_CODES = {'nba': {'GS': 'GSW', 'NY': 'NYK', 'SA': 'SAS', 'NO': 'NOP', 'UTAH': 'UTA', 'WSH': 'WAS'}}
+# College codes are a bonus in match_event (the title's school names carry the match on their own, as in football);
+# these are the ones seen in Kalshi's Nov 2-3, 2026 tickers.
+KALSHI_CODES = {'nba': {'GS': 'GSW', 'NY': 'NYK', 'SA': 'SAS', 'NO': 'NOP', 'UTAH': 'UTA', 'WSH': 'WAS'},
+                'cbb': {'TA&M': 'TXAM', 'MIZ': 'MIZZ', 'CSUF': 'CSF', 'TOW': 'TOWS', 'SPU': 'SPC', 'UL': 'ULL', 'NU': 'NW', 'LUC': 'LCHI',
+                        'OU': 'OKLA', 'LIN': 'LINW', 'KC': 'UMKC', 'UIW': 'IW', 'GCU': 'GC'}}
 # Seconds left in Q3 above which the game still counts as 'early3' (the Q3 push slot): the first minute of football,
 # the first 30 seconds of an NBA quarter (a basket comes in seconds, and the score-moved check then stops pricing).
 EARLY3_SECONDS = {'nfl': 12 * 60, 'cfb': 13 * 60, 'nba': 11 * 60 + 30}
+# The period whose end is the half: the second quarter everywhere but college basketball, which plays two
+# 20-minute halves (ESPN numbers them 1 and 2), so its half is the end of period 1 and the second half is period 2.
+HALF_PERIOD = {'cbb': 1}
+# Sports with no second window: a basket comes in seconds, and the game has no quarter break after the half.
+ONE_WINDOW = {'cbb'}
 MONTHS = {m: i for i, m in enumerate(['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'], 1)}
 
 
@@ -95,14 +107,22 @@ def espn_games(sport, date_yyyymmdd=None):
     return parse_espn(get_json(url, params), sport)
 
 
-PERIOD_SECONDS = {'nba': 720}        # a quarter's clock; football 900
+PERIOD_SECONDS = {'nba': 720, 'cbb': 1200}        # a quarter's clock; football 900; a college basketball half 1200
 # A break can't come before this much wall clock has passed: the half after the listed start, the end of the
 # third after the half was read (a quarter plus the halftime break). ESPN marks a quarter break with the NEXT
 # period's number and a 0:00 clock, so "period 2, 0:00" can be the end of the first and "period 3, 0:00" the
 # start of the third (Oct 24: Heat-Hornets priced 31-31 as the half, Warriors-Suns 54-57 as the end of the third).
+# A college basketball first half runs about 45 minutes of wall clock and tips a few minutes after the listed
+# start, so its floor is 35.
 MIN_HALF_MINUTES = 50
+MIN_HALF_MINUTES_BY_SPORT = {'cbb': 35}
 MIN_Q3END_MINUTES = 30
 MIN_Q3END_FROM_START = 95
+
+
+def half_period(sport):
+    """The period whose end is the half (2, or 1 in college basketball)."""
+    return HALF_PERIOD.get(sport, 2)
 
 
 def period_played(g, n, rec=None):
@@ -141,7 +161,7 @@ def break_too_early(g, rec, stage, now=None):
     """A reason string when a break is being reported before it could have happened, else None."""
     if stage == 'half':
         m = _minutes_since(g.get('start_utc'), now)
-        if m is not None and m < MIN_HALF_MINUTES:
+        if m is not None and m < MIN_HALF_MINUTES_BY_SPORT.get(g.get('sport'), MIN_HALF_MINUTES):
             return f'half reported {m:.0f} min after the listed start'
         return None
     half_at = (rec or {}).get('half_at')
@@ -158,14 +178,15 @@ def break_too_early(g, rec, stage, now=None):
 
 def half_score(g, rec=None):
     """(away_pts, home_pts) at the half, or None if not known yet. The live score counts as the half only with
-    evidence the second period was played (period_played); after the third starts the first two linescores
-    are the half."""
-    if g['status'] == 'STATUS_HALFTIME' or (g['period'] == 2 and g['clock_s'] == 0 and g['state'] == 'in'):
-        if period_played(g, 2, rec):
+    evidence the half's last period was played (period_played: the second quarter, or college basketball's
+    first half); once the next period has started the linescores through the half are the half."""
+    hp = half_period(g.get('sport'))
+    if g['status'] == 'STATUS_HALFTIME' or (g['period'] == hp and g['clock_s'] == 0 and g['state'] == 'in'):
+        if period_played(g, hp, rec):
             return g['away']['score'], g['home']['score']
         return None
-    if g['period'] >= 3 and len(g['home']['linescores']) >= 2 and len(g['away']['linescores']) >= 2:
-        return sum(g['away']['linescores'][:2]), sum(g['home']['linescores'][:2])
+    if g['period'] >= hp + 1 and len(g['home']['linescores']) >= hp and len(g['away']['linescores']) >= hp:
+        return sum(g['away']['linescores'][:hp]), sum(g['home']['linescores'][:hp])
     return None
 
 
@@ -192,6 +213,17 @@ def phase(g):
         return 'post'
     if g['status'] == 'STATUS_HALFTIME':
         return 'half'
+    if g['sport'] in ONE_WINDOW:
+        # College basketball: the half is the end of period 1. Approaching under 5:00 of the first half; the half
+        # when ESPN shows it, or the second half at a full clock before the first basket (the score is still the
+        # halftime score, and the moved-score check stops the pricing once it is not); live from there to the end.
+        # The end of the game (period 2 under 5:00) is not a break.
+        hp = half_period(g['sport'])
+        if g['period'] == hp and g['clock_s'] is not None and g['clock_s'] <= 300:
+            return 'approaching'
+        if g['period'] == hp + 1 and g['clock_s'] == PERIOD_SECONDS.get(g['sport'], 900) and g['status'] == 'STATUS_IN_PROGRESS':
+            return 'half'
+        return 'live'
     if g['period'] == 2 and g['clock_s'] is not None and g['clock_s'] <= 300:
         return 'approaching'
     if g['sport'] == 'nba':
@@ -254,7 +286,7 @@ def espn_odds_endpoint(sport, game_id):
 
 # ---------- The Odds API (pregame closing lines; needs ODDS_API_KEY) ----------
 ODDS_API = 'https://api.the-odds-api.com/v4/sports/{key}/odds'
-ODDS_SPORT = {'nfl': 'americanfootball_nfl', 'cfb': 'americanfootball_ncaaf', 'nba': 'basketball_nba'}
+ODDS_SPORT = {'nfl': 'americanfootball_nfl', 'cfb': 'americanfootball_ncaaf', 'nba': 'basketball_nba', 'cbb': 'basketball_ncaab'}
 # Up to ten bookmakers count as one region, so this list with two markets costs 2 credits a call (500 free a month).
 # Pinnacle first (the sharp line, from its public site), then the US books for a median when Pinnacle is quiet.
 ODDS_BOOKS = ['pinnacle', 'draftkings', 'fanduel', 'betmgm', 'betonlineag', 'lowvig', 'bovada', 'betrivers']

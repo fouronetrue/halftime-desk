@@ -55,8 +55,9 @@ DEFAULTS = dict(mode='shadow', sports=['nba'], rest_mode='pair', rest_until='q4'
                 pair_miss_pct=0.5, pair_miss_max=None, night_loss_pct=5.0, night_loss_max=None, rest_capital_pct=40.0,
                 singles=False, max_orders_per_game=12, max_orders_per_night=200)
 # Minutes from the first look at a break to the end of that break, and to the start of the fourth quarter.
-BREAK_MIN = {'half': {'nfl': 14, 'cfb': 21, 'nba': 16}, 'q3': {'nba': 4}}
-Q4_MIN = {'half': {'nfl': 60, 'cfb': 70, 'nba': 50}, 'q3': {'nba': 10}}   # q3: until about the first timeout of the 4th
+BREAK_MIN = {'half': {'nfl': 14, 'cfb': 21, 'nba': 16, 'cbb': 16}, 'q3': {'nba': 4}}
+# q3: until about the first timeout of the 4th; college basketball has no 4th, so its rest runs to about the under-12 timeout
+Q4_MIN = {'half': {'nfl': 60, 'cfb': 70, 'nba': 50, 'cbb': 40}, 'q3': {'nba': 10}}
 
 
 def now_iso():
