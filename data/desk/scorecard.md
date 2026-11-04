@@ -1,6 +1,6 @@
 # Halftime Desk scorecard
 
-Written by the nightly export on 2026-11-03 (UTC) from the Supabase results table (315 games, graded by the worker and the GitHub backup) plus the 0 games only log/results.csv has (graded before the mirror existed). One row a game window; 408 windows on 315 games. The repo scorecard (python watch.py --scorecard) sees only what reached the CSV; this one sees everything.
+Written by the nightly export on 2026-11-04 (UTC) from the Supabase results table (336 games, graded by the worker and the GitHub backup) plus the 0 games only log/results.csv has (graded before the mirror existed). One row a game window; 429 windows on 336 games. The repo scorecard (python watch.py --scorecard) sees only what reached the CSV; this one sees everything.
 
 ## Lead play per game window
 
@@ -27,14 +27,16 @@ Miss is the distance from the final total. Finals vs a line is the final minus t
 
 | sport | games | model closer | ties | miss: model | miss: market | finals vs the market at the break | finals vs the pregame total |
 |---|---|---|---|---|---|---|---|
-| CFB | 167 | 65 | 34 | 8.5 | 8.4 | +1.0 on 167 (+1.2 SE), over 47% | +0.6 on 167 (+0.5 SE), over 48% |
+| CBB | 19 | 3 | 6 | 6.7 | 6.6 | -3.3 on 19 (-2.0 SE), over 32% | -5.3 on 19 (-1.7 SE), over 32% |
+| CFB | 169 | 65 | 35 | 8.6 | 8.5 | +1.1 on 169 (+1.3 SE), over 48% | +0.7 on 169 (+0.5 SE), over 48% |
 | NBA | 107 | 48 | 21 | 12.0 | 11.7 | -1.6 on 107 (-1.2 SE), over 39% | -3.4 on 107 (-1.9 SE), over 44% |
 | NFL | 41 | 15 | 5 | 7.8 | 7.9 | +0.2 on 41 (+0.1 SE), over 49% | -0.1 on 41 (-0.1 SE), over 56% |
 
 ## Drift (this season against the model)
 
+- CBB: finals vs the model -3.9 on 19 games (-2.3 SE)
 - CFB: finals vs the fair line +0.4 on 58 games (+0.2 SE)
-- CFB: finals vs the model +0.9 on 109 games (+0.8 SE)
+- CFB: finals vs the model +1.1 on 111 games (+1.1 SE)
 - NBA: finals vs the fair line -0.5 on 3 games (-0.0 SE)
 - NBA: finals vs the model -1.1 on 104 games (-0.7 SE)
 - NFL: finals vs the fair line +3.6 on 13 games (+1.4 SE)
@@ -44,7 +46,8 @@ Miss is the distance from the final total. Finals vs a line is the final minus t
 
 | sport | window | games | hits | P&L |
 |---|---|---|---|---|
-| CFB | half | 107 | 17 | $+872 |
+| CBB | half | 19 | 7 | $+141 |
+| CFB | half | 109 | 17 | $+869 |
 | NBA | half | 103 | 10 | $+875 |
 | NBA | end of 3rd | 89 | 13 | $+295 |
 | NFL | half | 28 | 5 | $+201 |
