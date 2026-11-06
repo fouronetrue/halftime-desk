@@ -148,3 +148,20 @@ cfg_file = watch.load_json(watch.CONFIG_PATH, {})
 assert 'cbb' in cfg_file['sports'] and cfg_file['read_push'].get('cbb') == 'min' and cfg_file['play_push'].get('cbb') == 'min'
 assert 'cbb' in cfg_file['sharp_model_pct'] and cfg_file['rest_near_pts'].get('cbb') == 6.0
 print('cbb: ok')
+
+# 5. the matcher needs both schools (Nov 4, 2026: Saint Mary-of-the-Woods at Southern Indiana was priced off the
+# North Dakota St. vs Saint Mary's ladder on one exact side)
+smwc = dict(sport='cbb', date_et='2026-11-04', away=dict(abbr='SMWC', name="Saint Mary-of-the-Woods Pomeroys", loc='Saint Mary-of-the-Woods', short="St Mary's"),
+            home=dict(abbr='USI', name='Southern Indiana Screaming Eagles', loc='Southern Indiana', short='S Indiana'))
+ndsu = dict(sport='cbb', date_et='2026-11-04', away=dict(abbr='NDSU', name='North Dakota State Bison', loc='North Dakota State', short='N Dakota St'),
+            home=dict(abbr='SMC', name="Saint Mary's Gaels", loc="Saint Mary's", short="Saint Mary's"))
+evs = [dict(event_ticker='KXNCAAMBTOTAL-26NOV04NDSUSMC', title="North Dakota St. vs Saint Mary's: Point Total")]
+assert feeds.match_event(smwc, evs) is None, 'one exact school name is not a match'
+assert feeds.match_event(ndsu, evs)['event_ticker'] == 'KXNCAAMBTOTAL-26NOV04NDSUSMC'
+txst = dict(sport='cfb', date_et='2026-11-07', away=dict(abbr='TXST', name='Texas State Bobcats', loc='Texas State', short='Texas State'),
+            home=dict(abbr='OU', name='Oklahoma Sooners', loc='Oklahoma', short='Oklahoma'))
+assert feeds.match_event(txst, [dict(event_ticker='KXNCAAFTOTAL-26NOV07TEXOU', title='Texas vs Oklahoma: Total Points')]) is None, 'a school modifier is not a match'
+utc = dict(sport='cbb', date_et='2026-11-05', away=dict(abbr='UTC', name='Chattanooga Mocs', loc='Chattanooga', short='Chattanooga'),
+           home=dict(abbr='PSU', name='Penn State Nittany Lions', loc='Penn State', short='Penn State'))
+assert feeds.match_event(utc, [dict(event_ticker='KXNCAAMBTOTAL-26NOV05CHATPSU', title='Chattanooga vs Penn St.: Point Total')])['event_ticker'].endswith('CHATPSU')
+print('matcher: both schools or nothing')

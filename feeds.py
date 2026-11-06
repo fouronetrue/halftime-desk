@@ -26,7 +26,8 @@ SERIES = {'nfl': {'total': 'KXNFLTOTAL', 'spread': 'KXNFLSPREAD'}, 'cfb': {'tota
 # these are the ones seen in Kalshi's Nov 2-3, 2026 tickers.
 KALSHI_CODES = {'nba': {'GS': 'GSW', 'NY': 'NYK', 'SA': 'SAS', 'NO': 'NOP', 'UTAH': 'UTA', 'WSH': 'WAS'},
                 'cbb': {'TA&M': 'TXAM', 'MIZ': 'MIZZ', 'CSUF': 'CSF', 'TOW': 'TOWS', 'SPU': 'SPC', 'UL': 'ULL', 'NU': 'NW', 'LUC': 'LCHI',
-                        'OU': 'OKLA', 'LIN': 'LINW', 'KC': 'UMKC', 'UIW': 'IW', 'GCU': 'GC', 'SC': 'SCAR'}}
+                        'OU': 'OKLA', 'LIN': 'LINW', 'KC': 'UMKC', 'UIW': 'IW', 'GCU': 'GC', 'SC': 'SCAR', 'UTC': 'CHAT', 'HPU': 'HP',
+                        'BTLR': 'BUT', 'CLE': 'CLEV', 'NOLA': 'UNO', 'UAPB': 'ARPB', 'IU': 'IND', 'MERC': 'MHU'}}
 # Seconds left in Q3 above which the game still counts as 'early3' (the Q3 push slot): the first minute of football,
 # the first 30 seconds of an NBA quarter (a basket comes in seconds, and the score-moved check then stops pricing).
 EARLY3_SECONDS = {'nfl': 12 * 60, 'cfb': 13 * 60, 'nba': 11 * 60 + 30}
@@ -611,7 +612,11 @@ def sim(a, b):
 
 
 def match_event(game, events):
-    """Pick the Kalshi event for an ESPN game: same date, both teams found in the ticker codes or the title."""
+    """Pick the Kalshi event for an ESPN game: same date, and both teams found, in the ticker codes or in the title.
+    A title match needs BOTH schools to match (each side a real name match, 2.0 or more): one exact name on its
+    own is not a match. Nov 4, 2026: ESPN's Saint Mary-of-the-Woods at Southern Indiana (short name "St Mary's",
+    an NAIA school Kalshi does not list) was priced for a night off Kalshi's North Dakota St. vs Saint Mary's
+    ladder, because the one exact side scored 3.0 and the threshold was 3.0."""
     best, best_s = None, 0.0
     for ev in events:
         d, codes = ticker_date(ev.get('event_ticker'))
@@ -628,9 +633,12 @@ def match_event(game, events):
         if len(parts) == 2:
             names_a = [game['away'][k] for k in ('name', 'loc', 'short')]
             names_h = [game['home'][k] for k in ('name', 'loc', 'short')]
-            s1 = max(sim(parts[0], n) for n in names_a) + max(sim(parts[1], n) for n in names_h)
-            s2 = max(sim(parts[1], n) for n in names_a) + max(sim(parts[0], n) for n in names_h)
-            s += max(s1, s2)
+            title_s = 0.0
+            for first, second in ((parts[0], parts[1]), (parts[1], parts[0])):
+                sa, sh = max(sim(first, n) for n in names_a), max(sim(second, n) for n in names_h)
+                if sa >= 2.0 and sh >= 2.0:
+                    title_s = max(title_s, sa + sh)
+            s += title_s
         if s > best_s:
             best, best_s = ev, s
     return best if best_s >= 3.0 else None
