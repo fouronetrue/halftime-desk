@@ -607,7 +607,7 @@
    "half_at": "2026-11-07T19:25:27+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07ARKAUB",
    "last_eval": "2026-11-07T19:46:04+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:47:09+00:00",
     "legs": [
@@ -697,9 +697,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07OKLAFLA",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 59,
@@ -717,7 +717,7 @@
    "name": "Oklahoma Sooners at Florida Gators",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -4.0,
@@ -756,18 +756,47 @@
      -4.0,
      45.5
     ],
-    "home_spread": -4.5,
+    "home_spread": -4.0,
     "odds_event": "1ef954bd3305a66136e52ea0786f1593",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 45.5
    },
    "sport": "cfb"
   },
   "401856740": {
+   "break_read_at": "2026-11-07T22:13:31+00:00",
+   "center_src": "sharp",
+   "clear": {},
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:17:52+00:00",
+    "at_s": 1794089871.812474,
+    "books": {
+     "bovada": [
+      27.0,
+      -112,
+      -108
+     ],
+     "draftkings": [
+      27.5,
+      -125,
+      -110
+     ]
+    },
+    "calls": 2,
+    "line": 27.5,
+    "n": 2,
+    "source": "median2"
+   },
+   "half": {
+    "away": 10,
+    "home": 3
+   },
+   "half_at": "2026-11-07T22:13:32+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07ALALSU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:34:32+00:00",
+   "last_seen": "2026-11-07T22:34:32+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -785,7 +814,7 @@
     "line": 54.0
    },
    "name": "Alabama Crimson Tide at LSU Tigers",
-   "phase": "approaching",
+   "phase": "half",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -835,17 +864,26 @@
     "1": true,
     "2": true
    },
+   "slots": {
+    "half": "elsewhere"
+   },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:30:54+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": {
+    "label": "home favorite trailing by 1-7",
+    "lean": 1.8,
+    "mode": "shadow",
+    "name": "home_fav_trailing_1_7"
+   }
   },
   "401856741": {
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07UGAMISS",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 53,
@@ -863,7 +901,7 @@
    "name": "Georgia Bulldogs at Ole Miss Rebels",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       3.5,
@@ -900,7 +938,7 @@
     ],
     "home_spread": 3.5,
     "odds_event": "0842fcd69fdf5061f6751f876ead09f2",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 56.5
    },
    "sport": "cfb"
@@ -909,7 +947,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07VANMSST",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:20:30+00:00",
     "legs": [
@@ -927,7 +965,7 @@
     "line": 49.0
    },
    "name": "Vanderbilt Commodores at Mississippi State Bulldogs",
-   "phase": "live",
+   "phase": "approaching",
    "pre": {
     "at": "2026-11-07T21:20:30+00:00",
     "books": {
@@ -1013,7 +1051,7 @@
    "half_at": "2026-11-07T18:43:30+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07TEXMIZZ",
    "last_eval": "2026-11-07T19:05:42+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:25+00:00",
     "legs": [
@@ -1130,8 +1168,8 @@
    },
    "half_at": "2026-11-07T21:24:48+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07TXAMSCAR",
-   "last_eval": "2026-11-07T21:51:42+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:30:10+00:00",
+   "last_seen": "2026-11-07T22:34:32+00:00",
    "mkt": {
     "at": "2026-11-07T20:03:38+00:00",
     "legs": [
@@ -1203,7 +1241,8 @@
    "seen": {
     "1": true,
     "2": true,
-    "3": true
+    "3": true,
+    "4": true
    },
    "sheet": {
     "at": "2026-11-07T21:46:28+00:00",
@@ -1264,9 +1303,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07UKTENN",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 53,
@@ -1284,7 +1323,7 @@
    "name": "Kentucky Wildcats at Tennessee Volunteers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -6.5,
@@ -1325,9 +1364,10 @@
     ],
     "home_spread": -6.0,
     "odds_event": "72cab2217ae57cbb00928eab05eb244e",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 49.5
    },
+   "snap60": "2026-11-07T22:15:43+00:00",
    "sport": "cfb"
   },
   "401856842": {
@@ -2149,7 +2189,7 @@
    "half_at": "2026-11-07T18:43:29+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07BYUUTAH",
    "last_eval": "2026-11-07T19:05:42+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:25+00:00",
     "legs": [
@@ -2232,10 +2272,39 @@
    "sport": "cfb"
   },
   "401856850": {
+   "break_read_at": "2026-11-07T22:21:11+00:00",
+   "center_src": "sharp",
+   "clear": {},
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:25:46+00:00",
+    "at_s": 1794090345.7568405,
+    "books": {
+     "bovada": [
+      23.5,
+      -110,
+      -110
+     ],
+     "draftkings": [
+      23.5,
+      -120,
+      -115
+     ]
+    },
+    "calls": 2,
+    "line": 23.5,
+    "n": 2,
+    "source": "median2"
+   },
+   "half": {
+    "away": 12,
+    "home": 7
+   },
+   "half_at": "2026-11-07T22:21:11+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07UCFKU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:34:34+00:00",
+   "last_seen": "2026-11-07T22:34:33+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -2253,7 +2322,7 @@
     "line": 48.5
    },
    "name": "UCF Knights at Kansas Jayhawks",
-   "phase": "live",
+   "phase": "half",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -2303,15 +2372,53 @@
     "1": true,
     "2": true
    },
+   "slots": {
+    "half": "elsewhere"
+   },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:46:04+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": {
+    "label": "home favorite trailing by 1-7",
+    "lean": 1.8,
+    "mode": "shadow",
+    "name": "home_fav_trailing_1_7"
+   }
   },
   "401856851": {
+   "break_read_at": "2026-11-07T22:23:28+00:00",
+   "center_src": "sharp",
+   "clear": {},
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:27:59+00:00",
+    "at_s": 1794090478.982547,
+    "books": {
+     "bovada": [
+      30.0,
+      -110,
+      -110
+     ],
+     "draftkings": [
+      29.5,
+      -115,
+      -120
+     ]
+    },
+    "calls": 2,
+    "line": 30.0,
+    "n": 2,
+    "source": "median2"
+   },
+   "half": {
+    "away": 10,
+    "home": 21
+   },
+   "half_at": "2026-11-07T22:23:29+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07CINHOU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:34:33+00:00",
+   "last_seen": "2026-11-07T22:34:33+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -2329,7 +2436,7 @@
     "line": 61.0
    },
    "name": "Cincinnati Bearcats at Houston Cougars",
-   "phase": "approaching",
+   "phase": "half",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -2379,35 +2486,39 @@
     "1": true,
     "2": true
    },
+   "slots": {
+    "half": "elsewhere"
+   },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:30:54+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": null
   },
   "401856852": {
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07COLOASU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
-      "c": 58,
+      "c": 57,
       "k": 44.5,
       "side": "over"
      },
      {
-      "c": 52,
+      "c": 53,
       "k": 47.5,
       "side": "under"
      }
     ],
-    "line": 47.0
+    "line": 46.5
    },
    "name": "Colorado Buffaloes at Arizona State Sun Devils",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -3.5,
@@ -2448,8 +2559,8 @@
     ],
     "home_spread": -3.0,
     "odds_event": "4f0efedf5f575715851efea9089f7ea6",
-    "source": "odds:pinnacle",
-    "total": 47.0
+    "source": "espn",
+    "total": 46.5
    },
    "sport": "cfb"
   },
@@ -2485,7 +2596,7 @@
    "half_at": "2026-11-07T18:43:30+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07ISUBAY",
    "last_eval": "2026-11-07T19:05:43+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:25+00:00",
     "legs": [
@@ -2650,7 +2761,7 @@
    "half_at": "2026-11-07T19:59:16+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07OKSTKSU",
    "last_eval": "2026-11-07T20:19:36+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:55:34+00:00",
     "legs": [
@@ -2768,7 +2879,7 @@
    "half_at": "2026-11-07T05:31:12+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV06TCUARIZ",
    "last_eval": "2026-11-07T06:12:32+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T03:31:27+00:00",
     "legs": [
@@ -2862,13 +2973,13 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07WVUTTU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
-      "c": 52,
-      "k": 66.5,
+      "c": 54,
+      "k": 65.5,
       "side": "over"
      },
      {
@@ -2877,12 +2988,12 @@
       "side": "under"
      }
     ],
-    "line": 67.0
+    "line": 66.5
    },
    "name": "West Virginia Mountaineers at Texas Tech Red Raiders",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -16.5,
@@ -2921,9 +3032,9 @@
      -16.5,
      66.5
     ],
-    "home_spread": -16.0,
+    "home_spread": -16.5,
     "odds_event": "6bfae12b9d44d12ca7dde4f4f4aedc7d",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 66.5
    },
    "sport": "cfb"
@@ -3945,7 +4056,7 @@
    "half_at": "2026-11-07T18:43:31+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07CLEMSYR",
    "last_eval": "2026-11-07T18:58:03+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:25+00:00",
     "legs": [
@@ -4063,7 +4174,7 @@
    "half_at": "2026-11-07T19:25:25+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07DUKENCST",
    "last_eval": "2026-11-07T19:48:14+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:40:45+00:00",
     "legs": [
@@ -4148,9 +4259,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07LOUGT",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 56,
@@ -4168,7 +4279,7 @@
    "name": "Louisville Cardinals at Georgia Tech Yellow Jackets",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       14.5,
@@ -4209,8 +4320,8 @@
     ],
     "home_spread": 14.5,
     "odds_event": "dea9a1987ddc6fe5c1fc0cf1a596851c",
-    "source": "odds:pinnacle",
-    "total": 62.0
+    "source": "espn",
+    "total": 62.5
    },
    "sport": "cfb"
   },
@@ -4246,7 +4357,7 @@
    "half_at": "2026-11-07T01:57:24+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV06VTSMU",
    "last_eval": "2026-11-07T02:03:10+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-06T23:32:17+00:00",
     "legs": [
@@ -4364,7 +4475,7 @@
    "half_at": "2026-11-07T18:43:32+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07FSUBC",
    "last_eval": "2026-11-07T19:36:19+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:25+00:00",
     "legs": [
@@ -4456,10 +4567,50 @@
    "sport": "cfb"
   },
   "401858290": {
+   "break_read_at": "2026-11-07T22:27:58+00:00",
+   "center_src": "sharp",
+   "clear": {
+    "single under 73.5": {
+     "first": "2026-11-07T22:29:07+00:00",
+     "last": "2026-11-07T22:29:07+00:00",
+     "n": 1
+    },
+    "single under 76.5": {
+     "first": "2026-11-07T22:27:58+00:00",
+     "last": "2026-11-07T22:27:58+00:00",
+     "n": 1
+    },
+    "single under 79.5": {
+     "first": "2026-11-07T22:27:58+00:00",
+     "last": "2026-11-07T22:27:58+00:00",
+     "n": 1
+    }
+   },
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:32:22+00:00",
+    "at_s": 1794090742.0823967,
+    "books": {
+     "draftkings": [
+      21.5,
+      100,
+      -135
+     ]
+    },
+    "calls": 2,
+    "line": 21.5,
+    "n": 1,
+    "source": "median1"
+   },
+   "half": {
+    "away": 0,
+    "home": 49
+   },
+   "half_at": "2026-11-07T22:27:58+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07MRMKWAKE",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:34:33+00:00",
+   "last_seen": "2026-11-07T22:34:33+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -4478,7 +4629,7 @@
    },
    "name": "Merrimack Warriors at Wake Forest Demon Deacons",
    "odds_asked": 1793596944,
-   "phase": "live",
+   "phase": "half",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -4524,17 +4675,36 @@
     "1": true,
     "2": true
    },
+   "shot": {
+    "band_hi": 90,
+    "fair": 69.5,
+    "mode": "shadow",
+    "mu": 20.88,
+    "picks": [],
+    "sd": 8.66,
+    "spread": 46.5,
+    "width": 0.87
+   },
+   "slots": {
+    "half": "elsewhere"
+   },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:30:54+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": {
+    "label": "first half 10+ over the pace",
+    "lean": 1.1,
+    "mode": "shadow",
+    "name": "hot_first_half"
+   }
   },
   "401858291": {
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07MIAND",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 53,
@@ -4552,7 +4722,7 @@
    "name": "Miami Hurricanes at Notre Dame Fighting Irish",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -7.0,
@@ -4593,8 +4763,8 @@
     ],
     "home_spread": -7.0,
     "odds_event": "4aac00e6cc06b8905659f911419540d2",
-    "source": "odds:pinnacle",
-    "total": 54.0
+    "source": "espn",
+    "total": 54.5
    },
    "sport": "cfb"
   },
@@ -4636,7 +4806,7 @@
    "half_at": "2026-11-07T18:43:33+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07UNCCONN",
    "last_eval": "2026-11-07T19:30:53+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:25+00:00",
     "legs": [
@@ -5862,7 +6032,7 @@
    "half_at": "2026-11-07T02:47:12+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV06NEBILL",
    "last_eval": "2026-11-07T03:10:46+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T01:05:42+00:00",
     "legs": [
@@ -5951,9 +6121,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07MSUMICH",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -5971,7 +6141,7 @@
    "name": "Michigan State Spartans at Michigan Wolverines",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -14.0,
@@ -6012,7 +6182,7 @@
     ],
     "home_spread": -14.0,
     "odds_event": "2c3f80e228a486e04f6f7a38e4f00fb4",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 39.5
    },
    "sport": "cfb"
@@ -6049,7 +6219,7 @@
    "half_at": "2026-11-07T18:47:56+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07UCLAMINN",
    "last_eval": "2026-11-07T19:05:42+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:25+00:00",
     "legs": [
@@ -6138,9 +6308,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07IOWANW",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 60,
@@ -6158,7 +6328,7 @@
    "name": "Iowa Hawkeyes at Northwestern Wildcats",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       3.0,
@@ -6199,16 +6369,45 @@
     ],
     "home_spread": 3.0,
     "odds_event": "61cf0b043d9d95f0a73d0838ff08a24b",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 42.5
    },
    "sport": "cfb"
   },
   "401858514": {
+   "break_read_at": "2026-11-07T22:23:25+00:00",
+   "center_src": "sharp",
+   "clear": {},
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:27:54+00:00",
+    "at_s": 1794090474.3459287,
+    "books": {
+     "bovada": [
+      23.5,
+      -108,
+      -112
+     ],
+     "draftkings": [
+      23.5,
+      -110,
+      -125
+     ]
+    },
+    "calls": 2,
+    "line": 23.5,
+    "n": 2,
+    "source": "median2"
+   },
+   "half": {
+    "away": 17,
+    "home": 14
+   },
+   "half_at": "2026-11-07T22:23:25+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07OREOSU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:34:33+00:00",
+   "last_seen": "2026-11-07T22:34:32+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -6226,7 +6425,7 @@
     "line": 45.0
    },
    "name": "Oregon Ducks at Ohio State Buckeyes",
-   "phase": "approaching",
+   "phase": "half",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -6276,9 +6475,18 @@
     "1": true,
     "2": true
    },
+   "slots": {
+    "half": "elsewhere"
+   },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:30:54+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": {
+    "label": "home favorite trailing by 1-7",
+    "lean": 1.8,
+    "mode": "shadow",
+    "name": "home_fav_trailing_1_7"
+   }
   },
   "401858515": {
    "center_src": "sharp",
@@ -6312,7 +6520,7 @@
    "half_at": "2026-11-07T18:54:41+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07MDPUR",
    "last_eval": "2026-11-07T19:05:43+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:25+00:00",
     "legs": [
@@ -6397,10 +6605,39 @@
    "sport": "cfb"
   },
   "401858516": {
+   "break_read_at": "2026-11-07T22:12:06+00:00",
+   "center_src": "sharp",
+   "clear": {},
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:16:47+00:00",
+    "at_s": 1794089806.787162,
+    "books": {
+     "bovada": [
+      21.5,
+      -110,
+      -110
+     ],
+     "draftkings": [
+      22.5,
+      -125,
+      -110
+     ]
+    },
+    "calls": 2,
+    "line": 22.5,
+    "n": 2,
+    "source": "median2"
+   },
+   "half": {
+    "away": 28,
+    "home": 6
+   },
+   "half_at": "2026-11-07T22:12:06+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07PSUWASH",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:34:33+00:00",
+   "last_seen": "2026-11-07T22:34:33+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -6418,7 +6655,7 @@
     "line": 47.0
    },
    "name": "Penn State Nittany Lions at Washington Huskies",
-   "phase": "approaching",
+   "phase": "early3",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -6466,17 +6703,28 @@
    },
    "seen": {
     "1": true,
-    "2": true
+    "2": true,
+    "3": true
+   },
+   "slots": {
+    "half": "elsewhere",
+    "q3": "elsewhere"
    },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:30:54+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": {
+    "label": "first half 10+ over the pace",
+    "lean": 1.1,
+    "mode": "shadow",
+    "name": "hot_first_half"
+   }
   },
   "401858517": {
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07RUTGWIS",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:16:13+00:00",
     "legs": [
@@ -6494,7 +6742,7 @@
     "line": 45.5
    },
    "name": "Rutgers Scarlet Knights at Wisconsin Badgers",
-   "phase": "live",
+   "phase": "approaching",
    "pre": {
     "at": "2026-11-07T21:16:13+00:00",
     "books": {
@@ -7042,9 +7290,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07BSUCSU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 53,
@@ -7052,17 +7300,17 @@
       "side": "over"
      },
      {
-      "c": 53,
-      "k": 69.5,
+      "c": 55,
+      "k": 70.5,
       "side": "under"
      }
     ],
-    "line": 69.0
+    "line": 69.5
    },
    "name": "Boise State Broncos at Colorado State Rams",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       16.0,
@@ -7101,20 +7349,160 @@
      16.5,
      69.5
     ],
-    "home_spread": 16.0,
+    "home_spread": 15.5,
     "odds_event": "bbb1d38a8f51b761a789459a08fa6ded",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 68.5
    },
+   "pre_ladder": {
+    "at": "2026-11-07T22:34:38+00:00",
+    "event": "KXNCAAFTOTAL-26NOV07BSUCSU",
+    "quotes": {
+     "48.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-49",
+      90,
+      91,
+      9,
+      10
+     ],
+     "51.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-52",
+      85,
+      87,
+      13,
+      15
+     ],
+     "54.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-55",
+      82,
+      83,
+      17,
+      18
+     ],
+     "57.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-58",
+      76,
+      78,
+      22,
+      24
+     ],
+     "60.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-61",
+      70,
+      71,
+      29,
+      30
+     ],
+     "63.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-64",
+      63,
+      64,
+      36,
+      37
+     ],
+     "66.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-67",
+      56,
+      57,
+      43,
+      44
+     ],
+     "67.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-68",
+      53,
+      55,
+      45,
+      47
+     ],
+     "68.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-69",
+      52,
+      53,
+      47,
+      48
+     ],
+     "69.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-70",
+      49,
+      50,
+      50,
+      51
+     ],
+     "70.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-71",
+      45,
+      46,
+      54,
+      55
+     ],
+     "71.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-72",
+      44,
+      45,
+      55,
+      56
+     ],
+     "72.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-73",
+      41,
+      43,
+      57,
+      59
+     ],
+     "75.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-76",
+      35,
+      36,
+      64,
+      65
+     ],
+     "78.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-79",
+      29,
+      30,
+      70,
+      71
+     ],
+     "81.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-82",
+      22,
+      24,
+      76,
+      78
+     ],
+     "84.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-85",
+      17,
+      18,
+      82,
+      83
+     ],
+     "87.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-88",
+      13,
+      14,
+      86,
+      87
+     ],
+     "90.5": [
+      "KXNCAAFTOTAL-26NOV07BSUCSU-91",
+      10,
+      11,
+      89,
+      90
+     ]
+    }
+   },
+   "snap60": "2026-11-07T22:12:20+00:00",
    "sport": "cfb"
   },
   "401860912": {
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07TXSTORST",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 53,
@@ -7122,7 +7510,7 @@
       "side": "over"
      },
      {
-      "c": 57,
+      "c": 58,
       "k": 73.5,
       "side": "under"
      }
@@ -7132,7 +7520,7 @@
    "name": "Texas State Bobcats at Oregon State Beavers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -5.5,
@@ -7173,8 +7561,8 @@
     ],
     "home_spread": -5.5,
     "odds_event": "d4334cec8f2060f3b8491ca9c7325892",
-    "source": "odds:pinnacle",
-    "total": 71.0
+    "source": "espn",
+    "total": 71.5
    },
    "sport": "cfb"
   },
@@ -7182,9 +7570,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07FRESUSU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 52,
@@ -7202,7 +7590,7 @@
    "name": "Fresno State Bulldogs at Utah State Aggies",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -1.0,
@@ -7241,10 +7629,10 @@
      -1.5,
      43.5
     ],
-    "home_spread": -1.0,
+    "home_spread": -1.5,
     "odds_event": "d74a875341a00e77cf86ecfb7569edd3",
-    "source": "odds:pinnacle",
-    "total": 43.0
+    "source": "espn",
+    "total": 43.5
    },
    "sport": "cfb"
   },
@@ -8070,7 +8458,7 @@
    },
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV05UTSAFAU",
    "last_eval": "2026-11-06T03:05:33+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-06T00:35:35+00:00",
     "legs": [
@@ -8181,7 +8569,7 @@
    "half_at": "2026-11-07T02:12:15+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV06USFECU",
    "last_eval": "2026-11-07T02:20:07+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T00:29:08+00:00",
     "legs": [
@@ -8297,8 +8685,8 @@
    },
    "half_at": "2026-11-07T21:49:36+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07CHARUAB",
-   "last_eval": "2026-11-07T21:58:04+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:13:33+00:00",
+   "last_seen": "2026-11-07T22:34:33+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -8316,7 +8704,7 @@
     "line": 47.5
    },
    "name": "Charlotte 49ers at UAB Blazers",
-   "phase": "half",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -8364,20 +8752,58 @@
    },
    "seen": {
     "1": true,
-    "2": true
+    "2": true,
+    "3": true
    },
    "slots": {
-    "half": "elsewhere"
+    "half": "elsewhere",
+    "q3": "elsewhere"
    },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:30:54+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": null
   },
   "401862820": {
+   "break_read_at": "2026-11-07T22:12:11+00:00",
+   "center_src": "sharp",
+   "clear": {
+    "single over 59.5": {
+     "first": "2026-11-07T22:24:38+00:00",
+     "last": "2026-11-07T22:24:38+00:00",
+     "n": 1
+    }
+   },
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:16:47+00:00",
+    "at_s": 1794089807.379469,
+    "books": {
+     "bovada": [
+      25.5,
+      100,
+      -120
+     ],
+     "draftkings": [
+      24.5,
+      -120,
+      -115
+     ]
+    },
+    "calls": 2,
+    "line": 25.5,
+    "n": 2,
+    "source": "median2"
+   },
+   "half": {
+    "away": 7,
+    "home": 28
+   },
+   "half_at": "2026-11-07T22:12:11+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07TEMNAVY",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:24:38+00:00",
+   "last_seen": "2026-11-07T22:34:33+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -8395,7 +8821,7 @@
     "line": 55.5
    },
    "name": "Temple Owls at Navy Midshipmen",
-   "phase": "approaching",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -8443,17 +8869,23 @@
    },
    "seen": {
     "1": true,
-    "2": true
+    "2": true,
+    "3": true
+   },
+   "slots": {
+    "half": "elsewhere",
+    "q3": "elsewhere"
    },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:30:54+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": null
   },
   "401862821": {
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07RICEUNT",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:34+00:00",
    "mkt": {
     "at": "2026-11-07T21:05:10+00:00",
     "legs": [
@@ -8471,7 +8903,7 @@
     "line": 66.0
    },
    "name": "Rice Owls at North Texas Mean Green",
-   "phase": "live",
+   "phase": "approaching",
    "pre": {
     "at": "2026-11-07T21:05:10+00:00",
     "books": {
@@ -8559,7 +8991,7 @@
    "half_at": "2026-11-07T18:43:33+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07TLSATULN",
    "last_eval": "2026-11-07T18:56:57+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:25+00:00",
     "legs": [
@@ -8649,9 +9081,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07AFAARMY",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 61,
@@ -8669,7 +9101,7 @@
    "name": "Air Force Falcons at Army Black Knights",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -4.0,
@@ -8710,7 +9142,7 @@
     ],
     "home_spread": -4.0,
     "odds_event": "241c23f2724f5ca91727a47a91f2facf",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 43.5
    },
    "sport": "cfb"
@@ -9081,9 +9513,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07HAWUTEP",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -9101,7 +9533,7 @@
    "name": "Hawai'i Rainbow Warriors at UTEP Miners",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       7.5,
@@ -9140,10 +9572,10 @@
      7.5,
      48.5
     ],
-    "home_spread": 8.0,
+    "home_spread": 7.5,
     "odds_event": "eca05dc53fc3a8dd74622a4b7657bc3b",
-    "source": "odds:pinnacle",
-    "total": 49.0
+    "source": "espn",
+    "total": 48.5
    },
    "sport": "cfb"
   },
@@ -9174,7 +9606,7 @@
    "half_at": "2026-11-07T03:16:12+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV06UNMNEV",
    "last_eval": "2026-11-07T03:32:32+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T02:03:10+00:00",
     "legs": [
@@ -9268,7 +9700,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07NIUSJSU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:34+00:00",
    "mkt": {
     "at": "2026-11-07T21:05:10+00:00",
     "legs": [
@@ -9286,7 +9718,7 @@
     "line": 53.0
    },
    "name": "Northern Illinois Huskies at San Jos\u00e9 State Spartans",
-   "phase": "live",
+   "phase": "approaching",
    "pre": {
     "at": "2026-11-07T21:05:10+00:00",
     "books": {
@@ -9340,9 +9772,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07WYOUNLV",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -9360,7 +9792,7 @@
    "name": "Wyoming Cowboys at UNLV Rebels",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -3.5,
@@ -9401,8 +9833,8 @@
     ],
     "home_spread": -3.5,
     "odds_event": "6ce85b1067e9e85cd0d8b3242905ecd7",
-    "source": "odds:pinnacle",
-    "total": 49.0
+    "source": "espn",
+    "total": 49.5
    },
    "sport": "cfb"
   },
@@ -9678,7 +10110,7 @@
    "half_at": "2026-11-04T01:44:18+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV03OHIOAKR",
    "last_eval": "2026-11-04T02:01:00+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-03T23:30:18+00:00",
     "legs": [
@@ -9790,7 +10222,7 @@
    "half_at": "2026-11-04T02:41:57+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV03BUFFMOH",
    "last_eval": "2026-11-04T02:52:31+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-04T01:05:30+00:00",
     "legs": [
@@ -9930,7 +10362,7 @@
    "half_at": "2026-11-05T01:54:18+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV04BALLMASS",
    "last_eval": "2026-11-05T01:59:49+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-04T23:34:43+00:00",
     "legs": [
@@ -10008,7 +10440,7 @@
    "half_at": "2026-11-05T01:59:49+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV04CMUEMU",
    "last_eval": "2026-11-05T02:59:26+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-05T00:35:19+00:00",
     "legs": [
@@ -10102,7 +10534,7 @@
    "date": "2026-11-04",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV04TOLSAC",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-04T23:34:43+00:00",
     "legs": [
@@ -10246,7 +10678,7 @@
    "half_at": "2026-11-07T21:05:10+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07GASTAPP",
    "last_eval": "2026-11-07T21:25:53+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:32+00:00",
    "mkt": {
     "at": "2026-11-07T19:31:59+00:00",
     "legs": [
@@ -10316,7 +10748,7 @@
    "half_at": "2026-11-07T21:25:53+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07ULMARST",
    "last_eval": "2026-11-07T21:46:28+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:32+00:00",
    "mkt": {
     "at": "2026-11-07T20:02:33+00:00",
     "legs": [
@@ -10383,7 +10815,8 @@
    "seen": {
     "1": true,
     "2": true,
-    "3": true
+    "3": true,
+    "4": true
    },
    "slots": {
     "half": "elsewhere"
@@ -10536,7 +10969,7 @@
    "half_at": "2026-11-07T19:44:58+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07ODUCCAR",
    "last_eval": "2026-11-07T20:08:59+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T18:08:24+00:00",
     "legs": [
@@ -10623,10 +11056,39 @@
    "sport": "cfb"
   },
   "401869951": {
+   "break_read_at": "2026-11-07T22:12:15+00:00",
+   "center_src": "sharp",
+   "clear": {},
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:16:48+00:00",
+    "at_s": 1794089808.0290942,
+    "books": {
+     "bovada": [
+      24.5,
+      -105,
+      -115
+     ],
+     "draftkings": [
+      24.5,
+      -115,
+      -115
+     ]
+    },
+    "calls": 2,
+    "line": 24.5,
+    "n": 2,
+    "source": "median2"
+   },
+   "half": {
+    "away": 7,
+    "home": 21
+   },
+   "half_at": "2026-11-07T22:12:15+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07MRSHGASO",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:33:29+00:00",
+   "last_seen": "2026-11-07T22:34:33+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -10644,7 +11106,7 @@
     "line": 54.5
    },
    "name": "Marshall Thundering Herd at Georgia Southern Eagles",
-   "phase": "approaching",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -10692,11 +11154,17 @@
    },
    "seen": {
     "1": true,
-    "2": true
+    "2": true,
+    "3": true
+   },
+   "slots": {
+    "half": "elsewhere",
+    "q3": "elsewhere"
    },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:30:54+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": null
   },
   "401869963": {
    "date": "2026-10-29",
@@ -10842,7 +11310,7 @@
    "half_at": "2026-11-06T03:01:16+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV05JMUUSM",
    "last_eval": "2026-11-06T03:18:27+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-06T01:11:03+00:00",
     "legs": [
@@ -10897,7 +11365,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07USAULL",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:58:04+00:00",
     "legs": [
@@ -10915,7 +11383,7 @@
     "line": 57.0
    },
    "name": "South Alabama Jaguars at Louisiana Ragin' Cajuns",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T21:58:04+00:00",
     "books": {
@@ -10961,145 +11429,10 @@
     "source": "odds:pinnacle",
     "total": 57.5
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:04+00:00",
-    "event": "KXNCAAFTOTAL-26NOV07USAULL",
-    "quotes": {
-     "37.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-38",
-      89,
-      90,
-      10,
-      11
-     ],
-     "40.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-41",
-      85,
-      87,
-      13,
-      15
-     ],
-     "43.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-44",
-      79,
-      81,
-      19,
-      21
-     ],
-     "46.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-47",
-      74,
-      75,
-      25,
-      26
-     ],
-     "49.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-50",
-      67,
-      68,
-      32,
-      33
-     ],
-     "52.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-53",
-      59,
-      60,
-      40,
-      41
-     ],
-     "55.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-56",
-      53,
-      54,
-      46,
-      47
-     ],
-     "56.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-57",
-      51,
-      52,
-      48,
-      49
-     ],
-     "57.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-58",
-      48,
-      49,
-      51,
-      52
-     ],
-     "58.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-59",
-      44,
-      45,
-      55,
-      56
-     ],
-     "59.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-60",
-      42,
-      43,
-      57,
-      58
-     ],
-     "60.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-61",
-      41,
-      42,
-      58,
-      59
-     ],
-     "61.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-62",
-      38,
-      39,
-      61,
-      62
-     ],
-     "64.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-65",
-      31,
-      33,
-      67,
-      69
-     ],
-     "67.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-68",
-      25,
-      27,
-      73,
-      75
-     ],
-     "70.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-71",
-      20,
-      22,
-      78,
-      80
-     ],
-     "73.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-74",
-      15,
-      17,
-      83,
-      85
-     ],
-     "76.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-77",
-      11,
-      13,
-      87,
-      89
-     ],
-     "79.5": [
-      "KXNCAAFTOTAL-26NOV07USAULL-80",
-      8,
-      10,
-      90,
-      92
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T21:58:04+00:00",
    "snap60": "2026-11-07T21:04:01+00:00",
    "sport": "cfb"
   },
@@ -11107,9 +11440,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07LIBNMSU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 52,
@@ -11127,7 +11460,7 @@
    "name": "Liberty Flames at New Mexico State Aggies",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       14.5,
@@ -11166,9 +11499,9 @@
      14.5,
      46.5
     ],
-    "home_spread": 15.0,
+    "home_spread": 14.5,
     "odds_event": "2dd995baa931f5b063cb50ddbe821d74",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 46.5
    },
    "sport": "cfb"
@@ -11729,7 +12062,7 @@
    "half_at": "2026-11-07T21:46:28+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07DELKENN",
    "last_eval": "2026-11-07T21:58:04+00:00",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:32+00:00",
    "mkt": {
     "at": "2026-11-07T20:02:33+00:00",
     "legs": [
@@ -11747,7 +12080,7 @@
     "line": 56.5
    },
    "name": "Delaware Blue Hens at Kennesaw State Owls",
-   "phase": "half",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T20:02:33+00:00",
     "books": {
@@ -11795,7 +12128,8 @@
    },
    "seen": {
     "1": true,
-    "2": true
+    "2": true,
+    "3": true
    },
    "slots": {
     "half": "elsewhere"
@@ -11805,10 +12139,34 @@
    "sport": "cfb"
   },
   "401871074": {
+   "break_read_at": "2026-11-07T22:34:37+00:00",
+   "center_src": "sharp",
+   "clear": {},
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:34:37+00:00",
+    "at_s": 1794090877.3293993,
+    "books": {
+     "draftkings": [
+      23.5,
+      -120,
+      -115
+     ]
+    },
+    "calls": 1,
+    "line": 23.5,
+    "n": 1,
+    "source": "median1"
+   },
+   "half": {
+    "away": 3,
+    "home": 3
+   },
+   "half_at": "2026-11-07T22:34:37+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07MOSUFIU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:34:38+00:00",
+   "last_seen": "2026-11-07T22:34:34+00:00",
    "mkt": {
     "at": "2026-11-07T21:04:01+00:00",
     "legs": [
@@ -11826,7 +12184,7 @@
     "line": 49.5
    },
    "name": "Missouri State Bears at Florida International Panthers",
-   "phase": "live",
+   "phase": "half",
    "pre": {
     "at": "2026-11-07T21:04:01+00:00",
     "books": {
@@ -11872,17 +12230,21 @@
     "1": true,
     "2": true
    },
+   "slots": {
+    "half": "elsewhere"
+   },
    "snap0": "2026-11-07T21:04:01+00:00",
    "snap60": "2026-11-07T20:00:24+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": null
   },
   "401871075": {
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07SHSUJVST",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 60,
@@ -11900,7 +12262,7 @@
    "name": "Sam Houston Bearkats at Jacksonville State Gamecocks",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -16.5,
@@ -11941,16 +12303,45 @@
     ],
     "home_spread": -16.5,
     "odds_event": "a3f893b3bac8940a6899ae5869fb211c",
-    "source": "odds:pinnacle",
-    "total": 46.0
+    "source": "espn",
+    "total": 45.5
    },
    "sport": "cfb"
   },
   "401871076": {
+   "break_read_at": "2026-11-07T22:12:19+00:00",
+   "center_src": "sharp",
+   "clear": {},
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
+   "h2": {
+    "at": "2026-11-07T22:16:49+00:00",
+    "at_s": 1794089808.7719944,
+    "books": {
+     "bovada": [
+      27.0,
+      -108,
+      -112
+     ],
+     "draftkings": [
+      27.5,
+      -110,
+      -120
+     ]
+    },
+    "calls": 2,
+    "line": 27.5,
+    "n": 2,
+    "source": "median2"
+   },
+   "half": {
+    "away": 13,
+    "home": 21
+   },
+   "half_at": "2026-11-07T22:12:19+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07WKUMTU",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_eval": "2026-11-07T22:32:24+00:00",
+   "last_seen": "2026-11-07T22:34:33+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -11967,8 +12358,13 @@
     ],
     "line": 53.0
    },
+   "moved": {
+    "away": 13,
+    "home": 27
+   },
+   "moved_at": "2026-11-07T22:28:00+00:00",
    "name": "Western Kentucky Hilltoppers at Middle Tennessee Blue Raiders",
-   "phase": "approaching",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -12016,11 +12412,17 @@
    },
    "seen": {
     "1": true,
-    "2": true
+    "2": true,
+    "3": true
+   },
+   "slots": {
+    "half": "elsewhere",
+    "q3": "elsewhere"
    },
    "snap0": "2026-11-07T20:28:25+00:00",
    "snap60": "2026-11-07T19:30:54+00:00",
-   "sport": "cfb"
+   "sport": "cfb",
+   "spot_lane": null
   },
   "401871095": {
    "center_src": null,
@@ -12332,7 +12734,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-02T05:22:23+00:00",
    "kalshi_total_event": "KXNCAAFTOTAL-26NOV07LTTROY",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:25+00:00",
     "legs": [
@@ -12350,7 +12752,7 @@
     "line": 48.5
    },
    "name": "Louisiana Tech Bulldogs at Troy Trojans",
-   "phase": "live",
+   "phase": "approaching",
    "pre": {
     "at": "2026-11-07T20:28:25+00:00",
     "books": {
@@ -15505,7 +15907,7 @@
    "date": "2026-11-05",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV05JACBAL",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
     "at": "2026-11-06T01:16:32+00:00",
     "legs": [
@@ -15583,9 +15985,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08CINATL",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 55,
@@ -15603,7 +16005,7 @@
    "name": "Cincinnati Bengals at Atlanta Falcons",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       3.0,
@@ -15653,9 +16055,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08CLENO",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 54,
@@ -15673,7 +16075,7 @@
    "name": "Cleveland Browns at New Orleans Saints",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       -3.0,
@@ -15723,9 +16125,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08DALIND",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 55,
@@ -15743,7 +16145,7 @@
    "name": "Dallas Cowboys at Indianapolis Colts",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       5.0,
@@ -15793,9 +16195,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08DENCAR",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 55,
@@ -15813,7 +16215,7 @@
    "name": "Denver Broncos at Carolina Panthers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       2.5,
@@ -15863,9 +16265,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08DETMIA",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 52,
@@ -15883,7 +16285,7 @@
    "name": "Detroit Lions at Miami Dolphins",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       7.0,
@@ -15933,9 +16335,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08LARWAS",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 52,
@@ -15953,7 +16355,7 @@
    "name": "Los Angeles Rams at Washington Commanders",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       4.5,
@@ -16003,9 +16405,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08NYGPHI",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 53,
@@ -16023,7 +16425,7 @@
    "name": "New York Giants at Philadelphia Eagles",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       3.0,
@@ -16073,9 +16475,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08NYJKC",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 52,
@@ -16093,7 +16495,7 @@
    "name": "New York Jets at Kansas City Chiefs",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       -10.0,
@@ -16143,9 +16545,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08HOULAC",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 55,
@@ -16163,7 +16565,7 @@
    "name": "Houston Texans at Los Angeles Chargers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       5.5,
@@ -16213,9 +16615,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08LVSF",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 56,
@@ -16233,7 +16635,7 @@
    "name": "Las Vegas Raiders at San Francisco 49ers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       -9.5,
@@ -16283,9 +16685,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08ARISEA",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 53,
@@ -16303,7 +16705,7 @@
    "name": "Arizona Cardinals at Seattle Seahawks",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       -8.5,
@@ -16353,9 +16755,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08GBNE",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 52,
@@ -16373,7 +16775,7 @@
    "name": "Green Bay Packers at New England Patriots",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       -3.0,
@@ -16423,9 +16825,9 @@
    "date": "2026-11-08",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV08TBCHI",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 56,
@@ -16443,7 +16845,7 @@
    "name": "Tampa Bay Buccaneers at Chicago Bears",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       -6.0,
@@ -16493,9 +16895,9 @@
    "date": "2026-11-09",
    "first_seen": "2026-11-04T05:24:49+00:00",
    "kalshi_total_event": "KXNFLTOTAL-26NOV09BUFMIN",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:31+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "legs": [
      {
       "c": 53,
@@ -16513,7 +16915,7 @@
    "name": "Buffalo Bills at Minnesota Vikings",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:34:31+00:00",
     "books": {
      "betmgm": [
       3.0,
@@ -23761,9 +24163,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07MDGTWN",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 53,
@@ -23781,7 +24183,7 @@
    "name": "Maryland Terrapins at Georgetown Hoyas",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       3.5,
@@ -23946,13 +24348,13 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07NEBPROV",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
-      "c": 55,
-      "k": 156.5,
+      "c": 52,
+      "k": 157.5,
       "side": "over"
      },
      {
@@ -23961,12 +24363,12 @@
       "side": "under"
      }
     ],
-    "line": 157.5
+    "line": 158.0
    },
    "name": "Providence Friars at Nebraska Cornhuskers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -2.5,
@@ -24964,7 +25366,7 @@
    "half_at": "2026-11-07T21:39:10+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07COLOSDSU",
    "last_eval": "2026-11-07T21:54:56+00:00",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:26+00:00",
     "legs": [
@@ -39646,27 +40048,27 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNBATOTAL-26NOV07DENIND",
-   "last_seen": "2026-11-07T21:58:04+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:14:39+00:00",
     "legs": [
      {
-      "c": 54,
+      "c": 55,
       "k": 228.5,
       "side": "over"
      },
      {
-      "c": 54,
+      "c": 53,
       "k": 230.5,
       "side": "under"
      }
     ],
-    "line": 229.5
+    "line": 230.0
    },
    "name": "Denver Nuggets at Indiana Pacers",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
-    "at": "2026-11-07T21:58:04+00:00",
+    "at": "2026-11-07T22:14:39+00:00",
     "books": {
      "betmgm": [
       8.5,
@@ -39705,220 +40107,15 @@
      8.5,
      229.5
     ],
-    "home_spread": 8.0,
+    "home_spread": 8.5,
     "odds_event": "e76682ca6c25a37b0a53cec226b91aab",
-    "source": "odds:pinnacle",
-    "total": 229.0
+    "source": "espn",
+    "total": 229.5
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:05+00:00",
-    "event": "KXNBATOTAL-26NOV07DENIND",
-    "quotes": {
-     "200.5": [
-      "KXNBATOTAL-26NOV07DENIND-201",
-      95,
-      96,
-      4,
-      5
-     ],
-     "202.5": [
-      "KXNBATOTAL-26NOV07DENIND-203",
-      93,
-      94,
-      6,
-      7
-     ],
-     "204.5": [
-      "KXNBATOTAL-26NOV07DENIND-205",
-      91,
-      94,
-      6,
-      9
-     ],
-     "206.5": [
-      "KXNBATOTAL-26NOV07DENIND-207",
-      90,
-      91,
-      9,
-      10
-     ],
-     "208.5": [
-      "KXNBATOTAL-26NOV07DENIND-209",
-      88,
-      89,
-      11,
-      12
-     ],
-     "210.5": [
-      "KXNBATOTAL-26NOV07DENIND-211",
-      86,
-      87,
-      13,
-      14
-     ],
-     "212.5": [
-      "KXNBATOTAL-26NOV07DENIND-213",
-      83,
-      84,
-      16,
-      17
-     ],
-     "214.5": [
-      "KXNBATOTAL-26NOV07DENIND-215",
-      78,
-      81,
-      19,
-      22
-     ],
-     "216.5": [
-      "KXNBATOTAL-26NOV07DENIND-217",
-      76,
-      77,
-      23,
-      24
-     ],
-     "218.5": [
-      "KXNBATOTAL-26NOV07DENIND-219",
-      72,
-      74,
-      26,
-      28
-     ],
-     "220.5": [
-      "KXNBATOTAL-26NOV07DENIND-221",
-      69,
-      71,
-      29,
-      31
-     ],
-     "222.5": [
-      "KXNBATOTAL-26NOV07DENIND-223",
-      65,
-      66,
-      34,
-      35
-     ],
-     "224.5": [
-      "KXNBATOTAL-26NOV07DENIND-225",
-      61,
-      62,
-      38,
-      39
-     ],
-     "226.5": [
-      "KXNBATOTAL-26NOV07DENIND-227",
-      57,
-      58,
-      42,
-      43
-     ],
-     "228.5": [
-      "KXNBATOTAL-26NOV07DENIND-229",
-      53,
-      54,
-      46,
-      47
-     ],
-     "230.5": [
-      "KXNBATOTAL-26NOV07DENIND-231",
-      46,
-      47,
-      53,
-      54
-     ],
-     "232.5": [
-      "KXNBATOTAL-26NOV07DENIND-233",
-      42,
-      44,
-      56,
-      58
-     ],
-     "234.5": [
-      "KXNBATOTAL-26NOV07DENIND-235",
-      38,
-      40,
-      60,
-      62
-     ],
-     "236.5": [
-      "KXNBATOTAL-26NOV07DENIND-237",
-      33,
-      35,
-      65,
-      67
-     ],
-     "238.5": [
-      "KXNBATOTAL-26NOV07DENIND-239",
-      29,
-      31,
-      69,
-      71
-     ],
-     "240.5": [
-      "KXNBATOTAL-26NOV07DENIND-241",
-      26,
-      27,
-      73,
-      74
-     ],
-     "242.5": [
-      "KXNBATOTAL-26NOV07DENIND-243",
-      23,
-      24,
-      76,
-      77
-     ],
-     "244.5": [
-      "KXNBATOTAL-26NOV07DENIND-245",
-      19,
-      20,
-      80,
-      81
-     ],
-     "246.5": [
-      "KXNBATOTAL-26NOV07DENIND-247",
-      15,
-      19,
-      81,
-      85
-     ],
-     "248.5": [
-      "KXNBATOTAL-26NOV07DENIND-249",
-      13,
-      14,
-      86,
-      87
-     ],
-     "250.5": [
-      "KXNBATOTAL-26NOV07DENIND-251",
-      10,
-      14,
-      86,
-      90
-     ],
-     "252.5": [
-      "KXNBATOTAL-26NOV07DENIND-253",
-      8,
-      9,
-      91,
-      92
-     ],
-     "254.5": [
-      "KXNBATOTAL-26NOV07DENIND-255",
-      7,
-      9,
-      91,
-      93
-     ],
-     "256.5": [
-      "KXNBATOTAL-26NOV07DENIND-257",
-      5,
-      8,
-      92,
-      95
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T22:14:39+00:00",
    "snap60": "2026-11-07T21:04:01+00:00",
    "sport": "nba"
   },
@@ -39926,9 +40123,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNBATOTAL-26NOV07BKNATL",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 53,
@@ -39946,7 +40143,7 @@
    "name": "Brooklyn Nets at Atlanta Hawks",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -6.5,
@@ -39985,10 +40182,10 @@
      -6.5,
      226.5
     ],
-    "home_spread": -7.0,
+    "home_spread": -6.5,
     "odds_event": "ee45341df802cfb42dd48f1ad60c8b81",
-    "source": "odds:pinnacle",
-    "total": 227.0
+    "source": "espn",
+    "total": 226.5
    },
    "sport": "nba"
   },
@@ -39996,9 +40193,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNBATOTAL-26NOV07NYKCLE",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 52,
@@ -40016,7 +40213,7 @@
    "name": "New York Knicks at Cleveland Cavaliers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       5.5,
@@ -40055,10 +40252,10 @@
      4.5,
      223.5
     ],
-    "home_spread": 5.0,
+    "home_spread": 4.5,
     "odds_event": "fdf3b77f50b2fad3988193af5ef4b00e",
-    "source": "odds:pinnacle",
-    "total": 223.0
+    "source": "espn",
+    "total": 223.5
    },
    "sport": "nba"
   },
@@ -40066,12 +40263,12 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNBATOTAL-26NOV07WASOKC",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
-      "c": 53,
+      "c": 54,
       "k": 222.5,
       "side": "over"
      },
@@ -40081,12 +40278,12 @@
       "side": "under"
      }
     ],
-    "line": 223.5
+    "line": 224.0
    },
    "name": "Washington Wizards at Oklahoma City Thunder",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -11.5,
@@ -40125,9 +40322,9 @@
      -11.5,
      223.5
     ],
-    "home_spread": -11.0,
+    "home_spread": -11.5,
     "odds_event": "6faeaee3bdf2a167eb67f93c44d3ef37",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 223.5
    },
    "sport": "nba"
@@ -40136,9 +40333,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNBATOTAL-26NOV07ORLGSW",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 51,
@@ -40156,7 +40353,7 @@
    "name": "Orlando Magic at Golden State Warriors",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -7.5,
@@ -40195,10 +40392,10 @@
      -7.5,
      219.5
     ],
-    "home_spread": -7.0,
+    "home_spread": -7.5,
     "odds_event": "39099dc03208d0771daaab5f7993478a",
-    "source": "odds:pinnacle",
-    "total": 219.0
+    "source": "espn",
+    "total": 219.5
    },
    "sport": "nba"
   },
@@ -40206,12 +40403,12 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNBATOTAL-26NOV07HOUPHX",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
-      "c": 55,
+      "c": 54,
       "k": 222.5,
       "side": "over"
      },
@@ -40226,7 +40423,7 @@
    "name": "Houston Rockets at Phoenix Suns",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       6.5,
@@ -40265,9 +40462,9 @@
      6.5,
      224.5
     ],
-    "home_spread": 6.0,
+    "home_spread": 6.5,
     "odds_event": "af8d920f175d73f12933c64ae296573f",
-    "source": "odds:pinnacle",
+    "source": "espn",
     "total": 224.5
    },
    "sport": "nba"
@@ -40276,9 +40473,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNBATOTAL-26NOV07SASPOR",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 52,
@@ -40296,7 +40493,7 @@
    "name": "San Antonio Spurs at Portland Trail Blazers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:05+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       5.5,
@@ -40337,8 +40534,8 @@
     ],
     "home_spread": 5.5,
     "odds_event": "08d47dd5e50e83839e395e49870d6a0d",
-    "source": "odds:pinnacle",
-    "total": 230.0
+    "source": "espn",
+    "total": 229.5
    },
    "sport": "nba"
   },
@@ -40486,7 +40683,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07BELLMOH",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:58:06+00:00",
     "legs": [
@@ -40504,7 +40701,7 @@
     "line": 157.5
    },
    "name": "Bellarmine Knights at Miami (OH) RedHawks",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T21:58:06+00:00",
     "books": {
@@ -40550,124 +40747,10 @@
     "source": "odds:pinnacle",
     "total": 159.5
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:06+00:00",
-    "event": "KXNCAAMBTOTAL-26NOV07BELLMOH",
-    "quotes": {
-     "128.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-129",
-      92,
-      95,
-      5,
-      8
-     ],
-     "133.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-134",
-      92,
-      95,
-      5,
-      8
-     ],
-     "137.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-138",
-      89,
-      93,
-      7,
-      11
-     ],
-     "141.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-142",
-      83,
-      89,
-      11,
-      17
-     ],
-     "144.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-145",
-      78,
-      83,
-      17,
-      22
-     ],
-     "147.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-148",
-      74,
-      77,
-      23,
-      26
-     ],
-     "149.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-150",
-      69,
-      72,
-      28,
-      31
-     ],
-     "151.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-152",
-      65,
-      68,
-      32,
-      35
-     ],
-     "154.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-155",
-      59,
-      61,
-      39,
-      41
-     ],
-     "157.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-158",
-      50,
-      51,
-      49,
-      50
-     ],
-     "161.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-162",
-      41,
-      42,
-      58,
-      59
-     ],
-     "165.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-166",
-      33,
-      34,
-      66,
-      67
-     ],
-     "170.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-171",
-      22,
-      23,
-      77,
-      78
-     ],
-     "171.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-172",
-      21,
-      22,
-      78,
-      79
-     ],
-     "175.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-176",
-      13,
-      18,
-      82,
-      87
-     ],
-     "180.5": [
-      "KXNCAAMBTOTAL-26NOV07BELLMOH-181",
-      6,
-      14,
-      86,
-      94
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T21:58:06+00:00",
    "snap60": "2026-11-07T21:04:06+00:00",
    "sport": "cbb"
   },
@@ -40675,9 +40758,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07NIUDAY",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 52,
@@ -40695,7 +40778,7 @@
    "name": "Northern Illinois Huskies at Dayton Flyers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       null,
@@ -40953,9 +41036,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07SBONCAN",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -40973,7 +41056,7 @@
    "name": "St. Bonaventure Bonnies at Canisius Golden Griffins",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       9.5,
@@ -40985,7 +41068,7 @@
      ],
      "betrivers": [
       8.5,
-      150.5
+      149.5
      ],
      "bovada": [
       9.0,
@@ -41218,9 +41301,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07COOKGC",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 57,
@@ -41238,7 +41321,7 @@
    "name": "Bethune-Cookman Wildcats at Grand Canyon Lopes",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "home_spread": -22.5,
     "source": "espn",
     "total": 155.5
@@ -41264,9 +41347,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07SJSUUCI",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -41284,7 +41367,7 @@
    "name": "San Jos\u00e9 State Spartans at UC Irvine Anteaters",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -8.5,
@@ -42476,9 +42559,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07PRSTSEA",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -42496,7 +42579,7 @@
    "name": "Portland State Vikings at Seattle U Redhawks",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -10.5,
@@ -42546,9 +42629,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07PACBRAD",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -42566,14 +42649,14 @@
    "name": "Pacific Tigers at Bradley Braves",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -1.5,
       139.5
      ],
      "betonlineag": [
-      0.0,
+      -1.0,
       139.5
      ],
      "betrivers": [
@@ -42593,7 +42676,7 @@
       139.5
      ],
      "lowvig": [
-      0.0,
+      -1.0,
       139.5
      ],
      "pinnacle": [
@@ -42616,9 +42699,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07SACSCU",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 57,
@@ -42636,7 +42719,7 @@
    "name": "Sacramento State Hornets at Santa Clara Broncos",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -19.5,
@@ -42910,7 +42993,7 @@
    "half_at": "2026-11-07T19:59:19+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07LAMAC",
    "last_eval": "2026-11-07T20:09:00+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T19:02:28+00:00",
     "legs": [
@@ -43165,7 +43248,7 @@
    "half_at": "2026-11-07T17:53:28+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07MORELOU",
    "last_eval": "2026-11-07T18:09:30+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T16:27:16+00:00",
     "legs": [
@@ -43532,7 +43615,7 @@
    "half_at": "2026-11-07T20:13:15+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07UNCWECU",
    "last_eval": "2026-11-07T20:18:33+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T19:02:28+00:00",
     "legs": [
@@ -43657,7 +43740,7 @@
    "half_at": "2026-11-07T21:04:04+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07VCUMEM",
    "last_eval": "2026-11-07T21:10:52+00:00",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:02:35+00:00",
     "legs": [
@@ -43675,7 +43758,7 @@
     "line": 159.5
    },
    "name": "VCU Rams at Memphis Tigers",
-   "phase": "live",
+   "phase": "post",
    "pre": {
     "at": "2026-11-07T20:02:35+00:00",
     "books": {
@@ -43724,6 +43807,14 @@
    "seen": {
     "1": true,
     "2": true
+   },
+   "settled": {
+    "at": "2026-11-07T22:22:18+00:00",
+    "final_total": 177,
+    "mid_pnl": null,
+    "plays_pnl": 0.0,
+    "q3_mid_pnl": null,
+    "q3_plays_pnl": null
    },
    "slots": {
     "half": "elsewhere"
@@ -44302,7 +44393,7 @@
   "401919758": {
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "City College NY Beavers at Fairleigh Dickinson Knights",
    "odds_asked": 1794070947,
    "phase": "post",
@@ -44366,7 +44457,7 @@
    "half_at": "2026-11-07T21:23:43+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07LIULAS",
    "last_eval": "2026-11-07T21:41:15+00:00",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:26+00:00",
     "legs": [
@@ -44528,15 +44619,16 @@
     "away": 25,
     "home": 44
    },
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Penn State Shenango Nittany Lions at Mercyhurst Lakers",
    "noted_no_line": true,
    "odds_asked": 1794085445,
-   "phase": "half",
+   "phase": "live",
    "pre": {},
-   "pre_asked": 1794088622,
+   "pre_asked": 1794090878,
    "seen": {
-    "1": true
+    "1": true,
+    "2": true
    },
    "sport": "cbb"
   },
@@ -44681,7 +44773,7 @@
    "half_at": "2026-11-07T21:54:57+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07MONMURI",
    "last_eval": "2026-11-07T21:58:06+00:00",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:26+00:00",
     "legs": [
@@ -44699,7 +44791,7 @@
     "line": 144.5
    },
    "name": "Monmouth Hawks at Rhode Island Rams",
-   "phase": "half",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T20:28:26+00:00",
     "books": {
@@ -44746,7 +44838,8 @@
     "total": 144.5
    },
    "seen": {
-    "1": true
+    "1": true,
+    "2": true
    },
    "slots": {
     "half": "elsewhere"
@@ -44928,7 +45021,7 @@
    "half_at": "2026-11-07T19:59:19+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07CSFSDAK",
    "last_eval": "2026-11-07T20:04:45+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T19:04:39+00:00",
     "legs": [
@@ -45118,7 +45211,7 @@
    "half_at": "2026-11-07T21:51:43+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07LAFJOES",
    "last_eval": "2026-11-07T21:58:05+00:00",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:05:13+00:00",
     "legs": [
@@ -45136,7 +45229,7 @@
     "line": 146.5
    },
    "name": "Lafayette Leopards at Saint Joseph's Hawks",
-   "phase": "half",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T21:05:13+00:00",
     "books": {
@@ -45183,7 +45276,8 @@
     "total": 146.5
    },
    "seen": {
-    "1": true
+    "1": true,
+    "2": true
    },
    "slots": {
     "half": "elsewhere"
@@ -45541,9 +45635,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07FRESUCSD",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -45561,7 +45655,7 @@
    "name": "Fresno State Bulldogs at UC San Diego Tritons",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -11.5,
@@ -45855,7 +45949,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07WSUHP",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:58:06+00:00",
     "legs": [
@@ -45873,7 +45967,7 @@
     "line": 157.0
    },
    "name": "Washington State Cougars at High Point Panthers",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T21:58:06+00:00",
     "books": {
@@ -45919,124 +46013,10 @@
     "source": "odds:pinnacle",
     "total": 156.5
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:06+00:00",
-    "event": "KXNCAAMBTOTAL-26NOV07WSUHP",
-    "quotes": {
-     "128.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-129",
-      92,
-      95,
-      5,
-      8
-     ],
-     "133.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-134",
-      89,
-      95,
-      5,
-      11
-     ],
-     "137.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-138",
-      84,
-      90,
-      10,
-      16
-     ],
-     "141.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-142",
-      79,
-      80,
-      20,
-      21
-     ],
-     "144.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-145",
-      76,
-      77,
-      23,
-      24
-     ],
-     "147.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-148",
-      70,
-      71,
-      29,
-      30
-     ],
-     "149.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-150",
-      66,
-      67,
-      33,
-      34
-     ],
-     "151.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-152",
-      61,
-      62,
-      38,
-      39
-     ],
-     "154.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-155",
-      55,
-      56,
-      44,
-      45
-     ],
-     "157.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-158",
-      48,
-      49,
-      51,
-      52
-     ],
-     "161.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-162",
-      36,
-      39,
-      61,
-      64
-     ],
-     "165.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-166",
-      28,
-      29,
-      71,
-      72
-     ],
-     "170.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-171",
-      17,
-      23,
-      77,
-      83
-     ],
-     "174.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-175",
-      11,
-      19,
-      81,
-      89
-     ],
-     "175.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-176",
-      10,
-      18,
-      82,
-      90
-     ],
-     "177.5": [
-      "KXNCAAMBTOTAL-26NOV07WSUHP-178",
-      7,
-      16,
-      84,
-      93
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T21:58:06+00:00",
    "snap60": "2026-11-07T21:04:06+00:00",
    "sport": "cbb"
   },
@@ -46183,9 +46163,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07UVUWEB",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -46203,7 +46183,7 @@
    "name": "Utah Valley Wolverines at Weber State Wildcats",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       7.5,
@@ -46563,7 +46543,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07SIUELIP",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:58:06+00:00",
     "legs": [
@@ -46581,124 +46561,17 @@
     "line": 144.0
    },
    "name": "SIU Edwardsville Cougars at Lipscomb Bisons",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T21:58:06+00:00",
     "home_spread": -8.5,
     "source": "espn",
     "total": 143.5
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:06+00:00",
-    "event": "KXNCAAMBTOTAL-26NOV07SIUELIP",
-    "quotes": {
-     "122.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-123",
-      83,
-      95,
-      5,
-      17
-     ],
-     "127.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-128",
-      81,
-      90,
-      10,
-      19
-     ],
-     "128.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-129",
-      82,
-      88,
-      12,
-      18
-     ],
-     "133.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-134",
-      75,
-      77,
-      23,
-      25
-     ],
-     "137.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-138",
-      65,
-      68,
-      32,
-      35
-     ],
-     "141.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-142",
-      55,
-      58,
-      42,
-      45
-     ],
-     "144.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-145",
-      48,
-      49,
-      51,
-      52
-     ],
-     "147.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-148",
-      41,
-      42,
-      58,
-      59
-     ],
-     "149.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-150",
-      36,
-      37,
-      63,
-      64
-     ],
-     "151.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-152",
-      32,
-      33,
-      67,
-      68
-     ],
-     "154.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-155",
-      25,
-      26,
-      74,
-      75
-     ],
-     "157.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-158",
-      18,
-      23,
-      77,
-      82
-     ],
-     "161.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-162",
-      12,
-      16,
-      84,
-      88
-     ],
-     "165.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-166",
-      7,
-      11,
-      89,
-      93
-     ],
-     "170.5": [
-      "KXNCAAMBTOTAL-26NOV07SIUELIP-171",
-      5,
-      8,
-      92,
-      95
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T21:58:06+00:00",
    "snap60": "2026-11-07T21:04:06+00:00",
    "sport": "cbb"
   },
@@ -47065,7 +46938,7 @@
    "half_at": "2026-11-07T19:59:19+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07COLGDREX",
    "last_eval": "2026-11-07T20:04:45+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T19:05:44+00:00",
     "legs": [
@@ -47497,9 +47370,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07SELAUALR",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 60,
@@ -47517,7 +47390,7 @@
    "name": "SE Louisiana Lions at Little Rock Trojans",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "home_spread": -9.5,
     "source": "espn",
     "total": 145.5
@@ -47566,7 +47439,7 @@
    "half_at": "2026-11-07T19:59:18+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07TOLMRSH",
    "last_eval": "2026-11-07T20:14:19+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T19:02:28+00:00",
     "legs": [
@@ -48697,7 +48570,7 @@
    "half_at": "2026-11-07T18:53:29+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07NCATOHIO",
    "last_eval": "2026-11-07T19:05:44+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:55:36+00:00",
     "legs": [
@@ -48919,7 +48792,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07UTMIUIN",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:58:06+00:00",
     "legs": [
@@ -48937,145 +48810,17 @@
     "line": 171.5
    },
    "name": "UT Martin Skyhawks at IU Indianapolis Jaguars",
-   "phase": "pre",
+   "phase": "approaching",
    "pre": {
     "at": "2026-11-07T21:58:06+00:00",
     "home_spread": 1.5,
     "source": "espn",
     "total": 171.5
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:06+00:00",
-    "event": "KXNCAAMBTOTAL-26NOV07UTMIUIN",
-    "quotes": {
-     "128.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-129",
-      94,
-      95,
-      5,
-      6
-     ],
-     "133.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-134",
-      94,
-      98,
-      2,
-      6
-     ],
-     "137.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-138",
-      93,
-      95,
-      5,
-      7
-     ],
-     "141.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-142",
-      84,
-      95,
-      5,
-      16
-     ],
-     "144.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-145",
-      83,
-      94,
-      6,
-      17
-     ],
-     "147.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-148",
-      86,
-      87,
-      13,
-      14
-     ],
-     "149.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-150",
-      83,
-      84,
-      16,
-      17
-     ],
-     "151.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-152",
-      81,
-      82,
-      18,
-      19
-     ],
-     "154.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-155",
-      78,
-      79,
-      21,
-      22
-     ],
-     "157.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-158",
-      73,
-      74,
-      26,
-      27
-     ],
-     "161.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-162",
-      68,
-      69,
-      31,
-      32
-     ],
-     "165.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-166",
-      60,
-      62,
-      38,
-      40
-     ],
-     "170.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-171",
-      53,
-      54,
-      46,
-      47
-     ],
-     "174.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-175",
-      41,
-      42,
-      58,
-      59
-     ],
-     "179.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-180",
-      30,
-      33,
-      67,
-      70
-     ],
-     "181.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-182",
-      25,
-      29,
-      71,
-      75
-     ],
-     "184.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-185",
-      19,
-      27,
-      73,
-      81
-     ],
-     "189.5": [
-      "KXNCAAMBTOTAL-26NOV07UTMIUIN-190",
-      6,
-      31,
-      69,
-      94
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T21:58:06+00:00",
    "snap60": "2026-11-07T21:04:06+00:00",
    "sport": "cbb"
   },
@@ -51252,7 +50997,7 @@
    "half_at": "2026-11-07T21:04:03+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07NCCULONG",
    "last_eval": "2026-11-07T21:08:28+00:00",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:02:35+00:00",
     "legs": [
@@ -51270,7 +51015,7 @@
     "line": 149.0
    },
    "name": "North Carolina Central Eagles at Longwood Lancers",
-   "phase": "live",
+   "phase": "post",
    "pre": {
     "at": "2026-11-07T20:02:35+00:00",
     "books": {
@@ -51318,7 +51063,16 @@
    },
    "seen": {
     "1": true,
-    "2": true
+    "2": true,
+    "3": true
+   },
+   "settled": {
+    "at": "2026-11-07T22:24:40+00:00",
+    "final_total": 155,
+    "mid_pnl": null,
+    "plays_pnl": 0.0,
+    "q3_mid_pnl": null,
+    "q3_plays_pnl": null
    },
    "slots": {
     "half": "elsewhere"
@@ -51677,12 +51431,12 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07WCUUNCA",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:33:30+00:00",
     "legs": [
      {
-      "c": 54,
+      "c": 55,
       "k": 151.5,
       "side": "over"
      },
@@ -51695,9 +51449,9 @@
     "line": 152.5
    },
    "name": "Western Carolina Catamounts at UNC Asheville Bulldogs",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:33:30+00:00",
     "books": {
      "betmgm": [
       3.5,
@@ -51741,6 +51495,10 @@
     "source": "odds:pinnacle",
     "total": 152.0
    },
+   "seen": {
+    "1": true
+   },
+   "snap0": "2026-11-07T22:33:30+00:00",
    "snap60": "2026-11-07T21:36:04+00:00",
    "sport": "cbb"
   },
@@ -51898,9 +51656,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07USIEVAN",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 54,
@@ -51918,7 +51676,7 @@
    "name": "Southern Indiana Screaming Eagles at Evansville Purple Aces",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -7.5,
@@ -51972,7 +51730,7 @@
    "half_at": "2026-11-07T21:04:02+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07LBSUMTST",
    "last_eval": "2026-11-07T21:10:50+00:00",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:02:35+00:00",
     "legs": [
@@ -51990,7 +51748,7 @@
     "line": 146.0
    },
    "name": "Long Beach State Beach at Montana State Bobcats",
-   "phase": "live",
+   "phase": "post",
    "pre": {
     "at": "2026-11-07T20:02:35+00:00",
     "home_spread": -10.5,
@@ -52000,6 +51758,14 @@
    "seen": {
     "1": true,
     "2": true
+   },
+   "settled": {
+    "at": "2026-11-07T22:12:25+00:00",
+    "final_total": 153,
+    "mid_pnl": null,
+    "plays_pnl": 0.0,
+    "q3_mid_pnl": null,
+    "q3_plays_pnl": null
    },
    "slots": {
     "half": "elsewhere"
@@ -52177,9 +51943,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07MORGNIAG",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 52,
@@ -52197,7 +51963,7 @@
    "name": "Morgan State Bears at Niagara Purple Eagles",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -3.5,
@@ -52241,15 +52007,16 @@
     "source": "odds:pinnacle",
     "total": 149.0
    },
+   "snap60": "2026-11-07T22:30:14+00:00",
    "sport": "cbb"
   },
   "401924895": {
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07NAUUNM",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 57,
@@ -52267,7 +52034,7 @@
    "name": "Northern Arizona Lumberjacks at New Mexico Lobos",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -28.5,
@@ -52283,7 +52050,7 @@
      ],
      "bovada": [
       -28.5,
-      158.0
+      157.5
      ],
      "draftkings": [
       -28.5,
@@ -52311,6 +52078,125 @@
     "source": "odds:pinnacle",
     "total": 157.5
    },
+   "pre_ladder": {
+    "at": "2026-11-07T22:34:38+00:00",
+    "event": "KXNCAAMBTOTAL-26NOV07NAUUNM",
+    "quotes": {
+     "128.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-129",
+      93,
+      98,
+      2,
+      7
+     ],
+     "133.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-134",
+      91,
+      95,
+      5,
+      9
+     ],
+     "137.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-138",
+      86,
+      91,
+      9,
+      14
+     ],
+     "141.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-142",
+      80,
+      86,
+      14,
+      20
+     ],
+     "144.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-145",
+      76,
+      78,
+      22,
+      24
+     ],
+     "147.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-148",
+      72,
+      73,
+      27,
+      28
+     ],
+     "149.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-150",
+      68,
+      69,
+      31,
+      32
+     ],
+     "151.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-152",
+      63,
+      64,
+      36,
+      37
+     ],
+     "154.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-155",
+      56,
+      57,
+      43,
+      44
+     ],
+     "157.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-158",
+      49,
+      50,
+      50,
+      51
+     ],
+     "161.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-162",
+      38,
+      40,
+      60,
+      62
+     ],
+     "165.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-166",
+      29,
+      30,
+      70,
+      71
+     ],
+     "170.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-171",
+      19,
+      24,
+      76,
+      81
+     ],
+     "175.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-176",
+      12,
+      19,
+      81,
+      88
+     ],
+     "176.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-177",
+      11,
+      17,
+      83,
+      89
+     ],
+     "179.5": [
+      "KXNCAAMBTOTAL-26NOV07NAUUNM-180",
+      7,
+      14,
+      86,
+      93
+     ]
+    }
+   },
+   "snap60": "2026-11-07T22:12:25+00:00",
    "sport": "cbb"
   },
   "401924911": {
@@ -52390,10 +52276,44 @@
    "sport": "cbb"
   },
   "401924912": {
+   "break_read_at": "2026-11-07T22:12:23+00:00",
+   "center_src": "sharp",
+   "clear": {},
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
+   "h2": {
+    "at": "2026-11-07T22:12:24+00:00",
+    "at_s": 1794089543.9987657,
+    "books": {
+     "betmgm": [
+      83.5,
+      -120,
+      -110
+     ],
+     "bovada": [
+      85.5,
+      -110,
+      -110
+     ],
+     "draftkings": [
+      86.5,
+      -110,
+      -125
+     ]
+    },
+    "calls": 1,
+    "line": 85.5,
+    "n": 3,
+    "source": "median3"
+   },
+   "half": {
+    "away": 40,
+    "home": 45
+   },
+   "half_at": "2026-11-07T22:12:24+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07SAMUNLV",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_eval": "2026-11-07T22:14:40+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:26+00:00",
     "legs": [
@@ -52411,7 +52331,7 @@
     "line": 157.5
    },
    "name": "Samford Bulldogs at UNLV Rebels",
-   "phase": "approaching",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T20:28:26+00:00",
     "books": {
@@ -52458,10 +52378,15 @@
     "total": 158.5
    },
    "seen": {
-    "1": true
+    "1": true,
+    "2": true
+   },
+   "slots": {
+    "half": "elsewhere"
    },
    "snap60": "2026-11-07T20:00:26+00:00",
-   "sport": "cbb"
+   "sport": "cbb",
+   "spot_lane": null
   },
   "401924920": {
    "date": "2026-11-03",
@@ -52487,7 +52412,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07ODUBUCK",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:58:06+00:00",
     "legs": [
@@ -52505,7 +52430,7 @@
     "line": 140.5
    },
    "name": "Old Dominion Monarchs at Bucknell Bison",
-   "phase": "pre",
+   "phase": "approaching",
    "pre": {
     "at": "2026-11-07T21:58:06+00:00",
     "books": {
@@ -52551,124 +52476,10 @@
     "source": "odds:pinnacle",
     "total": 141.0
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:06+00:00",
-    "event": "KXNCAAMBTOTAL-26NOV07ODUBUCK",
-    "quotes": {
-     "119.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-120",
-      87,
-      95,
-      5,
-      13
-     ],
-     "122.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-123",
-      83,
-      92,
-      8,
-      17
-     ],
-     "123.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-124",
-      82,
-      90,
-      10,
-      18
-     ],
-     "128.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-129",
-      78,
-      79,
-      21,
-      22
-     ],
-     "133.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-134",
-      67,
-      68,
-      32,
-      33
-     ],
-     "137.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-138",
-      56,
-      59,
-      41,
-      44
-     ],
-     "141.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-142",
-      46,
-      49,
-      51,
-      54
-     ],
-     "144.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-145",
-      40,
-      41,
-      59,
-      60
-     ],
-     "147.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-148",
-      32,
-      34,
-      66,
-      68
-     ],
-     "149.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-150",
-      27,
-      29,
-      71,
-      73
-     ],
-     "151.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-152",
-      23,
-      26,
-      74,
-      77
-     ],
-     "154.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-155",
-      21,
-      22,
-      78,
-      79
-     ],
-     "157.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-158",
-      12,
-      18,
-      82,
-      88
-     ],
-     "161.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-162",
-      7,
-      12,
-      88,
-      93
-     ],
-     "165.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-166",
-      5,
-      12,
-      88,
-      95
-     ],
-     "170.5": [
-      "KXNCAAMBTOTAL-26NOV07ODUBUCK-171",
-      2,
-      8,
-      92,
-      98
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T21:58:06+00:00",
    "snap60": "2026-11-07T21:04:06+00:00",
    "sport": "cbb"
   },
@@ -52714,9 +52525,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07HCUWIU",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 58,
@@ -52734,7 +52545,7 @@
    "name": "Houston Christian Huskies at Western Illinois Leathernecks",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       9.5,
@@ -52806,7 +52617,7 @@
     "away": 31,
     "home": 42
    },
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Loyola New Orleans Wolfpack at LSU New Orleans Privateers",
    "noted_no_line": true,
    "odds_asked": 1794077016,
@@ -52823,9 +52634,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07NWSTMURR",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 52,
@@ -52833,7 +52644,7 @@
       "side": "over"
      },
      {
-      "c": 57,
+      "c": 58,
       "k": 157.5,
       "side": "under"
      }
@@ -52843,7 +52654,7 @@
    "name": "Northwestern State Demons at Murray State Racers",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -23.5,
@@ -52854,8 +52665,8 @@
       154.5
      ],
      "betrivers": [
-      -22.5,
-      153.5
+      -23.5,
+      155.5
      ],
      "bovada": [
       -23.5,
@@ -52964,9 +52775,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07PVUTRGV",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:32:24+00:00",
     "legs": [
      {
       "c": 53,
@@ -52974,17 +52785,17 @@
       "side": "over"
      },
      {
-      "c": 54,
+      "c": 53,
       "k": 151.5,
       "side": "under"
      }
     ],
-    "line": 150.5
+    "line": 150.0
    },
    "name": "Prairie View A&M Panthers at UT Rio Grande Valley Vaqueros",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:32:24+00:00",
     "books": {
      "betmgm": [
       null,
@@ -53021,13 +52832,17 @@
     },
     "espn": [
      -8.5,
-     149.5
+     150.5
     ],
     "home_spread": -8.5,
     "odds_event": "23efc4a58ecc218d159460b515d0a781",
     "source": "odds:pinnacle",
     "total": 150.5
    },
+   "seen": {
+    "1": true
+   },
+   "snap0": "2026-11-07T22:32:24+00:00",
    "snap60": "2026-11-07T21:36:04+00:00",
    "sport": "cbb"
   },
@@ -53218,7 +53033,7 @@
    "half_at": "2026-11-07T18:06:13+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07UNDWIN",
    "last_eval": "2026-11-07T18:11:39+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T17:02:26+00:00",
     "legs": [
@@ -53425,9 +53240,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07MERDAV",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 57,
@@ -53445,7 +53260,7 @@
    "name": "Mercer Bears at Davidson Wildcats",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -11.5,
@@ -53613,9 +53428,9 @@
   "401925780": {
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Central State Marauders at Duquesne Dukes",
-   "odds_asked": 1794087364,
+   "odds_asked": 1794089546,
    "phase": "pre",
    "pre": {},
    "sport": "cbb"
@@ -53696,14 +53511,20 @@
    "sport": "cbb"
   },
   "401925839": {
+   "break_read_at": "2026-11-07T22:28:04+00:00",
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "half": {
+    "away": 24,
+    "home": 37
+   },
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Cheyney (PA) Wolves at Maryland Eastern Shore Hawks",
+   "noted_no_line": true,
    "odds_asked": 1794087364,
-   "phase": "live",
+   "phase": "half",
    "pre": {},
-   "pre_asked": 1794088622,
+   "pre_asked": 1794090878,
    "seen": {
     "1": true
    },
@@ -53818,7 +53639,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07UNIFUR",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:58:06+00:00",
     "legs": [
@@ -53836,7 +53657,7 @@
     "line": 150.5
    },
    "name": "Northern Iowa Panthers at Furman Paladins",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T21:58:06+00:00",
     "books": {
@@ -53882,117 +53703,10 @@
     "source": "odds:pinnacle",
     "total": 150.5
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:06+00:00",
-    "event": "KXNCAAMBTOTAL-26NOV07UNIFUR",
-    "quotes": {
-     "127.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-128",
-      87,
-      96,
-      4,
-      13
-     ],
-     "128.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-129",
-      89,
-      95,
-      5,
-      11
-     ],
-     "133.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-134",
-      83,
-      89,
-      11,
-      17
-     ],
-     "137.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-138",
-      78,
-      80,
-      20,
-      22
-     ],
-     "141.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-142",
-      70,
-      71,
-      29,
-      30
-     ],
-     "144.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-145",
-      62,
-      65,
-      35,
-      38
-     ],
-     "147.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-148",
-      57,
-      58,
-      42,
-      43
-     ],
-     "149.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-150",
-      52,
-      53,
-      47,
-      48
-     ],
-     "151.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-152",
-      45,
-      47,
-      53,
-      55
-     ],
-     "154.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-155",
-      38,
-      39,
-      61,
-      62
-     ],
-     "157.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-158",
-      31,
-      32,
-      68,
-      69
-     ],
-     "161.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-162",
-      22,
-      23,
-      77,
-      78
-     ],
-     "165.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-166",
-      14,
-      19,
-      81,
-      86
-     ],
-     "170.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-171",
-      8,
-      12,
-      88,
-      92
-     ],
-     "171.5": [
-      "KXNCAAMBTOTAL-26NOV07UNIFUR-172",
-      6,
-      13,
-      87,
-      94
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T21:58:06+00:00",
    "snap60": "2026-11-07T21:04:06+00:00",
    "sport": "cbb"
   },
@@ -54261,7 +53975,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07VMIUTSA",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:58:06+00:00",
     "legs": [
@@ -54279,7 +53993,7 @@
     "line": 163.5
    },
    "name": "VMI Keydets at UTSA Roadrunners",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T21:58:06+00:00",
     "books": {
@@ -54325,131 +54039,10 @@
     "source": "odds:pinnacle",
     "total": 163.5
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:06+00:00",
-    "event": "KXNCAAMBTOTAL-26NOV07VMIUTSA",
-    "quotes": {
-     "128.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-129",
-      89,
-      100,
-      0,
-      11
-     ],
-     "133.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-134",
-      92,
-      95,
-      5,
-      8
-     ],
-     "137.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-138",
-      90,
-      95,
-      5,
-      10
-     ],
-     "141.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-142",
-      89,
-      93,
-      7,
-      11
-     ],
-     "144.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-145",
-      83,
-      89,
-      11,
-      17
-     ],
-     "147.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-148",
-      79,
-      85,
-      15,
-      21
-     ],
-     "149.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-150",
-      77,
-      78,
-      22,
-      23
-     ],
-     "151.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-152",
-      74,
-      75,
-      25,
-      26
-     ],
-     "154.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-155",
-      67,
-      68,
-      32,
-      33
-     ],
-     "157.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-158",
-      62,
-      63,
-      37,
-      38
-     ],
-     "161.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-162",
-      54,
-      55,
-      45,
-      46
-     ],
-     "165.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-166",
-      44,
-      45,
-      55,
-      56
-     ],
-     "170.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-171",
-      31,
-      34,
-      66,
-      69
-     ],
-     "173.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-174",
-      25,
-      27,
-      73,
-      75
-     ],
-     "177.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-178",
-      18,
-      23,
-      77,
-      82
-     ],
-     "182.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-183",
-      11,
-      15,
-      85,
-      89
-     ],
-     "185.5": [
-      "KXNCAAMBTOTAL-26NOV07VMIUTSA-186",
-      6,
-      14,
-      86,
-      94
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T21:58:06+00:00",
    "snap60": "2026-11-07T21:04:06+00:00",
    "sport": "cbb"
   },
@@ -54472,9 +54065,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07DENUCRV",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 55,
@@ -54492,7 +54085,7 @@
    "name": "Denver Pioneers at UC Riverside Highlanders",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "books": {
      "betmgm": [
       -2.5,
@@ -54623,7 +54216,7 @@
     "away": 19,
     "home": 51
    },
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Boyce Bulldogs at Liberty Flames",
    "noted_no_line": true,
    "odds_asked": 1794077015,
@@ -54660,9 +54253,9 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07HAMPGW",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "legs": [
      {
       "c": 58,
@@ -54680,11 +54273,116 @@
    "name": "Hampton Pirates at George Washington Revolutionaries",
    "phase": "pre",
    "pre": {
-    "at": "2026-11-07T21:58:06+00:00",
+    "at": "2026-11-07T22:34:38+00:00",
     "home_spread": -20.5,
     "source": "espn",
     "total": 147.5
    },
+   "pre_ladder": {
+    "at": "2026-11-07T22:34:38+00:00",
+    "event": "KXNCAAMBTOTAL-26NOV07HAMPGW",
+    "quotes": {
+     "126.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-127",
+      86,
+      95,
+      5,
+      14
+     ],
+     "128.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-129",
+      87,
+      92,
+      8,
+      13
+     ],
+     "133.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-134",
+      79,
+      82,
+      18,
+      21
+     ],
+     "137.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-138",
+      72,
+      74,
+      26,
+      28
+     ],
+     "141.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-142",
+      63,
+      65,
+      35,
+      37
+     ],
+     "144.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-145",
+      56,
+      58,
+      42,
+      44
+     ],
+     "147.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-148",
+      47,
+      49,
+      51,
+      53
+     ],
+     "149.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-150",
+      42,
+      44,
+      56,
+      58
+     ],
+     "151.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-152",
+      38,
+      39,
+      61,
+      62
+     ],
+     "154.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-155",
+      30,
+      32,
+      68,
+      70
+     ],
+     "157.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-158",
+      23,
+      26,
+      74,
+      77
+     ],
+     "161.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-162",
+      16,
+      21,
+      79,
+      84
+     ],
+     "165.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-166",
+      10,
+      15,
+      85,
+      90
+     ],
+     "170.5": [
+      "KXNCAAMBTOTAL-26NOV07HAMPGW-171",
+      5,
+      10,
+      90,
+      95
+     ]
+    }
+   },
+   "snap60": "2026-11-07T22:12:25+00:00",
    "sport": "cbb"
   },
   "401927361": {
@@ -54789,7 +54487,7 @@
    "half_at": "2026-11-07T21:58:05+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07OAKUCSB",
    "last_eval": "2026-11-07T21:58:05+00:00",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:26+00:00",
     "legs": [
@@ -54807,7 +54505,7 @@
     "line": 148.5
    },
    "name": "Oakland Golden Grizzlies at UC Santa Barbara Gauchos",
-   "phase": "half",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T20:28:26+00:00",
     "books": {
@@ -54854,7 +54552,8 @@
     "total": 149.5
    },
    "seen": {
-    "1": true
+    "1": true,
+    "2": true
    },
    "slots": {
     "half": "elsewhere"
@@ -54946,7 +54645,7 @@
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07NMSUGONZ",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T21:58:06+00:00",
     "legs": [
@@ -54964,7 +54663,7 @@
     "line": 151.5
    },
    "name": "New Mexico State Aggies at Gonzaga Bulldogs",
-   "phase": "pre",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T21:58:06+00:00",
     "books": {
@@ -55010,117 +54709,10 @@
     "source": "odds:pinnacle",
     "total": 152.0
    },
-   "pre_ladder": {
-    "at": "2026-11-07T21:58:06+00:00",
-    "event": "KXNCAAMBTOTAL-26NOV07NMSUGONZ",
-    "quotes": {
-     "128.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-129",
-      91,
-      96,
-      4,
-      9
-     ],
-     "133.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-134",
-      85,
-      90,
-      10,
-      15
-     ],
-     "137.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-138",
-      79,
-      84,
-      16,
-      21
-     ],
-     "141.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-142",
-      74,
-      75,
-      25,
-      26
-     ],
-     "144.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-145",
-      66,
-      68,
-      32,
-      34
-     ],
-     "147.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-148",
-      59,
-      62,
-      38,
-      41
-     ],
-     "149.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-150",
-      55,
-      56,
-      44,
-      45
-     ],
-     "151.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-152",
-      50,
-      51,
-      49,
-      50
-     ],
-     "154.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-155",
-      41,
-      42,
-      58,
-      59
-     ],
-     "157.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-158",
-      34,
-      36,
-      64,
-      66
-     ],
-     "161.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-162",
-      25,
-      26,
-      74,
-      75
-     ],
-     "165.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-166",
-      17,
-      22,
-      78,
-      83
-     ],
-     "170.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-171",
-      9,
-      13,
-      87,
-      91
-     ],
-     "171.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-172",
-      8,
-      16,
-      84,
-      92
-     ],
-     "172.5": [
-      "KXNCAAMBTOTAL-26NOV07NMSUGONZ-173",
-      7,
-      15,
-      85,
-      93
-     ]
-    }
+   "seen": {
+    "1": true
    },
+   "snap0": "2026-11-07T21:58:06+00:00",
    "snap60": "2026-11-07T21:04:06+00:00",
    "sport": "cbb"
   },
@@ -55131,13 +54723,13 @@
     "away": 23,
     "home": 53
    },
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Howard Payne Yellow Jackets at Sam Houston Bearkats",
    "noted_no_line": true,
    "odds_asked": 1794081561,
-   "phase": "live",
+   "phase": "post",
    "pre": {},
-   "pre_asked": 1794088622,
+   "pre_asked": 1794090214,
    "seen": {
     "1": true,
     "2": true
@@ -55287,9 +54879,9 @@
   "401928817": {
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Albion Britons at Purdue Fort Wayne Mastodons",
-   "odds_asked": 1794087364,
+   "odds_asked": 1794089545,
    "phase": "pre",
    "pre": {},
    "sport": "cbb"
@@ -55497,12 +55089,12 @@
   "401929039": {
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "East West Phantoms at Lindenwood Lions",
    "odds_asked": 1794085446,
-   "phase": "live",
+   "phase": "approaching",
    "pre": {},
-   "pre_asked": 1794088622,
+   "pre_asked": 1794090878,
    "seen": {
     "1": true
    },
@@ -55595,7 +55187,7 @@
    "half_at": "2026-11-07T21:46:30+00:00",
    "kalshi_total_event": "KXNCAAMBTOTAL-26NOV07NEOMUSU",
    "last_eval": "2026-11-07T21:58:05+00:00",
-   "last_seen": "2026-11-07T21:58:05+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "mkt": {
     "at": "2026-11-07T20:28:26+00:00",
     "legs": [
@@ -55613,7 +55205,7 @@
     "line": 154.0
    },
    "name": "Omaha Mavericks at Utah State Aggies",
-   "phase": "half",
+   "phase": "live",
    "pre": {
     "at": "2026-11-07T20:28:26+00:00",
     "books": {
@@ -55660,7 +55252,8 @@
     "total": 154.5
    },
    "seen": {
-    "1": true
+    "1": true,
+    "2": true
    },
    "slots": {
     "half": "elsewhere"
@@ -55882,9 +55475,9 @@
   "401929399": {
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Northwestern (OK) Rangers at Oral Roberts Golden Eagles",
-   "odds_asked": 1794087364,
+   "odds_asked": 1794089546,
    "phase": "pre",
    "pre": {},
    "sport": "cbb"
@@ -55951,7 +55544,7 @@
     "away": 32,
     "home": 48
    },
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Andrew Fighting Tigers at Georgia State Panthers",
    "noted_no_line": true,
    "odds_asked": 1794072803,
@@ -56002,9 +55595,9 @@
   "401931055": {
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Bethesda Flames at Southern Utah Thunderbirds",
-   "odds_asked": 1794087364,
+   "odds_asked": 1794089546,
    "phase": "pre",
    "pre": {},
    "sport": "cbb"
@@ -56012,9 +55605,9 @@
   "401931195": {
    "date": "2026-11-07",
    "first_seen": "2026-11-07T16:27:16+00:00",
-   "last_seen": "2026-11-07T21:58:06+00:00",
+   "last_seen": "2026-11-07T22:34:38+00:00",
    "name": "Bethesda Flames at Pepperdine Waves",
-   "odds_asked": 1794087364,
+   "odds_asked": 1794089546,
    "phase": "pre",
    "pre": {},
    "sport": "cbb"
@@ -56022,10 +55615,10 @@
  },
  "odds_api": {
   "cbb": {
-   "at": 1794087989.6629822,
-   "calls": 10,
+   "at": 1794089540.6387491,
+   "calls": 11,
    "day": "2026-11-07",
-   "games": 59
+   "games": 57
   },
   "cfb": {
    "at": 1794088621.3775253,
@@ -56045,8 +55638,8 @@
    "day": "2026-11-05",
    "games": 28
   },
-  "remaining": 98481,
-  "usage_at": "2026-11-07T21:58:05+00:00",
-  "used": 1519
+  "remaining": 98436,
+  "usage_at": "2026-11-07T22:34:37+00:00",
+  "used": 1564
  }
 }
