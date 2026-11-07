@@ -110,6 +110,7 @@ store.read = lambda table, params: []
 scratch = tempfile.mkdtemp()
 watch.LOG_PATH = os.path.join(scratch, 'halftime_log.csv'); watch.RESULTS_PATH = os.path.join(scratch, 'results.csv')
 cfg = dict(watch.load_json(watch.CONFIG_PATH, {}), sports=['nfl'])
+cfg = dict(cfg, spots={})   # the held-leg verdicts below are tuned to the plain fair; the spot lane (tests/spots.py) is off here
 d = watch.Desk(cfg, {}, FIX)
 d.holdings = {EV: [dict(ticker=f'{EV}-46', event_ticker=EV, sport='nfl', side='yes', shares=60, paid_c=44.0, fee=1.05)]}
 d.run_pass()

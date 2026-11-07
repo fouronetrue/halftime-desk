@@ -35,11 +35,13 @@ class HalfModel:
     calibrated to a cent, so the NBA desk centers on the market and keeps the model for the shape of the
     ladder (see claude/nba-halftime.md). mu_model is always the model's own number, for the log."""
 
-    def __init__(self, sport, total, home_spread, h1h, h1a, center=None, center_w=1.0, shift=0.0, width=1.0):
+    def __init__(self, sport, total, home_spread, h1h, h1a, center=None, center_w=1.0, shift=0.0, width=1.0, lean=0.0):
         """shift: points added to the model's own second-half mean before the blend (the NFL bad-weather
         haircut, -1 in rain, snow or 16+ mph wind outdoors; tail study, Oct 24). width: the ladder's spread as
         a multiple of the block's (0.87 in a 28+ point college mismatch, where the second half is more
-        predictable than the block says; same study). Both default to no change."""
+        predictable than the block says; same study). lean: points added to the blended mean after the blend,
+        the spot lane's lean (spot_lane below): what the second half runs over the desk's own number in a cell
+        of the halftime study. All default to no change."""
         m = MODEL.get(sport) or MODEL['nfl']
         self.sport = sport
         self.total = total
@@ -70,6 +72,9 @@ class HalfModel:
             for _ in range(5):
                 cm = center - m['k'] * math.sqrt(max(8.0, cm)) * self.q[100]
             self.mu = max(8.0, self.center_w * self.mu_model + (1 - self.center_w) * cm)
+        self.lean = float(lean or 0.0)
+        if self.lean:
+            self.mu = max(8.0, self.mu + self.lean)
         self.sd = m['k'] * math.sqrt(self.mu) * self.width
         self.n = m['n']
         self.state = 'trail' if self.favm < 0 else ('lead' if self.favm > 0 else 'tied')
@@ -132,6 +137,46 @@ class HalfModel:
         if fm <= -15:
             return 'favorite buried: no lean'
         return 'no strong lean'
+
+
+# The spot lane (Nov 7, claude/scorecard-readout-nov07.md). Cells of the halftime study whose second half runs over
+# the desk's own blended number by enough to carry, measured on the halftime data with a 2H line against the blend
+# the desk prices from (not only against the book's line, which the model already half-knows):
+#   NFL home favorite trailing: +1.5 over the blend (n 181, z 2.0; +2.2, +0.5, +1.7, +1.8 by season 2023-26);
+#   CFB home favorite trailing by 1-7: +1.8 (n 171, z 2.1), but +0.5 in 2025;
+#   CFB first half 10+ over the pace: +1.1 (n 424, z 2.1), but +0.2 in 2025.
+# config spots.<sport>.<cell>: {lean, mode}. A live cell's lean is added to the blended mean (HalfModel lean); a
+# shadow cell is named on the push and kept on the sheet, never applied, until the graded rows earn it.
+SPOT_CELLS = {
+    'home_fav_trailing': ('home favorite trailing', lambda total, hs, h1h, h1a: hs is not None and hs < 0 and h1h < h1a),
+    'home_fav_trailing_1_7': ('home favorite trailing by 1-7', lambda total, hs, h1h, h1a: hs is not None and hs < 0 and 0 < h1a - h1h <= 7),
+    'hot_first_half': ('first half 10+ over the pace', lambda total, hs, h1h, h1a: bool(total) and h1h + h1a > total / 2 + 10),
+}
+
+
+def spot_lane(sport, spots, total, home_spread, h1h, h1a):
+    """The first configured cell this half is in: dict(name, label, lean, mode), else None."""
+    for name, cell in ((spots or {}).get(sport) or {}).items():
+        meta = SPOT_CELLS.get(name)
+        if not meta or not isinstance(cell, dict):
+            continue
+        label, test = meta
+        try:
+            hit = test(total, None if home_spread is None else float(home_spread), h1h, h1a)
+        except Exception:
+            hit = False
+        if hit:
+            return dict(name=name, label=label, lean=float(cell.get('lean') or 0.0), mode='live' if cell.get('mode') == 'live' else 'shadow')
+    return None
+
+
+def spot_text(sp):
+    """The push's one phrase for the lane."""
+    if not sp:
+        return ''
+    if sp['mode'] == 'live':
+        return f" Spot: {sp['label']}, {sp['lean']:+.1f} on the number."
+    return f" Spot (watch): {sp['label']}, would be {sp['lean']:+.1f}."
 
 
 class LateModel:
@@ -832,7 +877,7 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
     fl = fair_line(model, mode)
     # the book's full-game number: the points so far plus the sharp second-half line, when one was read
     book = None if inp.get('sharp') is None else (0 if mode == '2h' else inp['h1a'] + inp['h1h']) + inp['sharp']
-    ctx = f"Fair {fl:.1f}." + (f" Book {book:.1f}." if book is not None else '') + (f" {inp['weather']}" if inp.get('weather') else '')
+    ctx = f"Fair {fl:.1f}." + (f" Book {book:.1f}." if book is not None else '') + (f" {inp['weather']}" if inp.get('weather') else '') + spot_text(inp.get('spot_lane'))
     singles, mid = chosen(sug, top)
     rev = chosen_rev(sug)
     held = [l for l in (held or []) if l]

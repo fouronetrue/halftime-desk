@@ -123,7 +123,7 @@ d = watch.Desk(cfg, {}, FIX)
 d.run_pass()
 row = captured['suggestions'][0]
 assert row['mu_model'] == round(engine.HalfModel('nfl', 55.5, -3.5, 7, 13).mu_model - 1.0, 2), row['mu_model']
-assert pushes and pushes[0][1].split('\n')[0].endswith('Weather: rain, 18 mph wind. Model -1.0.'), pushes[0][1].split('\n')[0]
+assert pushes and 'Weather: rain, 18 mph wind. Model -1.0.' in pushes[0][1].split('\n')[0], pushes[0][1].split('\n')[0]   # the spot lane may follow it
 assert row['weather']['bad'] and row['weather']['shift'] == -1.0
 print('weather: the haircut reaches the number and the push')
 print('weather: ok')

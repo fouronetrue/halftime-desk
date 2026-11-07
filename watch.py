@@ -37,6 +37,8 @@ DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct
                 # nothing is priced while the model's own full-game number sits further than this from Kalshi's
                 # line, a gap no honest disagreement makes (post-refit the fair has never been 4 points from the ladder).
                 break_confirm_seconds=3, score_hold_pts={'nfl': 6, 'cfb': 6, 'nba': 10, 'cbb': 10},
+                # The spot lane (engine.spot_lane): per sport, cells of the halftime study and their lean, live or shadow.
+                spots={},
                 # Per sport, the weight the model's own second-half number keeps against the market's center (Kalshi's
                 # implied total at the half minus the first-half points). Football keeps its own center (100). The NBA
                 # model's center never beats the market, so it keeps 25 and the ladder is shaped around the market's number.
@@ -902,8 +904,11 @@ class Desk:
             self.spread_at_half(g, rec, spread, home_pts, away_pts)
             wx = self.weather(g, rec)
             lane = self.mismatch(g, spread)
+            sp = engine.spot_lane(g['sport'], self.cfg.get('spots'), total, spread, home_pts, away_pts)
+            rec['spot_lane'] = sp
             m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w,
-                                 shift=(wx or {}).get('shift') or 0.0, width=lane['width'] if lane and lane['mode'] == 'live' else 1.0)
+                                 shift=(wx or {}).get('shift') or 0.0, width=lane['width'] if lane and lane['mode'] == 'live' else 1.0,
+                                 lean=sp['lean'] if sp and sp['mode'] == 'live' else 0.0)
         hold = self.score_hold(g, m, ev, away_pts + home_pts)
         if hold:
             if rec.get(K('noted_hold')) != hold:
@@ -930,7 +935,7 @@ class Desk:
                              single_band=(max(self.cfg['min_price_c'], self.cfg.get('single_min_price_c') or 0), self.cfg['max_price_c']))
         inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'], h1a=away_pts, h1h=home_pts,
                    sharp=(rec.get('h2') or {}).get('line') if center_src == 'sharp' else None,
-                   weather=weather.text(rec.get('weather')) if not q3 else None)
+                   weather=weather.text(rec.get('weather')) if not q3 else None, spot_lane=rec.get('spot_lane') if not q3 else None)
         # the mismatch lane (shadow): what a narrowed ladder would call in a 28+ point college game, logged and
         # shown as a SHOT line, never a play until config mismatch.<sport>.mode is live
         shot = None
@@ -1128,7 +1133,7 @@ class Desk:
         out = dict(at=now_iso(), lead=lead, total=total, spread=spread, h1a=away_pts, h1h=home_pts, mu=round(m.mu, 2), sd=round(m.sd, 2), spot=m.spot(),
                    mu_model=round(m.mu_model, 2), center=None if m.center is None else round(m.center, 2), center_w=m.center_w,
                    center_src=(rec or {}).get('center_src'), sharp=((rec or {}).get('h2') or {}).get('line'), sharp_books=((rec or {}).get('h2') or {}).get('books'),
-                   pace=(rec or {}).get('pace'), spread_half=(rec or {}).get('spread_half'),
+                   pace=(rec or {}).get('pace'), spread_half=(rec or {}).get('spread_half'), spot_lane=(rec or {}).get('spot_lane'), lean=round(getattr(m, 'lean', 0.0), 2),
                    fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev), held_miss=sizing.get('held_miss') or 0,
                    singles=[dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost']) for s in singles],
                    mid=None, rest_mid=None)
@@ -1328,6 +1333,9 @@ def grade_sheet(sh, T):
     detail, options = [], []
     if sh.get('void'):   # a push scratched at the break (a corrected score): nothing to grade, the reason on record
         detail.append(f"void ({sh['void']})")
+    sp = sh.get('spot_lane')
+    if sp:   # the spot lane the half sat in, live (applied) or shadow (named only), so the rows grade apart
+        detail.append(f"spot {sp.get('name')} {float(sp.get('lean') or 0):+.1f} {sp.get('mode')}")
     for i, x in enumerate(singles):
         win = T > x['line'] if x['kind'] == 'over' else T < x['line']
         p = round((x['contracts'] - x['cost']) if win else -x['cost'], 2)

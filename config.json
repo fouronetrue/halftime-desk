@@ -33,6 +33,15 @@
     "nba": 10,
     "cbb": 10
   },
+  "spots": {
+    "nfl": {
+      "home_fav_trailing": {"lean": 1.5, "mode": "live"}
+    },
+    "cfb": {
+      "home_fav_trailing_1_7": {"lean": 1.8, "mode": "shadow"},
+      "hot_first_half": {"lean": 1.1, "mode": "shadow"}
+    }
+  },
   "day_cost_pct": 20,
   "mid_loss_cap": 15,
   "center_model_pct": {
@@ -48,7 +57,10 @@
   "auto": {
     "mode": "shadow",
     "sports": [
-      "nba"
+      "nba",
+      "nfl",
+      "cfb",
+      "cbb"
     ],
     "rest_mode": "pair",
     "rest_until": "q4",
