@@ -84,6 +84,7 @@ gB['away']['linescores'], gB['home']['linescores'] = [3, 10, 0], [7, 0, 0]
 ev = B.events('nfl', 'total')[0]
 for mk in ev['markets']:
     mk['yes_ask_dollars'], mk['no_ask_dollars'] = '0.9000', '0.9000'   # every ask at 90c: nothing can clear
+B.cfg = dict(B.cfg, score_hold_pts={})   # every ask at 90c puts the ladder's center 8 points off: no real center here, so the score hold is off for this synthetic read
 recB = B.state['games'].setdefault('401', dict(sport='nfl', name=gB['name'], date=gB['date_et'], first_seen=watch.now_iso()))
 recB['phase'] = 'early3'
 B.restore_pregame([gB])

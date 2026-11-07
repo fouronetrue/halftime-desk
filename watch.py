@@ -30,6 +30,13 @@ DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct
                 middle_focus=['nba'], rest_near_pts={'nba': 6.5, 'cbb': 6.0},
                 read_push={'nfl': 'default', 'cfb': 'default'}, poll_seconds=75, max_poll_minutes=22, keep_days=10, min_price_c=15, max_price_c=85, day_cost_pct=20,
                 mid_loss_cap=None,
+                # The floor under a single play (Nick, Nov 7). The 15-85 band still decides which legs a pair may use.
+                single_min_price_c=40,
+                # The score guards from the Georgia State read (Nov 7, claude/scorecard-readout-nov07.md): a break score
+                # is priced only after a second read of the scoreboard this many seconds later says the same, and
+                # nothing is priced while the model's own full-game number sits further than this from Kalshi's
+                # line, a gap no honest disagreement makes (post-refit the fair has never been 4 points from the ladder).
+                break_confirm_seconds=3, score_hold_pts={'nfl': 6, 'cfb': 6, 'nba': 10, 'cbb': 10},
                 # Per sport, the weight the model's own second-half number keeps against the market's center (Kalshi's
                 # implied total at the half minus the first-half points). Football keeps its own center (100). The NBA
                 # model's center never beats the market, so it keeps 25 and the ladder is shaped around the market's number.
@@ -701,6 +708,99 @@ class Desk:
         if row['mkt_home_spread'] is not None:
             print(f"{g['short']}: spread ladder at the half: Kalshi home {row['mkt_home_spread']:+.1f}, model home margin {model_m:+.1f}, naive {naive_m:+.1f}")
 
+    # ---- the score guards (Nov 7, Georgia State 36-14 that was 26-14): a second read, a sanity hold, a scratch ----
+    def confirm_break(self, g, rec, stage, hs):
+        """(True, None) when a second read of the scoreboard, config break_confirm_seconds later, reports the same
+        break score; else (False, why). One read is not a break: ESPN's live score can carry a wrong number for a
+        few seconds, and a push on it is a play on a game that is not happening."""
+        secs = float(self.cfg.get('break_confirm_seconds') or 0)
+        if secs > 0 and not self.fixtures:
+            time.sleep(secs)
+        try:
+            again = next((x for x in self.games(g['sport']) if x['id'] == g['id']), None)
+        except Exception as e:
+            return False, f'second read of the break score failed ({e})'
+        if not again:
+            return False, 'second read of the break score: the game is missing from the scoreboard'
+        hs2 = feeds.third_score(again, rec) if stage == 'q3' else feeds.half_score(again, rec)
+        if hs2 != hs:
+            return False, (f"break score {hs[0]}-{hs[1]} not confirmed (second read {hs2[0]}-{hs2[1]})" if hs2
+                           else f"break score {hs[0]}-{hs[1]} not confirmed (second read shows no break score)")
+        return True, None
+
+    def score_corrected(self, g, rec, stage, live, score):
+        """True when a changed score is ESPN correcting the number the desk priced, not a team scoring: a team's
+        score went down (no play does that), or the game still shows halftime within three minutes of the break
+        read (halftime runs twelve minutes or more, so nothing was scored). A score that goes up while ESPN still
+        shows a quarter break is left to the moved-score rule: ESPN's status can stick while the game plays on
+        (Oct 24, the stuck 0:00 clock), and that is a real score, not a correction."""
+        if live[0] < score['away'] or live[1] < score['home']:
+            return True
+        if stage == 'half' and g['status'] == 'STATUS_HALFTIME':
+            m = feeds._minutes_since(rec.get('break_read_at'))
+            return m is not None and m < 3
+        return False
+
+    def score_hold(self, g, m, ev, h1):
+        """A reason to price nothing while the model's own full-game number sits further than config
+        score_hold_pts from Kalshi's line; else None. The ladder is priced on the real score, so a gap that size is
+        a wrong score, not an edge (Georgia State: fair 75.5 on a phantom 36-14, the ladder at 67)."""
+        pts = (self.cfg.get('score_hold_pts') or {}).get(g['sport'])
+        if not pts:
+            return None
+        line = feeds.kalshi_total_line(ev)
+        if line is None:
+            return None
+        own = h1 + m.mu_model
+        if abs(own - line) > float(pts):
+            return f"model {own:.1f} is {abs(own - line):.1f} from Kalshi's {line:g} on a {h1}-point break: a wrong score reads this way, holding"
+        return None
+
+    def scratch(self, g, rec, stage, live):
+        """ESPN corrected the break score while the game is still at the break. Void the push that went out on the
+        bad score, tell the phone, and re-arm the break so it is read, confirmed and priced again on the real score."""
+        q3 = stage == 'q3'
+        K = (lambda k: k + '_q3') if q3 else (lambda k: k)
+        key = 'third' if q3 else 'half'
+        slot = 'q3' if q3 else 'half'
+        when = 'end of 3rd' if q3 else 'half'
+        bad = dict(rec.get(key) or {})
+        slots = rec.setdefault('slots', {})
+        kind = slots.get(slot)
+        sheet = rec.get(K('play_sheet')) or rec.get(K('sheet'))
+        note = dict(at=now_iso(), slot=slot, kind=kind, bad=bad, real=dict(away=live[0], home=live[1]), title=(sheet or {}).get('title'))
+        rec.setdefault('scratched', []).append(note)
+        print(f"{g['short']}: ESPN corrected the {when} score from {bad.get('away')}-{bad.get('home')} to {live[0]}-{live[1]} while still at the break: "
+              f"the read is scratched" + (f", the {kind} push is void" if kind in ('play', 'read') else ''))
+        ticker = rec.get('kalshi_total_event')
+        if kind in ('play', 'read'):
+            title = f"SCRATCH: {g['away']['short'] or g['away']['abbr']} {live[0]}, {g['home']['short'] or g['home']['abbr']} {live[1]} ({when}, {g['sport'].upper()})"
+            body = (f"The last push on this game priced a wrong score, {bad.get('away')}-{bad.get('home')}. ESPN now shows {live[0]}-{live[1]} "
+                    f"and the game is still at the {when}, so nobody scored: the read was bad.\n\n"
+                    f"Don't buy anything from that push. If you did, sell it back. A fresh read on the real score follows if anything clears."
+                    + (f"\n\n{ticker}" if ticker else ''))
+            sent = send_push(title, body, priority='high', tags='warning', url=feeds.kalshi_url(ticker) if ticker else None)
+            self.pushed.append(title)
+            void = dict(void=f"bad {when} score {bad.get('away')}-{bad.get('home')}, real {live[0]}-{live[1]}", voided=sheet, lead='rest', singles=[], mid=None, rest_mid=None,
+                        h1a=live[0], h1h=live[1], total=(sheet or {}).get('total'), spread=(sheet or {}).get('spread'), fair=None, mkt=(sheet or {}).get('mkt'),
+                        at=now_iso(), stage=stage, slot=slot, kind='update', title=title)
+            self.db_alert(now_iso(), g, slot, 'update', 'high', title, body, dict(event_ticker=ticker), sent or [], void)
+            # the day's cap gets the voided play's cost back
+            if kind == 'play' and rec.get(K('counted_day')) and sheet:
+                lead = sheet.get('lead')
+                cost = (sheet.get('mid') or {}).get('cost') if lead == 'mid' else (sheet.get('rev') or {}).get('cost') if lead == 'rev' else ((sheet.get('singles') or [{}])[0]).get('cost')
+                day = self.state.setdefault('day_spend', {})
+                day[g['date_et']] = round(max(0.0, float(day.get(g['date_et'], 0)) - float(cost or 0)), 2)
+        if self.trader and (rec.get('auto') or {}).get(stage):
+            try:
+                self.trader.cancel_game(rec, f'scratched: bad {when} score')
+            except Exception as e:
+                print(f"{g['short']}: cancel after scratch failed ({e})")
+            rec['auto'].pop(stage, None)
+        for k in (key, K('break_read_at'), K('play_sheet'), K('sheet'), K('clear'), K('counted_day'), K('noted_unconfirmed'), K('noted_hold'), K('noted_no_center'), 'center_src'):
+            rec.pop(k, None)
+        slots.pop(slot, None)
+
     def evaluate(self, g, rec):
         """The halftime window (and football's first minute of Q3)."""
         self.evaluate_stage(g, rec, 'half')
@@ -725,16 +825,33 @@ class Desk:
                 rec[K('noted_early')] = early
                 print(f"{g['short']}: {early}, not a break, nothing priced")
             return
-        # The break score is taken once. Every later pass compares the live score with it, so a score that moves
-        # while ESPN still shows the break (a stuck 0:00 clock, Oct 24) stops the pricing instead of re-pricing
-        # the new score as the break.
+        # The break score is taken once, and only after a second read of the scoreboard a few seconds later says
+        # the same (Nov 7: ESPN carried Georgia State at 36 for one read at the half of a 26-14 game, and one read
+        # was enough to push "over 70.5 at 38c" on a fair of 75.5 against a ladder at 67). Every later pass
+        # compares the live score with it, so a score that moves while ESPN still shows the break (a stuck 0:00
+        # clock, Oct 24) stops the pricing instead of re-pricing the new score as the break.
         key = 'third' if q3 else 'half'
         if not rec.get(key):
+            ok, why = self.confirm_break(g, rec, stage, hs)
+            if not ok:
+                if rec.get(K('noted_unconfirmed')) != why:
+                    rec[K('noted_unconfirmed')] = why
+                    print(f"{g['short']}: {why}, nothing priced")
+                rec['last_eval'] = now_iso()
+                return
             rec[key] = dict(away=hs[0], home=hs[1])
+            rec[K('break_read_at')] = now_iso()
         score = rec[key]
         away_pts, home_pts = score['away'], score['home']
         live = (g['away']['score'], g['home']['score'])
         if live != (away_pts, home_pts):
+            if self.score_corrected(g, rec, stage, live, score):
+                # The game is still at the break, so nobody scored: ESPN changed its mind about the score the desk
+                # priced. The read is scratched, the push that went out on it is voided and a SCRATCH goes out, and
+                # the break is read again from the top on the real score (Nov 7, Georgia State).
+                self.scratch(g, rec, stage, live)
+                rec['last_eval'] = now_iso()
+                return
             # Someone scored since the break. The model no longer describes the game, so from here on nothing is
             # priced, logged or written: the newest suggestions row stays the last one priced at the break score,
             # and the app marks it stale by comparing it with the live score on the games row.
@@ -787,6 +904,13 @@ class Desk:
             lane = self.mismatch(g, spread)
             m = engine.HalfModel(g['sport'], total, spread, home_pts, away_pts, center=center, center_w=center_w,
                                  shift=(wx or {}).get('shift') or 0.0, width=lane['width'] if lane and lane['mode'] == 'live' else 1.0)
+        hold = self.score_hold(g, m, ev, away_pts + home_pts)
+        if hold:
+            if rec.get(K('noted_hold')) != hold:
+                rec[K('noted_hold')] = hold
+                print(f"{g['short']}: {hold}, nothing priced")
+            rec['last_eval'] = now_iso()
+            return
         rows = engine.price_lines(m, list(quotes), 'fg', self.cfg['margin_c'] / 100)
         bank = float(self.cfg['bankroll'])
         # daily cap: plays already pushed today (by cost) count against day_cost_pct of bankroll
@@ -802,7 +926,8 @@ class Desk:
         held_miss = engine.held_miss_loss(held_legs) if held_legs else 0.0
         mid_loss = None if cap is None else max(0.0, cap - held_miss)
         sug = engine.suggest(rows, quotes, self.cfg['order'], self.cfg['margin_c'] / 100, self.cfg['trust_pct'] / 100,
-                             bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']), mid_loss)
+                             bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']), mid_loss,
+                             single_band=(max(self.cfg['min_price_c'], self.cfg.get('single_min_price_c') or 0), self.cfg['max_price_c']))
         inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'], h1a=away_pts, h1h=home_pts,
                    sharp=(rec.get('h2') or {}).get('line') if center_src == 'sharp' else None,
                    weather=weather.text(rec.get('weather')) if not q3 else None)
@@ -1201,6 +1326,8 @@ def grade_sheet(sh, T):
     singles = sh.get('singles') or []
     lead = sh.get('lead') or ('single' if singles else 'mid' if sh.get('mid') else 'rest')
     detail, options = [], []
+    if sh.get('void'):   # a push scratched at the break (a corrected score): nothing to grade, the reason on record
+        detail.append(f"void ({sh['void']})")
     for i, x in enumerate(singles):
         win = T > x['line'] if x['kind'] == 'over' else T < x['line']
         p = round((x['contracts'] - x['cost']) if win else -x['cost'], 2)

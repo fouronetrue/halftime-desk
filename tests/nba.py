@@ -74,8 +74,11 @@ assert sh['mkt'] == 230.5 and sh['fair'] == 230.5, sh     # the market's median 
 halfp = [p for p in pushes if '(half' in p[0]]
 assert len(halfp) == 1 and halfp[0][0] == 'PLAY: Celtics 58, Pistons 61 (half, NBA)' and halfp[0][2] == 'high', pushes
 body = halfp[0][1]
-assert body.index('MIDDLE (clears') < body.index('SINGLE') and 'REST A MIDDLE' in body and 'WIDER MIDDLE' in body, body
-assert 'Buy OVER 236.5' in body and 'lean' not in body, 'the spot label left the push text on Oct 22'
+assert 'MIDDLE (clears' in body and 'REST A MIDDLE' in body and 'WIDER MIDDLE' in body, body
+# the single that clears here is Over 236.5 at 21c, under the 40c floor (config single_min_price_c, Nov 7): the middle keeps
+# its 21c leg, the single is not a play, and the push carries no SINGLE block
+assert 'SINGLE' not in body and 'Buy OVER 236.5' not in body and 'lean' not in body, body
+assert not sh['singles'], sh['singles']
 assert sh['mid'] and sh['rest_mid'] is None, 'a cleared middle is graded as the play; the resting what-if belongs to an UPDATE'
 assert rec['slots'] == {'half': 'play'}
 assert rec['pace'] and rec['pace']['poss'] == round(((49 - 7 + 7 + 0.44 * 9) + (47 - 5 + 8 + 0.44 * 10)) / 2, 2) and rec['pace']['home']['fouls'] == 10, rec.get('pace')

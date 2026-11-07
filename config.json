@@ -25,6 +25,14 @@
   "keep_days": 10,
   "min_price_c": 15,
   "max_price_c": 85,
+  "single_min_price_c": 40,
+  "break_confirm_seconds": 3,
+  "score_hold_pts": {
+    "nfl": 6,
+    "cfb": 6,
+    "nba": 10,
+    "cbb": 10
+  },
   "day_cost_pct": 20,
   "mid_loss_cap": 15,
   "center_model_pct": {

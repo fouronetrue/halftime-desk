@@ -177,13 +177,26 @@ def break_too_early(g, rec, stage, now=None):
     return None
 
 
+def scores_add_up(g, n):
+    """False when a team's first n period scores are all listed and do not add to its live score: one of the
+    two numbers is wrong, and a break read on it is not a break. True when the periods are not all listed yet
+    (nothing to check against). Nov 7: ESPN carried Georgia State at 36 for one read at the half of a 26-14 game,
+    and the desk priced and pushed it."""
+    for side in ('home', 'away'):
+        ls = g[side].get('linescores') or []
+        if len(ls) >= n and sum(ls[:n]) != g[side]['score']:
+            return False
+    return True
+
+
 def half_score(g, rec=None):
     """(away_pts, home_pts) at the half, or None if not known yet. The live score counts as the half only with
     evidence the half's last period was played (period_played: the second quarter, or college basketball's
-    first half); once the next period has started the linescores through the half are the half."""
+    first half) and only when it agrees with the period scores (scores_add_up); once the next period has started
+    the linescores through the half are the half."""
     hp = half_period(g.get('sport'))
     if g['status'] == 'STATUS_HALFTIME' or (g['period'] == hp and g['clock_s'] == 0 and g['state'] == 'in'):
-        if period_played(g, hp, rec):
+        if period_played(g, hp, rec) and scores_add_up(g, hp):
             return g['away']['score'], g['home']['score']
         return None
     if g['period'] >= hp + 1 and len(g['home']['linescores']) >= hp and len(g['away']['linescores']) >= hp:
@@ -195,7 +208,7 @@ def third_score(g, rec=None):
     """(away_pts, home_pts) at the end of the third quarter, or None if not known yet. Same rule: the live
     score is the end of the third only with evidence the third was played."""
     if g['period'] == 3 and (g['status'] == 'STATUS_END_PERIOD' or (g['clock_s'] == 0 and g['state'] == 'in')):
-        if period_played(g, 3, rec):
+        if period_played(g, 3, rec) and scores_add_up(g, 3):
             return g['away']['score'], g['home']['score']
         return None
     if g['period'] >= 4 and len(g['home']['linescores']) >= 3 and len(g['away']['linescores']) >= 3:

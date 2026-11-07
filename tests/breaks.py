@@ -174,9 +174,15 @@ d.run_pass()
 rec = d.state['games']['501']
 assert rec.get('half') == {'away': 31, 'home': 31} and rec.get('noted_no_center') and not rec.get('slots') and not [r for r in captured.get('suggestions', []) if r['game_id'] == '501'], (rec.get('half'), rec.get('noted_no_center'), rec.get('slots'))
 assert not [p for p in pushes if '(half' in p[0]], pushes
+# with the center guard off, the score hold (Nov 7, every sport) still refuses: the model's own number is 58 points
+# from Kalshi's line, which is what a wrong score looks like; with both guards off the model alone prices
 cfg_fb = dict(cfg, require_center=[])
 d = watch.Desk(cfg_fb, {}, fx)
 d.run_pass()
-assert d.state['games']['501'].get('slots'), 'with the guard off the model alone still prices (football behaviour)'
-print('breaks: no market center, no NBA pricing')
+r = d.state['games']['501']
+assert not r.get('slots') and str(r.get('noted_hold', '')).startswith('model 172.3 is 58.2 from'), (r.get('slots'), r.get('noted_hold'))
+d = watch.Desk(dict(cfg_fb, score_hold_pts={}), {}, fx)
+d.run_pass()
+assert d.state['games']['501'].get('slots'), 'with both guards off the model alone still prices'
+print('breaks: no market center, no NBA pricing; the score hold refuses the same read for every sport')
 print('breaks: ok')

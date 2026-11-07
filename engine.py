@@ -283,12 +283,17 @@ def fair_line(model, mode='fg'):
     return math.floor(x) + 0.5
 
 
-def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0, max_risk=75.0, max_cost=225.0, price_band=(15, 85), mid_loss=None):
+def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0, max_risk=75.0, max_cost=225.0, price_band=(15, 85), mid_loss=None, single_band=None):
     """quotes: {line: {'y': yes_ask_cents, 'n': no_ask_cents}} (None when missing).
     Legs priced outside price_band are ignored: the model's tails are its least trusted part, and a 3-cent edge
     on a 10-cent contract is a claim the data cannot back. Returns singles and middles sorted by edge.
-    mid_loss: dollars a middle may lose on a miss (Nick's $15 cap); None sizes middles by max_risk alone."""
+    mid_loss: dollars a middle may lose on a miss (Nick's $15 cap); None sizes middles by max_risk alone.
+    single_band: the narrower band a single must sit in to be a play (Nick, Nov 7: no single under 40c; the
+    desk's football leads under 40c were 1-7, and a sub-40c lead only exists when the model is far from the
+    book, which is mostly the model being wrong). A single that clears the edge below it is kept with ok False
+    and floor True, so the suggestions rows still show what the floor left out. Pairs keep price_band."""
     fee = lambda p: fee_per(p, order)
+    slo, shi = single_band or price_band
     legs = []
     for r in rows:
         qq = quotes.get(r['line']) or {}
@@ -316,12 +321,14 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
     singles = []
     for l in legs:
         p = l['price_c'] / 100
-        ok = l['edge'] >= margin - 1e-9
+        clears = l['edge'] >= margin - 1e-9
+        in_band = slo <= l['price_c'] <= shi
+        ok = clears and in_band
         f = max(0.0, 0.25 * (l['fair_used'] - l['eff']) / max(0.01, 1 - l['eff']))
         budget = min(f * bankroll, max_risk)
         contracts = int(budget / (p + fee(p)) + 1e-9) if ok else 0
         cost = round(contracts * p + order_fee(contracts, p, order), 2) if contracts else 0.0
-        singles.append(dict(l, ok=ok, contracts=contracts, cost=cost, win=round(contracts - cost, 2)))
+        singles.append(dict(l, ok=ok, floor=clears and not in_band, contracts=contracts, cost=cost, win=round(contracts - cost, 2)))
     singles.sort(key=lambda x: -x['edge'])
     by_line = {r['line']: r for r in rows}
     mids = []
