@@ -12,6 +12,21 @@ State lives in Supabase (desk_state, id 'worker') so a redeploy or restart picks
 every alert slot already pushed still marked. The GitHub Actions watcher can keep running as a backup: before
 either one pushes, it claims the game's slot in the alerts table, so a push never goes out twice.
 
+Writes (Nov 8, after Supabase warned the project was spending its Disk IO budget): the state used to be one
+jsonb row of about 0.8 MB (every game of the last ten days) rewritten on every pass, every 5 seconds around the
+half, which is about 8 GB a day on a full Saturday into a free-tier database with half a gigabyte of memory. Now:
+  every pass   a heartbeat on the 'worker' row (last_beat and the note; the state column is left alone, so its
+               stored value is not rewritten)
+  the state    written when something in it changed, at most once a minute (a change to the auto orders or the
+               day's spend: on the pass it happens), and at least every 5 minutes. Fields every pass rewrites with
+               nothing a restart needs (VOLATILE) are not a reason to write.
+  finished     games (final and graded, or never priced) move to a second row, 'worker_archive', rewritten at most
+               every 30 minutes, so the row written once a minute carries only the games still in play. A record
+               leaves the 'worker' row only while the archive holds an identical copy of it.
+  pregame row  when a price on it moves, or once a minute.
+A restart loads both rows. What a crash between writes can lose is at most a minute of routine fields: the alert
+slots are guarded by the alerts table, the orders by their client_order_id, and both are written as they happen.
+
 Auto orders (trade.py) are planned here and nowhere else: with an "auto" block in config.json the worker records
 what it would send at every break (shadow mode), and sends only in live mode with TRADE_ENABLED=1, the trade
 key in this service's variables and the kill switch off. The GitHub Actions backup never carries the trade key.
@@ -19,11 +34,23 @@ key in this service's variables and the kill switch off. The GitHub Actions back
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY, NTFY_TOPIC, KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (the last two optional),
      TRADE_ENABLED, KALSHI_TRADE_KEY_ID, KALSHI_TRADE_PRIVATE_KEY (live orders only).
 """
-import os, sys, time, json, signal, datetime as dt
+import os, sys, time, json, signal, hashlib, datetime as dt
 import watch, store, portfolio, held, trade
 
 FAST, LIVE, IDLE = 5, 60, 300
-STATE_ID = 'worker'
+STATE_ID, ARCHIVE_ID, PREGAME_ID = 'worker', 'worker_archive', 'pregame'
+SAVE_GAP = 60        # seconds: the state is written at most this often for a routine change
+SAVE_EVERY = 300     # seconds: and at least this often, whatever changed
+ARCHIVE_GAP = 1800   # seconds between rewrites of the archive row
+PREGAME_EVERY = 60   # seconds: the pregame row at least this often, so its read times stay fresh on Today
+RETRY_GAP = 30       # seconds after a failed state write before the next try (a down database is not hammered)
+# Game fields rewritten on (nearly) every pass that nothing needs after a restart: the next pass reads them again.
+# A change to these alone is not a reason to write the state. (The pregame line's own 'at' stamp is the same
+# kind of field: see durable_view.) A field missing here only means more writes, never a lost one.
+VOLATILE = ('last_seen', 'mkt', 'poly', 'pre_ladder', 'last_eval', 'odds_asked', 'pre_asked')
+# Game fields written on the pass they change: the auto orders (a live order's open list is what the refresh and
+# the kill switch work from) and the marks that count a play against the day's spend (with day_spend itself).
+URGENT = ('auto', 'counted_day', 'counted_day_q3')
 _stop = False
 
 
@@ -34,19 +61,134 @@ def _on_term(signum, frame):
 
 
 def load_state():
-    rows = store.read('desk_state', {'select': 'state', 'id': f'eq.{STATE_ID}'})
-    if rows and isinstance(rows[0].get('state'), dict):
-        return rows[0]['state']
+    """The 'worker' row's state with the archive row's finished games folded back in (the 'worker' row wins a
+    game both hold: it is the newer copy). With neither row there yet, the repo's state.json."""
+    rows = store.read('desk_state', {'select': 'id,state', 'id': f'in.({STATE_ID},{ARCHIVE_ID})'})
+    by_id = {r.get('id'): r.get('state') for r in rows if isinstance(r, dict)}
+    state, archive = by_id.get(STATE_ID), by_id.get(ARCHIVE_ID)
+    if isinstance(state, dict) and state:
+        if isinstance(archive, dict) and isinstance(archive.get('games'), dict) and archive['games']:
+            games = dict(archive['games'])
+            games.update(state.get('games') or {})
+            state = dict(state, games=games)
+        return state
     # first boot: start from the repo's state.json so games already pushed by the backup are not pushed again
     return watch.load_json(watch.STATE_PATH, {})
 
 
-def save_state(state, note):
-    now = watch.now_iso()
-    # a second, small row the Today screen reads: each upcoming game's live Kalshi total, keyed by game id
-    pregame = {gid: r['mkt'] for gid, r in (state.get('games') or {}).items() if r.get('phase') == 'pre' and r.get('mkt')}
-    store.write('desk_state', [dict(id=STATE_ID, state=state, last_beat=now, note=note, updated_at=now),
-                               dict(id='pregame', state=pregame, last_beat=now, note=f'{len(pregame)} games', updated_at=now)], on_conflict='id')
+def _fp(obj):
+    """A short fingerprint of a JSON-able object, the same whatever order its keys were added in."""
+    try:
+        text = json.dumps(obj, sort_keys=True, separators=(',', ':'), default=str)
+    except TypeError:   # keys of mixed types cannot be sorted; insertion order is stable from pass to pass
+        text = json.dumps(obj, separators=(',', ':'), default=str)
+    return hashlib.blake2b(text.encode(), digest_size=16).hexdigest()
+
+
+def durable_view(rec):
+    """A game record without the fields every pass rewrites (VOLATILE, and the pregame line's read stamp,
+    which capture_pregame renews on every pregame pass)."""
+    d = {k: v for k, v in rec.items() if k not in VOLATILE}
+    pre = d.get('pre')
+    if isinstance(pre, dict) and 'at' in pre:
+        d['pre'] = {k: v for k, v in pre.items() if k != 'at'}
+    return d
+
+
+def finished(rec):
+    """Final, and nothing left to grade (graded, or never priced so watch.settle has nothing to do). Such a
+    record only changes again if ESPN reopens the game, and then its fingerprint moves and it is written in the
+    'worker' row on that pass."""
+    if rec.get('phase') != 'post':
+        return False
+    return bool(rec.get('settled')) or not any(rec.get(k) for k in ('half_at', 'half_at_q3', 'slots', 'sheet', 'sheet_q3'))
+
+
+class Saver:
+    """When and how the worker's state reaches Supabase (the module docstring has the rules and the why)."""
+
+    def __init__(self):
+        self.full_at = None              # time of the last state write that went through (None: none yet)
+        self.fail_at = None              # time of the last one that did not
+        self.durable = self.urgent = None
+        self.archive_at = None           # time of the last archive row write
+        self.archived = None             # game id -> fingerprint of the record as the archive row holds it (None: not
+                                         # written by this process yet, so whatever the row holds is rewritten first)
+        self.pre_key, self.pre_at = None, 0.0
+        self.saves = self.beats = 0      # counts for the log line
+
+    @staticmethod
+    def digests(state):
+        """(fingerprint per game, fingerprint of everything a restart needs, fingerprint of the urgent part)."""
+        games = state.get('games') or {}
+        fps = {gid: _fp(durable_view(rec)) for gid, rec in games.items()}
+        top = {k: v for k, v in state.items() if k != 'games'}
+        durable = _fp([top, sorted(fps.items())])
+        urgent = _fp([state.get('day_spend'), sorted((gid, _fp({k: rec[k] for k in URGENT if k in rec}))
+                                                     for gid, rec in games.items() if any(k in rec for k in URGENT))])
+        return fps, durable, urgent
+
+    def after_pass(self, state, note, now=None):
+        """Once per pass: the state when it is due (that write carries the heartbeat), the heartbeat alone
+        otherwise, and the pregame row when it moved."""
+        now = time.time() if now is None else now
+        fps, durable, urgent = self.digests(state)
+        due = (self.full_at is None or urgent != self.urgent or now - self.full_at >= SAVE_EVERY
+               or (durable != self.durable and now - self.full_at >= SAVE_GAP))
+        if due and (self.fail_at is None or now - self.fail_at >= RETRY_GAP):
+            self.save(state, note, now, (fps, durable, urgent))
+        else:
+            self.beat(note)
+        self.pregame(state, now)
+
+    def beat(self, note):
+        """last_beat and the note on the 'worker' row. The row's state is not in the request, so the upsert
+        leaves the stored value as it is (no rewrite of the big column)."""
+        stamp = watch.now_iso()
+        if store.write('desk_state', [dict(id=STATE_ID, last_beat=stamp, note=note, updated_at=stamp)], on_conflict='id'):
+            self.beats += 1
+
+    def save(self, state, note, now=None, digests=None, final=False):
+        """Write the state now. The archive row goes in the same request (one statement, so both land or
+        neither) when its finished games are behind and it has been ARCHIVE_GAP since its last write, or on
+        the final write. True when it went through."""
+        now = time.time() if now is None else now
+        fps, durable, urgent = digests or self.digests(state)
+        games = state.get('games') or {}
+        want = {gid: fps[gid] for gid, rec in games.items() if finished(rec)}
+        write_archive = ((self.archived is None or want != self.archived)
+                         and (final or self.archive_at is None or now - self.archive_at >= ARCHIVE_GAP))
+        archived = want if write_archive else (self.archived or {})
+        # a game stays in the 'worker' row unless the archive row holds this exact record
+        hot = {gid: rec for gid, rec in games.items() if archived.get(gid) != fps[gid]}
+        stamp = watch.now_iso()
+        rows = [dict(id=STATE_ID, state=dict(state, games=hot), last_beat=stamp, note=note, updated_at=stamp)]
+        if write_archive:
+            rows.append(dict(id=ARCHIVE_ID, state={'games': {gid: games[gid] for gid in archived}}, last_beat=stamp,
+                             note=f'{len(archived)} finished games', updated_at=stamp))
+        if not store.write('desk_state', rows, on_conflict='id'):
+            self.fail_at = now
+            return False
+        self.full_at, self.durable, self.urgent, self.saves = now, durable, urgent, self.saves + 1
+        if write_archive:
+            self.archived, self.archive_at = archived, now
+        return True
+
+    def pregame(self, state, now):
+        """The small row the Today screen reads: each upcoming game's live Kalshi total, keyed by game id.
+        Written when a line or price on it moves, or PREGAME_EVERY seconds after the last write."""
+        pre = {gid: r['mkt'] for gid, r in (state.get('games') or {}).items() if r.get('phase') == 'pre' and r.get('mkt')}
+        key = _fp({gid: {k: v for k, v in m.items() if k != 'at'} if isinstance(m, dict) else m for gid, m in pre.items()})
+        if key == self.pre_key and now - self.pre_at < PREGAME_EVERY:
+            return
+        stamp = watch.now_iso()
+        if store.write('desk_state', [dict(id=PREGAME_ID, state=pre, last_beat=stamp, note=f'{len(pre)} games', updated_at=stamp)], on_conflict='id'):
+            self.pre_key, self.pre_at = key, now
+
+
+def save_state(state, note, saver=None):
+    """Write the whole state now, the archive row too when it is behind: the final write at a stop."""
+    return (saver or Saver()).save(state, note, final=True)
 
 
 def pace(desk, now=None):
@@ -101,6 +243,7 @@ def main():
           f"kalshi sync {'on' if portfolio.enabled() else 'off'}, {auto_note}", flush=True)
     last_sync, last_held, last_refresh, passes = 0.0, 0.0, 0.0, 0
     killed = False
+    saver = Saver()
     while not _stop:
         started = time.time()
         desk._events = {}
@@ -111,9 +254,16 @@ def main():
         wait = pace(desk)
         ph = desk.phases or {}
         note = f"{sum(ph.values())} games: " + ', '.join(f'{k} {v}' for k, v in sorted(ph.items())) + f'; next pass {wait}s'
-        save_state(desk.state, note)
+        try:
+            saver.after_pass(desk.state, note)
+        except Exception as e:   # a failed save never stops the watch; the next pass tries again
+            print(f'state save failed: {e}', flush=True)
         passes += 1
-        if passes == 1 or wait == FAST or passes % 12 == 0:
+        if passes == 1 or passes % 12 == 0:
+            # how often the big write happened, for the deploy logs: state writes and heartbeats since the last line
+            print(f'{watch.now_iso()} {note}; state written {saver.saves}x, heartbeat {saver.beats}x since the last line', flush=True)
+            saver.saves = saver.beats = 0
+        elif wait == FAST:
             print(f'{watch.now_iso()} {note}', flush=True)
         sync_every = 120 if wait <= LIVE else 1800
         if portfolio.enabled() and time.time() - last_sync > sync_every:
@@ -150,8 +300,7 @@ def main():
                 print(f'held check failed: {e}', flush=True)
         while not _stop and time.time() - started < wait:
             time.sleep(1)
-    save_state(desk.state, 'stopped')
-    print('worker stopped', flush=True)
+    print('worker stopped' if saver.save(desk.state, 'stopped', final=True) else 'worker stopped (the final state write failed)', flush=True)
 
 
 if __name__ == '__main__':
