@@ -165,6 +165,10 @@ export default function Today() {
   const [sport, setSport] = useState('all');
   const [showFinal, setShowFinal] = useState(false);
   const [err, setErr] = useState('');
+  // A final game's newest priced row never changes again, so it is read once and kept here (null: nothing priced).
+  // Only the games at or near a break are read on every poll. (Nov 8: every 5-second poll re-read 30 rows a game,
+  // JSON included, for every game of the day that had a half, which kept the free database's disk busy.)
+  const doneSugs = useRef({});
 
   const load = useCallback(async () => {
     const today = etDate();
@@ -184,10 +188,25 @@ export default function Today() {
     setHeld(hd?.state || {});
     const halfIds = list.filter((g) => isHalfish(g) || (g.phase === 'post' && g.half_at)).map((g) => g.id);
     if (halfIds.length) {
-      const { data: ss } = await supabase.from('suggestions').select('game_id,taken_at,fair_line,market_line,n_plays,half_away,half_home,top_single:singles->0,top_mid:mids->0')
-        .in('game_id', halfIds).order('taken_at', { ascending: false }).limit(halfIds.length * 30);
+      const breakIds = list.filter(isHalfish).map((g) => g.id);
+      const newDone = list.filter((g) => g.phase === 'post' && g.half_at && !(g.id in doneSugs.current)).map((g) => g.id);
+      const ask = (ids) => (ids.length
+        ? supabase.from('suggestions').select('game_id,taken_at,fair_line,market_line,n_plays,half_away,half_home,top_single:singles->0,top_mid:mids->0')
+          .in('game_id', ids).order('taken_at', { ascending: false }).limit(ids.length * 30)
+        : Promise.resolve({ data: [], error: null }));
+      const newest = (rows) => {
+        const out = {};
+        for (const s of rows || []) if (!out[s.game_id]) out[s.game_id] = s;
+        return out;
+      };
+      const [onBreak, done] = await Promise.all([ask(breakIds), ask(newDone)]);
+      if (!done.error) {
+        const got = newest(done.data);
+        for (const id of newDone) doneSugs.current[id] = got[id] || null;
+      }
       const latest = {};
-      for (const s of ss || []) if (!latest[s.game_id]) latest[s.game_id] = s;
+      for (const id of halfIds) if (doneSugs.current[id]) latest[id] = doneSugs.current[id];
+      Object.assign(latest, newest(onBreak.data));
       setSugs(latest);
       const { data: os } = await supabase.from('orders').select('game_id,side,strike,price_c,count,status,kind,mode,stage').in('game_id', halfIds).limit(400);
       const byGame = {};
