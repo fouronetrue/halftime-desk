@@ -1,8 +1,8 @@
 """Build the FBS halftime table from the cfbfastR play-by-play files, the schedules and the CFBD lines file.
 
 One row per game: season, week, date, teams, the halftime score, the final, the closing total and the home
-spread (minus = home favored). The final (overtime included, since a full-game total settles on it) comes from
-the schedule file; the halftime score is read off the play by play, and a game is kept only when the play by
+spread (minus = home favored; tests/football.py checks the sign against the results, season by season). The
+final (overtime included, since a full-game total settles on it) comes from the schedule file; the halftime score is read off the play by play, and a game is kept only when the play by
 play's own final agrees with the schedule, which proves its scores are complete and in order.
 
 Sources (sportsdataverse/cfbfastR-data on GitHub, free):
@@ -23,14 +23,13 @@ Usage: python scripts/build_cfb_games.py LINES.csv.gz PBP_DIR SCHED_DIR data/cfb
 """
 import os, sys, glob, statistics
 import pandas as pd
-import pyarrow.parquet as pq
 
 COLS = ['id', 'game_id', 'game_play_number', 'sequenceNumber', 'season', 'period', 'homeScore', 'awayScore', 'end.homeScore', 'end.awayScore',
         'homeTeamName', 'awayTeamName', 'homeTeamAbbrev', 'awayTeamAbbrev', 'homeTeamSpread']
 
 
 def lines(path):
-    """game_id -> (total, spread rows) from the closing lines, Pinnacle first, else the median across books."""
+    """game_id -> (total, spread rows, 'Away@Home') from the closing lines, Pinnacle first, else the median across books."""
     o = pd.read_csv(path, low_memory=False)
     o = o[o['game_id'].notna() & o['lines'].notna()]
     o['game_id'] = o['game_id'].astype(int)
@@ -43,28 +42,114 @@ def lines(path):
             p = t[t.book.str.upper().str.contains('PINNACLE', na=False)]
             total = float(p['lines'].iloc[0]) if len(p) else float(statistics.median(t['lines'].astype(float)))
         if len(s):
-            # the spread rows carry the team abbreviation; the home side is whichever row names the home team,
-            # which the pbp knows. Keep every (abbr, line, book) here and let the pbp pick the home one.
+            # every spread row names one team and gives that team's own line (minus = favored). Keep every
+            # (name, line, book) here; home_spread() works out which name is the home side.
             spread = [(str(a), float(l), str(b)) for a, l, b in zip(s['abbr'], s['lines'], s['book'])]
-        out[gid] = (total, spread)
+        out[gid] = (total, spread, str(g['game_desc'].iloc[0]) if 'game_desc' in g else '')
     return out
 
 
-def home_spread(rows, home_abbr, away_abbr):
-    """The home team's closing spread (minus = home favored), Pinnacle first, else the median across books."""
+def _norm(x):
+    return ''.join(ch for ch in str(x).lower() if ch.isalnum())
+
+
+def _subseq(a, name):
+    it = iter(name)
+    return all(ch in it for ch in a)
+
+
+def _fit(label, names):
+    """How well a lines-file team label fits a team, 0 to 4. The file labels a spread row three different ways
+    over the years: ESPN's abbreviation (2006-19, mostly), a sportsbook feed's own abbreviation (TRY for Troy,
+    UTS for Utah State, UCONN, WF) and, from 2020 on, the full team name."""
+    a = _norm(label)
+    best = 0
+    for nm in names:
+        n = _norm(nm)
+        if not a or not n:
+            continue
+        words = [w for w in ''.join(ch if ch.isalnum() else ' ' for ch in str(nm).lower()).split() if w]
+        initials = ''.join(w[0] for w in words)
+        if a == n:
+            best = max(best, 4)
+        elif n.startswith(a) or (len(words) > 1 and a == initials):
+            best = max(best, 3)
+        elif _subseq(a, n) and a[0] == n[0]:
+            # a two-word name whose later word the label reaches into (WST for Washington State) fits better
+            # than a one-word name the same letters happen to sit in (Washington)
+            deep = len(words) > 1 and any(_subseq(a[1:], ''.join(words[i:])) and a[1] == words[i][0] for i in range(1, len(words)))
+            best = max(best, 2.5 if deep else 2)
+        elif len(a) > 2 and a[0] == 'u' and _subseq(a[1:], n) and a[1] == n[0]:
+            best = max(best, 2)                        # UCONN, UMAINE: a leading U for "University of"
+        elif _subseq(a, n):
+            best = max(best, 1)
+    return best
+
+
+def home_spread(rows, home_names, away_names):
+    """The home team's closing spread (minus = home favored), Pinnacle first, else the median across books.
+
+    home_names / away_names: every way the team might be labeled (ESPN abbreviation, team name, the lines file's
+    own 'Away@Home' description). Each label in the spread rows is assigned to the side it fits better; a label
+    that fits both sides equally is skipped, and with exactly two labels the second takes the other side.
+
+    Before Nov 12, 2026 this matched a row to a team only when its label equaled ESPN's abbreviation. From 2020
+    on the file labels rows with the full team name, so nothing matched and the table fell back to the play by
+    play's homeTeamSpread, which is signed the other way (plus = home favored) and is a 2.5 placeholder when
+    ESPN had no line: 5,644 of the table's 13,127 games carried a home spread of the wrong sign."""
     if not rows:
         return None
-    mine = [(l, b) for a, l, b in rows if a == home_abbr]
-    theirs = [(-l, b) for a, l, b in rows if a == away_abbr]
-    cands = mine + theirs
+    if isinstance(home_names, str):
+        home_names = [home_names]
+    if isinstance(away_names, str):
+        away_names = [away_names]
+    labels = sorted({a for a, _, _ in rows})
+    side = {}
+    for a in labels:
+        sh, sa = _fit(a, home_names), _fit(a, away_names)
+        if sh != sa:
+            side[a] = 'home' if sh > sa else 'away'
+    if len(labels) == 2 and len(side) == 1:
+        (known, s), = side.items()
+        other = labels[0] if labels[1] == known else labels[1]
+        side[other] = 'away' if s == 'home' else 'home'
+    if len(labels) == 2 and len(side) == 2 and len(set(side.values())) == 1:
+        # both labels lean to the same team (Utah and Utah State): the stronger fit keeps it, the other flips
+        a, b = labels
+        da = _fit(a, home_names) - _fit(a, away_names)
+        db = _fit(b, home_names) - _fit(b, away_names)
+        if da == db:
+            return None
+        side = {a: 'home', b: 'away'} if da > db else {a: 'away', b: 'home'}
+    cands = [(l if side[a] == 'home' else -l, b) for a, l, b in rows if a in side]
     if not cands:
         return None
     p = [l for l, b in cands if 'PINNACLE' in b.upper()]
     return p[0] if p else float(statistics.median(l for l, b in cands))
 
 
+def game_home_spread(rows, home_abbr, home, away_abbr, away, desc=''):
+    """home_spread() for one game of the table: on ESPN's abbreviation and team name first, and only when those
+    cannot place the rows, on the lines file's own 'Away@Home' description as well (the file lists a few
+    neutral-site games with the sides the other way round, so its description is the last resort, not the first)."""
+    hs = home_spread(rows, [home_abbr, home], [away_abbr, away])
+    if hs is None and '@' in str(desc):
+        d_away, d_home = str(desc).split('@', 1)
+        hs = home_spread(rows, [home_abbr, home, d_home], [away_abbr, away, d_away])
+    return hs
+
+
+def pbp_spread(x):
+    """ESPN's play-by-play homeTeamSpread as a home spread with the table's sign (minus = home favored). The
+    play by play signs it the other way, and carries 2.5 when ESPN had no line at all, which is not a line."""
+    if x is None or abs(float(x)) == 2.5:
+        return None
+    return -float(x)
+
+
 def schedule(path):
     """game_id -> final and divisions from the schedule file."""
+    import pyarrow.parquet as pq
     t = pq.read_table(path, columns=['game_id', 'season', 'week', 'season_type', 'start_date', 'home_team', 'away_team',
                                      'home_points', 'away_points', 'home_division', 'away_division', 'neutral_site']).to_pandas()
     t = t[t.home_points.notna() & t.away_points.notna()]
@@ -73,6 +158,7 @@ def schedule(path):
 
 def season_games(path):
     """Per game: the halftime score off the play by play, plus the play by play's own final for the check."""
+    import pyarrow.parquet as pq
     names = pq.ParquetFile(path).schema_arrow.names
     t = pq.read_table(path, columns=[c for c in COLS if c in names]).to_pandas()
     t = t[t['game_id'].notna() & t['period'].notna()].copy()
@@ -134,10 +220,10 @@ def main(lines_path, pbp_dir, sched_dir, dst):
                 continue
             if s.home_division != 'fbs' and s.away_division != 'fbs':
                 continue                               # an FCS pairing with a line (a bowl); the desk watches FBS
-            total, sp = L.get(g['game_id'], (None, None))
-            hs = home_spread(sp, g['home_abbr'], g['away_abbr']) if total is not None else None
+            total, sp, desc = L.get(g['game_id'], (None, None, ''))
+            hs = game_home_spread(sp, g['home_abbr'], g['home'], g['away_abbr'], g['away'], desc) if total is not None else None
             if hs is None:
-                hs = g['pbp_home_spread'] if total is not None else None
+                hs = pbp_spread(g['pbp_home_spread']) if total is not None else None
             if total is None or hs is None:
                 nolines += 1
                 continue

@@ -45,6 +45,25 @@ def fit(X, y):
     return coef
 
 
+def dump_model(obj, f, level=0):
+    """model.json's layout (the one scripts/fit_cbb.py writes): one key a line, indented a space a level, every
+    list on one line, a dict of plain numbers (a ref table row) on one line. json.dump(indent=1) put every
+    quantile on its own line and turned a seven-number refit into a 1,400-line diff."""
+    pad = ' ' * level
+    if isinstance(obj, dict) and all(not isinstance(v, (dict, list)) for v in obj.values()) and level > 0:
+        f.write('{' + ', '.join(f'{json.dumps(k)}: {json.dumps(v)}' for k, v in obj.items()) + '}')
+    elif isinstance(obj, dict):
+        f.write('{\n')
+        items = list(obj.items())
+        for i, (k, v) in enumerate(items):
+            f.write(f'{pad} {json.dumps(k)}: ')
+            dump_model(v, f, level + 1)
+            f.write(',\n' if i < len(items) - 1 else '\n')
+        f.write(pad + '}')
+    else:
+        f.write(json.dumps(obj))
+
+
 def mu_of(coef, X):
     return np.maximum(8.0, X @ coef)
 
@@ -215,11 +234,15 @@ def main():
         full = json.load(open(MODEL_PATH))
         # ref (second-half points against the market's halftime line by state and spread bucket) stays: this
         # table has no halftime lines, and the engine only prints it
-        full['cfb'].update(coef=[round(float(c), 4) for c in coef], k=round(k, 4), z=[round(float(v), 4) for v in q], n=int(len(d)), knee=knee,
+        full['cfb'].update(coef=[round(float(c), 4) for c in coef], k=round(k, 4), z=[round(float(v), 4) for v in q], n=int(len(d)),
+                           knee=int(knee) if float(knee).is_integer() else knee,
                            fit=f'FBS {d.season.min()}-{d.season.max()} ({len(d)} games, cfbfastR play by play with finals checked against the '
-                               f'schedules, CFBD closing lines, Pinnacle first); second-half points including overtime; running-clock term '
+                               f'schedules, CFBD closing lines, Pinnacle first, home spreads repaired Nov 12, 2026 by scripts/repair_cfb_spreads.py); '
+                               f'second-half points including overtime; running-clock term '
                                f'max(0, |halftime margin| - {knee:g}); study in claude/cfb-blowout-refit.md')
-        json.dump(full, open(MODEL_PATH, 'w'), indent=1)
+        with open(MODEL_PATH, 'w') as f:
+            dump_model(full, f)
+            f.write('\n')
         print('model.json cfb block written')
 
 

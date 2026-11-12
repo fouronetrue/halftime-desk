@@ -66,7 +66,38 @@ for r in rows:
     assert r['home_div'] == 'fbs' or r['away_div'] == 'fbs', r
     seasons.add(int(r['season']))
 assert min(seasons) == 2006 and max(seasons) >= 2022, seasons
-print('cfb ok:', len(rows), 'games', min(seasons), '-', max(seasons), '; engine coef terms', len(orig['coef']))
+
+# 3b. the home spread's sign (minus = home favored), checked against the results season by season. Until Nov 12,
+# 2026 the table carried the wrong sign on 5,644 of 13,127 games (every game whose lines-file label was not ESPN's
+# abbreviation fell back to the play by play's spread, signed the other way): the correlation between the final
+# home margin and the home team being favored read -0.5 in 2021-25. A right table reads +0.65 to +0.76.
+def corr(xs, ys):
+    n = len(xs)
+    mx, my = sum(xs) / n, sum(ys) / n
+    sxy = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    sxx, syy = sum((x - mx) ** 2 for x in xs), sum((y - my) ** 2 for y in ys)
+    return sxy / (sxx * syy) ** 0.5
+by_season = {}
+for r in rows:
+    by_season.setdefault(int(r['season']), []).append((int(r['fh']) - int(r['fa']), -float(r['home_spread'])))
+for season, pairs in sorted(by_season.items()):
+    c = corr([p[0] for p in pairs], [p[1] for p in pairs])
+    assert c > 0.55, f'cfb_games.csv {season}: final home margin against the home spread correlates {c:+.2f}; the spread is signed the wrong way'
+    fav = sum(1 for p in pairs if p[1] > 0) / len(pairs)
+    assert 0.55 < fav < 0.72, f'cfb_games.csv {season}: home team favored in {100 * fav:.0f}% of games'
+by_id = {r['game_id']: r for r in rows}
+for gid, away, home, sp in [('401752677', 'Texas', 'Ohio State', -2.0), ('292460254', 'Utah State', 'Utah', -20.5), ('292460189', 'Troy', 'Bowling Green', 7.5)]:
+    g = by_id[gid]
+    assert (g['away'], g['home']) == (away, home) and float(g['home_spread']) == sp, g      # Ohio State laid 2 to Texas; Troy laid 7.5 at Bowling Green
+# the timetable the trust study reads carries the same spreads
+ht = list(csv.DictReader(open(os.path.join(ROOT, 'data', 'half_times_cfb.csv'))))
+assert len(ht) > 2000 and all(abs(float(r['home_spread']) - float(by_id[r['game_id']]['home_spread'])) < 1e-9 for r in ht if r['game_id'] in by_id)
+assert corr([int(r['fh']) - int(r['fa']) for r in ht], [-float(r['home_spread']) for r in ht]) > 0.6
+# with the favorite named right, the block carries the trailing-favorite terms: a favorite behind at the half
+# scores more in the second half than the same score with the dog behind
+assert orig['coef'][4] < 0 and orig['coef'][5] > 0, orig['coef']
+assert HalfModel('cfb', 55.5, -10, 10, 17).mu_model > HalfModel('cfb', 55.5, 10, 10, 17).mu_model + 0.5
+print('cfb ok:', len(rows), 'games', min(seasons), '-', max(seasons), '; engine coef terms', len(orig['coef']), '; home spread sign checked on', len(by_season), 'seasons')
 
 # 4. the NFL block by hand against the engine, and the NFL table (nflverse: home_spread is minus spread_line)
 nfl = engine.MODEL['nfl']

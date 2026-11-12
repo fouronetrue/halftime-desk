@@ -14,7 +14,7 @@ import pandas as pd
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fit_cfb import features, fit, mu_of, Loso, pricing
+from fit_cfb import features, fit, mu_of, Loso, pricing, dump_model
 MODEL_PATH = os.path.join(ROOT, 'model.json')
 
 
@@ -162,7 +162,9 @@ def main():
                            fit=f'NFL {d.season.min()}-{d.season.max()} ({len(d)} games, nflverse play by play, closing spread and total); '
                                f'second-half points including overtime; running-clock term max(0, |halftime margin| - {knee:g}); '
                                f'study in claude/nfl-refit.md')
-        json.dump(full, open(MODEL_PATH, 'w'), indent=1)
+        with open(MODEL_PATH, 'w') as f:      # model.json's own compact layout, so a refit is a few lines of diff
+            dump_model(full, f)
+            f.write('\n')
         print('model.json nfl block written')
 
 
