@@ -403,6 +403,17 @@ price (a restart cannot post it twice) and an `expiration_ts` at the window's en
 resting). The kill switch cancels what is resting and stops every send until it is turned off. `tests/trade_guard.py`
 pins all of it, and the fixtures run plans in shadow with the network forbidden.
 
+## The fee watch
+The engine prices a take at 7% x P x (1 - P) and a resting fill at no fee. That is what Kalshi's fee schedule
+(the July 7, 2026 update) says for the total series: maker fees, 1.75% x P x (1 - P) on a resting order that
+fills, are charged only on the series the schedule lists, the NFL and college football game-winner series among
+them and no total or spread series. One outside write-up says total series carry them too, and Kalshi has
+changed the table before, so every six hours the worker reads Kalshi's own record of each total series it
+prices (`/series/TICKER`: `fee_type`, `fee_multiplier`) and pushes once, high priority, if a series reads
+`quadratic_with_maker_fees` or `flat`, or its record changes from the first clean read (`watch.Desk.fee_check`,
+`tests/fees.py`). It tells the phone; it does not reprice. With maker fees a resting fill at 50c would cost
+about 0.44c a share, which is the amount every REST limit would then be too high by.
+
 ## Polymarket price log
 At every break the worker also reads Polymarket's total lines for the same game (the public Gamma API, no key;
 events are slugged `nba-bos-det-2026-10-20`, with full-game and first-half totals) every 15 seconds and writes each

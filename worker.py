@@ -44,6 +44,7 @@ SAVE_EVERY = 300     # seconds: and at least this often, whatever changed
 ARCHIVE_GAP = 1800   # seconds between rewrites of the archive row
 PREGAME_EVERY = 60   # seconds: the pregame row at least this often, so its read times stay fresh on Today
 RETRY_GAP = 30       # seconds after a failed state write before the next try (a down database is not hammered)
+FEE_CHECK = 6 * 3600 # seconds between reads of Kalshi's fee record for the total series (watch.Desk.fee_check)
 # Game fields rewritten on (nearly) every pass that nothing needs after a restart: the next pass reads them again.
 # A change to these alone is not a reason to write the state. (The pregame line's own 'at' stamp is the same
 # kind of field: see durable_view.) A field missing here only means more writes, never a lost one.
@@ -241,7 +242,7 @@ def main():
                  + (f", {'ARMED' if trader.armed() else 'not armed'}" if trader.mode() == 'live' else '')) if trader.on else 'auto off'
     print(f"worker up: {len(desk.state.get('games', {}))} games in state, ntfy {'on' if os.environ.get('NTFY_TOPIC') else 'OFF'}, "
           f"kalshi sync {'on' if portfolio.enabled() else 'off'}, {auto_note}", flush=True)
-    last_sync, last_held, last_refresh, passes = 0.0, 0.0, 0.0, 0
+    last_sync, last_held, last_refresh, last_fees, passes = 0.0, 0.0, 0.0, 0.0, 0
     killed = False
     saver = Saver()
     while not _stop:
@@ -265,6 +266,14 @@ def main():
             saver.saves = saver.beats = 0
         elif wait == FAST:
             print(f'{watch.now_iso()} {note}', flush=True)
+        if wait != FAST and time.time() - last_fees > FEE_CHECK:
+            # what Kalshi charges in the total series the desk prices: a push the day a series moves onto maker fees.
+            # Never around a break: four reads of a slow API are not worth one late look at a half.
+            last_fees = time.time()
+            try:
+                desk.fee_check()
+            except Exception as e:   # a look at the fee record never touches the watch
+                print(f'fee check failed: {e}', flush=True)
         sync_every = 120 if wait <= LIVE else 1800
         if portfolio.enabled() and time.time() - last_sync > sync_every:
             last_sync = time.time()

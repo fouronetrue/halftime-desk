@@ -569,6 +569,16 @@ def kalshi_events(series, status='open'):
     return out
 
 
+def kalshi_series(series):
+    """Kalshi's own record of a series. fee_type and fee_multiplier say what a fill costs there: 'quadratic' is the
+    general table (7% x P x (1 - P) to take a price, nothing to rest an order), 'quadratic_with_maker_fees' adds
+    1.75% x P x (1 - P) on a resting order that fills (Kalshi's fee schedule, Maker Fees). {} when it cannot be read."""
+    try:
+        return (get_json(f'{KALSHI}/series/{series}', tries=1, timeout=8) or {}).get('series') or {}
+    except Exception:
+        return {}
+
+
 def kalshi_url(event_ticker):
     """The Kalshi page for an event: kalshi.com/markets/<series>/event/<event ticker>, lower case. Opens the Kalshi
     app on a phone that has it."""

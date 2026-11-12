@@ -599,6 +599,63 @@ class Desk:
         print(f"{g['short']}: sharp 2H {line} ({source}, {n} books)")
         return rec['h2']
 
+    def fee_check(self):
+        """Ask Kalshi what a fill costs in each total series the desk prices, and tell the phone once when the answer
+        is not the one the engine is built on. The engine prices a take at 7% x P x (1 - P) and a resting fill at no
+        fee: Kalshi's schedule of July 7, 2026 charges maker fees only on the series it lists, the game-winner
+        series among them and no total series. If a total series moves onto maker fees, every resting limit the
+        desk posts is too high by the fee (0.44c a share at 50c) until the engine is told, and the resting fills'
+        record is overstated by it. The first clean read of a series is kept as its baseline; a later read that
+        differs, or any read that is not the general table (maker fees, a flat fee), is pushed once. Returns the
+        push titles."""
+        fees = self.state.setdefault('fees', {})
+        out = []
+        for sport in self.cfg.get('sports', []):
+            series = (feeds.SERIES.get(sport) or {}).get('total')
+            if not series:
+                continue
+            if self.fixtures:
+                row = load_json(os.path.join(self.fixtures, f'kalshi_series_{series}.json'), {}).get('series') or {}
+            else:
+                row = feeds.kalshi_series(series)
+            ft = row.get('fee_type')
+            if not ft:
+                continue   # not read this time: nothing learned, nothing changed
+            try:
+                mult = float(row.get('fee_multiplier'))
+            except (TypeError, ValueError):
+                mult = None
+            now, was = dict(fee_type=ft, fee_multiplier=mult), fees.get(series) or {}
+            base = was.get('base')
+            # quadratic: the general table. quadratic_with_combo_maker_fees: the same for a single market (the maker
+            # fee there is on combos, which the desk never trades). Anything else is not what the engine prices.
+            maker = ft == 'quadratic_with_maker_fees'
+            odd = ft not in ('quadratic', 'quadratic_with_combo_maker_fees')
+            changed = bool(base) and (base.get('fee_type'), base.get('fee_multiplier')) != (ft, mult)
+            sig = f'{ft}|{mult}'
+            rec = dict(now, base=base or (None if odd else now), checked=now_iso(), alerted=was.get('alerted'))
+            changed = changed or odd
+            if changed and was.get('alerted') != sig:
+                per = 100 * 0.0175 * (mult if mult is not None else 1.0) * 0.25
+                title = f'FEES: {series} is now {ft}'
+                body = (f"Kalshi's record for {series} reads fee_type {ft}, multiplier {mult if mult is not None else 'n/a'}"
+                        + (f" (it was {base.get('fee_type')}, {base.get('fee_multiplier')})" if base else '') + '. '
+                        + (f"The desk prices a resting fill at no fee. With maker fees a resting fill at 50c costs about {per:.2f}c a share, "
+                           f"so every REST limit is that much too high until the engine is told. " if maker else
+                           'The desk prices a take at 7% x P x (1 - P) and a resting fill at no fee. Check the fee schedule before the next slate. ')
+                        + 'Nothing else changed.')
+                try:
+                    notify.push(title, body, 'high', 'warning')
+                except Exception as e:
+                    print(f'fee alert failed to send ({e})')
+                rec['alerted'] = sig
+                out.append(title)
+                print(f'{series}: {title}')
+            elif not changed:
+                rec['alerted'] = None
+            fees[series] = rec
+        return out
+
     def stake(self):
         """config stake_scale as a number: the share of full size a play on price is sized at. Missing is full
         size; 0 is a real setting (plays on price off), not a missing one."""
