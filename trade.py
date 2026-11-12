@@ -168,16 +168,22 @@ def api(method, path, body=None, params=None, key=None, tries=2, timeout=8):
     next game's push."""
     if requests is None:
         raise ApiError('requests is not installed')
-    key = key or load_trade_key()
-    if key is None:
+    try:
+        key = key or load_trade_key()
+    except Exception as e:   # a key pasted wrong is a refusal to send, never a crash in the middle of a pass
+        raise ApiError(f'the trade key could not be read ({type(e).__name__}): check KALSHI_TRADE_PRIVATE_KEY is the whole key, BEGIN line to END line')
+    if key is None or not os.environ.get('KALSHI_TRADE_KEY_ID'):
         raise ApiError('no trade key in the environment')
     full = BASE.split('://', 1)[1]
     sign_path = full[full.index('/'):] + path
     last, status = None, None
     for i in range(tries):
         ts = str(int(time.time() * 1000))
-        headers = {'KALSHI-ACCESS-KEY': os.environ['KALSHI_TRADE_KEY_ID'], 'KALSHI-ACCESS-TIMESTAMP': ts,
-                   'KALSHI-ACCESS-SIGNATURE': sign(key, ts, method, sign_path), 'User-Agent': 'halftime-desk/1.0', 'Content-Type': 'application/json'}
+        try:
+            headers = {'KALSHI-ACCESS-KEY': os.environ['KALSHI_TRADE_KEY_ID'], 'KALSHI-ACCESS-TIMESTAMP': ts,
+                       'KALSHI-ACCESS-SIGNATURE': sign(key, ts, method, sign_path), 'User-Agent': 'halftime-desk/1.0', 'Content-Type': 'application/json'}
+        except Exception as e:
+            raise ApiError(f'the request could not be signed ({type(e).__name__}: {e})')
         try:
             r = requests.request(method, BASE + path, params=params, data=None if body is None else json.dumps(body), headers=headers, timeout=timeout)
             if r.status_code < 300:

@@ -65,6 +65,12 @@ assert live.ready() and not live.armed(), 'every switch on and no self-test: not
 # a self-test that cannot reach Kalshi is not a pass
 res = live.preflight([dict(event_ticker='E', markets=[dict(ticker='E-140', floor_strike=140.5, status='active', yes_ask_dollars='0.5200', no_ask_dollars='0.5000')])])
 assert not res['ok'] and 'network call attempted' in res['error'] and not live.armed(), res
+# a key pasted wrong (half a PEM) fails the self-test in plain words; it never raises out of the pass
+good_pem = os.environ['KALSHI_TRADE_PRIVATE_KEY']
+os.environ['KALSHI_TRADE_PRIVATE_KEY'] = good_pem[:60]
+res = live.preflight([dict(event_ticker='E', markets=[dict(ticker='E-140', floor_strike=140.5, status='active', yes_ask_dollars='0.5200', no_ask_dollars='0.5000')])])
+assert not res['ok'] and 'the trade key could not be read' in res['error'] and 'BEGIN line to END line' in res['error'] and not live.armed(), res
+os.environ['KALSHI_TRADE_PRIVATE_KEY'] = good_pem
 live.verified = dict(ok=True, walled=False)
 # the kill switch: with Supabase on, a kill row stops it; with Supabase unreadable, kill() is True (no read, no send)
 store.read = lambda table, params: [dict(kill=True)]
