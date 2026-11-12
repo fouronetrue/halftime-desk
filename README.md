@@ -1,7 +1,7 @@
 # Halftime Desk
 
 Watches NFL, college football and NBA games, and at the half prices every Kalshi full-game total strike with a
-second-half points model fit on 2,290 NFL, 13,124 FBS and 12,849 NBA games. When a single leg or a middle (Yes on
+second-half points model fit on 2,290 NFL, 13,109 FBS and 12,849 NBA games. When a single leg or a middle (Yes on
 a lower total plus No on a higher one) clears the edge, it sends a push notification with the play, the price,
 how many shares or pairs, and the resting limits for every strike near fair.
 
@@ -30,9 +30,11 @@ how many shares or pairs, and the resting limits for every strike near fair.
      SELL for +$18.`), then `Together it's a 51 to 57 middle: 50 or less -$93 (17%), 51 to 57 +$186 (25%), 58
      or more +$46 (58%).`, then `NO-LOSE HEDGE:` when one leg leaves every final at zero or better. The hedge
      is sized to the net downside of everything you hold on the total, never to one leg.
-   - `REST A MIDDLE:` with the limit prices to post, shares and dollars, and the finals line. If they don't
-     fill, you didn't want it. A middle you already hold on the total counts against the $15 loss cap first:
-     when it has spent the cap the push says `Nothing new to post` instead of offering the same middle again.
+   - `REST A MIDDLE (cancel unfilled legs when the 3rd starts):` with the limit prices to post, shares and
+     dollars, and the finals line. If they don't fill during the break, you didn't want it: a leg that fills
+     after play resumes fills because the game moved against it (the section below has the count). A middle
+     you already hold on the total counts against the $15 loss cap first: when it has spent the cap the push
+     says `Nothing new to post` instead of offering the same middle again.
    The priority of an UPDATE comes from `read_push` per sport; a PLAY is always high priority, and so is an
    UPDATE with a SELL verdict or a hedge.
 4. Logs every priced halftime to `log/halftime_log.csv`, and when the game goes final grades what the first push
@@ -69,6 +71,65 @@ how many shares or pairs, and the resting limits for every strike near fair.
    hours between game windows. Fills in a market the watcher priced at the half, filled after the half, are
    tagged `halftime`; everything else is `personal` until you retag it. The sync never overwrites a tag. The
    balance goes to Supabase only; no dollar figure is printed to the Actions log.
+
+## Live since Nov 12: sizing, lanes and the rules
+The desk ran as a test from Oct 16 to Nov 11, 2026: 791 halves graded at the prices Kalshi actually showed at
+the first look. `claude/go-live-nov12.md` has the readout. Three findings set how it runs live.
+
+**1. No edge on price is proven, so plays on price run at half stake.** Replayed at the real first-look asks,
+the desk's blend (model plus the sharp second-half line) cleared 3 cents 97 times and made 4.8c a contract with
+a standard error of 4.9. The model alone (250 calls) and the sharp line alone (119) made nothing. That is not a
+loss and it is not an edge. `stake_scale` (0.5) halves the budget of every single and reverse middle, after the
+risk cap, so a half-stake play risks at most 1.25% of bankroll whatever its price (applied before the cap, an
+83c favorite would have stayed at full size). `edge_cap_c` (6) is the most edge a play is credited when it is sized: the 60 calls that claimed 3 to 5c won
+42, the 37 that claimed 5c or more won 17. A big gap to the market is more often the model missing something.
+The rules that do not change without a reason did not change: the 3-cent margin, the 15 to 85c band, the 40c
+floor on singles, quarter Kelly, 2.5% risk and 7.5% cost a game, 20% a day, two pushes a game. The stake works
+under the caps, never over them, and comes off in one line of `config.json`.
+
+**2. A resting order that fills in play is a losing order.** The shadow fill model posted 1,251 resting orders
+from Oct 23 to Nov 11 and 945 were reached. The 605 reached after play resumed lost $910 and lost on 20 of 28
+sport-nights. The 340 reached during the break made $479, nearly all of it on the first three nights at five
+times the later size, and about nothing since: a fair price, not a proven profit. So the push now says to cancel
+unfilled legs when play resumes (`engine.cancel_by`), not at the 4th quarter, and a live auto order expires with
+the break whatever `auto.rest_until` says (shadow keeps resting to the 4th, which is how the two are told apart).
+Only 12 of 722 resting middles filled both legs inside a break: a resting middle is mostly one fair single.
+
+**3. One spot has a live lane, at a quarter of the old size. The rest are watched.** A spot lane
+(`engine.spot_lane`, config `spots.<sport>.<cell>`) is a cell of the halftime study, measured against the
+book's own second-half line and the blend the desk prices from:
+
+| sport | cell | lean | record against the book's 2H line | against the model, every season | mode |
+|---|---|---|---|---|---|
+| NFL | home favorite trailing at the half | over, +1.5 | 104 of 179 over (58%), 2023-26: 55, 61, 60, 56 by season | +0.1 on 1,359 games 2000-22, +1.4 on 182 since | live, half lane stake |
+| CFB | favorite leading by 1-7 | over, +1.1 | 247 of 442 over (56%), 2023-25 | +0.1 on 2,793 games | shadow |
+| CFB | first half 10+ over the pace | over, +1.0 | 233 of 422 over (55%), 2023-25 | +0.1 on 2,778 games | shadow |
+| CBB | 15+ point favorite not up by 15 | under, -1.0 | 454 of 1,023 over (44%), 2007-08 to 2010-11 | -1.6 on 2,944 games | shadow |
+
+A live cell does two things. Its lean is added to the blended mean, and a single on its side priced 40 to 60c
+(`lane_band_c`) is scored at the model's full weight instead of halved against Kalshi's own price. The lean was
+measured against the market's line, so blending it back toward that line threw half of it away: from Nov 7 to
+Nov 12 the lane named the spot and could not call a play. A lane's play carries `lane` on the sheet, the grade
+and the record, says `Spot play:` and the lane's record on the push, and is sized at the cell's `stake` (0.5)
+on top of `stake_scale`. A shadow cell is named on the push (`Spot (watch): ...`) and never applied. Against
+Kalshi's own halftime line this season the shadow cells have not shown it (the scorecard's "Spot cells at the
+Kalshi line" table), which is why they are shadow.
+
+| key | meaning | config.json |
+|---|---|---|
+| stake_scale | multiplies the budget of every single and reverse middle, after the risk cap; middles are sized by their loss cap and do not move | 0.5 |
+| edge_cap_c | the most edge, in cents, a play is credited when sized (the edge on record is still the claim) | 6 |
+| lane_band_c | the prices a live lane's own single may cost | 40 to 60 |
+| spots.SPORT.CELL | lean (points, plus is over), mode (live or shadow), stake (0 to 1, a live lane's share of the stake), note (one line of the lane's record, printed on the push) | above |
+| play_push.SPORT | min puts a sport's PLAYs in a shadow week (silent, marked, graded apart); empty since Nov 12, when college basketball went live | {} |
+
+The rules that move any of this were written down before the plays they judge, and the nightly scorecard
+(`data/desk/scorecard.md`, section "The go-live rules, and where each stands") prints where each one is:
+plays on price go back to full stake at 50 graded plays with a profit, and become reads if those 50 are down
+more than a tenth of the money risked; a live lane is reviewed at 30 graded plays (55% winners and a profit
+earns its full stake, under 48% sends it back to shadow); a shadow cell goes live at half size once 150 graded
+halves have landed on its side of Kalshi's line 55% of the time; the resting block stays on the push while the
+break fills return better than minus 5% on the next 300. `tests/lanes.py` pins the sizing and the lane's play.
 
 ## Setup (10 minutes)
 1. Create a GitHub repo (public is free for Actions minutes; private gets 2,000 minutes a month, enough if you
@@ -215,7 +276,7 @@ early-Q3 look never happens there). In the break before the fourth, and its firs
 still the end-of-third score, the watcher prices the same ladder with the end-of-third model (`engine.LateModel`,
 the `nba_q3` block: regulation fourth-quarter points plus an overtime mixture by the margin after three, 9 percent
 in a close game and 0.3 percent at 18+), centered on the ladder the same way, and pushes once as slot q3 ("end of
-3rd, NBA"). Resting middles there say "cancel what has not filled by the first timeout of the 4th". The final
+3rd, NBA"). Resting middles there say "cancel unfilled legs when the 4th starts". The final
 grades it on the game's results row in the q3_ columns (`supabase/007_q3.sql`); `log/results.csv` upgrades its
 own header the first time. `python scripts/fit_nba_q3.py` reprints the fit and its calibration.
 
@@ -252,7 +313,12 @@ like any play (the results row's detail starts with "shadow", the sheet carries 
 against the day's cap, and sits in its own line on the scorecard, the readout's play table and the Record and
 Alerts screens, apart from the live record. College priced rows are written to Supabase a minute apart at most
 (`EVAL_WRITE_GAP`), since the thin ladders change on most passes. Dropping the `play_push` entry makes the
-college PLAYs live (high priority, counted); that is the decision after about 100 graded halftimes.
+college PLAYs live (high priority, counted).
+
+That happened on Nov 12, after 340 graded halves: the shadow week's own plays were 8 of 9, and replayed at the
+first-look asks the college calls made 7c a contract at the model's full weight (59 of 77, standard error 4.7),
+the best of the four sports and still not proof. College PLAYs are live at half stake like every other play on
+price; the reads stay silent (`read_push.cbb` min), since a college night is 20 to 60 games.
 
 ## Football models
 The `nfl` block (2,290 games, SBR archive) was checked on Oct 22 against 5,496 nflverse games 2006-2026
@@ -262,16 +328,33 @@ at zero, so it stays as it is. The one lean is big spreads (10.5+), 2.3 cents ho
 margin; a spread-size term is the candidate if the live scorecard ever shows those overs bleeding.
 `python scripts/fit_nfl.py data/nfl_games.csv` reprints the check.
 
-The `cfb` block is fit on 13,124 FBS games, 2006-2025 (`data/cfb_games.csv`: halftime scores off the cfbfastR
+The `cfb` block is fit on 13,109 FBS games, 2006-2025 (`data/cfb_games.csv`: halftime scores off the cfbfastR
 play by play, finals checked against the schedules, Pinnacle closing lines). It carries one term the NFL block
-does not: the running clock, minus 0.20 second-half points for every point of halftime margin past 14. A team
-up four scores sits on the ball, and the six-term shape priced that second half as if both sides kept
-throwing: at the rungs the desk prices it said OVER 56 percent in 36+ point blowouts where overs hit 43, a
-phantom 10-cent OVER edge on exactly the games that kneel. With the term the same bucket reads 44.6 vs 43.1,
-and every other slice (by total, spread, season, trailing favorite) sits within 0.3 points of zero out of
-sample. The oft-repeated "60+ first-half points means a 20-point second half" is not in the data (115 games,
-29.6 actual, 30.9 model). `python scripts/fit_cfb.py data/cfb_games.csv` reprints the study (`--write` refits
+does not: the running clock, minus 0.16 second-half points for every point of halftime margin past 14. A team
+up four scores sits on the ball, and the six-term shape prices that second half as if both sides kept
+throwing: refit without the term and scored out of sample, it misses 36+ point blowouts by 1.8 points and says
+OVER 50 percent at the rungs the desk prices where overs hit 45.5. With the term the same bucket misses by 0.6
+and reads 46.0 against 45.5, and every halftime-margin bucket under 36 sits within 0.4 points of zero out of
+sample. The oft-repeated "60+ first-half points means a 20-point second half" is not in the data (133 games,
+30.8 actual, 32.6 model). `python scripts/fit_cfb.py data/cfb_games.csv` reprints the study (`--write` refits
 the block); `scripts/build_cfb_games.py` rebuilds the table. The study is in `claude/cfb-blowout-refit.md`.
+
+The home spread in that table was wrong until Nov 12, 2026. The builder matched a spread row to a team only when
+the lines file's label equaled ESPN's abbreviation; the file labels rows with a sportsbook feed's own
+abbreviations in a sixth of the 2006-19 games and with the full team name from 2020 on, so those games fell back
+to the play by play's spread, which is signed the other way (and is a 2.5 placeholder where ESPN had no line).
+5,644 of 13,127 games carried the wrong sign: the correlation between the final home margin and the home team
+being favored read -0.5 in 2021-25, where a right table reads +0.7. Totals were never touched, which is why the
+block still priced within a point: its favorite terms had fit to noise and sat at zero. The live desk was never
+wrong about who was favored (it prices off the line it captured before kickoff); what was wrong was every study
+that named a favorite on those seasons, including the spot cell "home favorite trailing by 1-7", which with the
+favorite named right is 91 of 177 over (51%). `scripts/repair_cfb_spreads.py` rewrote the column from the lines
+file with the fixed resolver in `scripts/build_cfb_games.py` (14 games whose sides could not be told apart were
+dropped), `data/half_times_cfb.csv` took the same spreads, and the block was refit: leave-one-season-out error
+8.82 (it was 8.83), and the trailing-favorite terms now carry weight. On this season's 159 college halves with a
+sharp 2H line the refit misses the second half by 8.58 points on average, the old block by 8.62 and the book by
+8.56: a small repair to the prices, a large one to the studies. `tests/football.py` checks the sign season by
+season so it cannot come back.
 
 ## Bankroll from the live balance
 Every cap is a percentage of `bankroll`. The worker sets it from Kalshi instead of a number typed into
@@ -295,7 +378,7 @@ names an order endpoint. It runs in the worker only, and only with an `auto` blo
 | mode | shadow (record what it would send, send nothing) or live | shadow |
 | sports | which sports it plans for | nba |
 | rest_mode | pair: the push's resting middle legs (tight and wide for the NBA); ladder: YES on every strike at or below fair and NO on every strike at or above it, within rest_near_pts | pair |
-| rest_until | how long a resting order lives: break (the end of the half) or q4 (the start of the fourth, the push's own cancel rule) | q4 |
+| rest_until | how long a shadow resting order lives: break (the end of the half) or q4 (the start of the fourth, so the readout can split break fills from in-play fills). A live order always expires with the break | q4 |
 | pair_miss_pct, pair_miss_max | per game: if every resting order filled, the worst final loses at most this % of bankroll (or this many dollars when set), less what you already hold on the total | 0.5, none |
 | night_loss_pct, night_loss_max | once the night's graded auto orders have lost this much, nothing new is posted | 5, none |
 | rest_capital_pct | open resting orders at once, % of bankroll | 40 |
@@ -325,6 +408,13 @@ line's Over bid and ask in cents beside Kalshi's quote at that strike at the sam
 `supabase/012_venues.sql`). Nothing prices off it. It answers the cross-venue question before any order crosses a
 venue: does one ladder lag the other at the half, on which strikes, by how much. NBA and NFL for now (no slug
 scheme for college yet).
+
+What the log says so far (Oct 23 to Nov 11, 171 games), and why it is not yet an answer: on about one row in ten
+inside the 15 to 85c band the two venues' quotes cross by more than a cent after Kalshi's fee, in 144 of the
+games, and the gap sits there read after read. Free money that sits for minutes on two liquid books is far more
+likely to be a quote that is not there: Gamma's `bestBid` and `bestAsk` are a summary with no size, and the log
+never reads the order book. Before anyone treats a gap as a middle, the reader has to take Polymarket's order
+book with sizes at the break, and whether that market can be traded from here has to be checked.
 
 ## Manual use
 ```
@@ -385,6 +475,11 @@ without a usable market center (`require_center`), since a center the plausible 
 sign of a bad read and the NBA model alone is a ruler, not a compass.
 
 ## Honest limits
+- Nothing on the desk has proven an edge yet. Four weeks and 791 graded halves at the real first-look asks say
+  Kalshi's halftime totals are priced about as well as the books' (the model misses the final by as much as the
+  market does in every sport), the plays on price are inside their own noise, and the resting fills at the
+  break are about even. The live sizes are small for that reason, and the scorecard's rules section says what
+  has to happen for any of them to grow. `claude/go-live-nov12.md` has the numbers.
 - The model knows the lines, the score and the clock. It does not know injuries or pace (and weather only in the NFL, at the half). That is why the
   market price gets half the weight once it is known, and why a 3-cent edge is required.
 - Kalshi's second-half line already discounts blowouts. The edge the desk reports is the gap between the model
