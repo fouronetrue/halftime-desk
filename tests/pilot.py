@@ -8,8 +8,10 @@ and a fake orders table stand in for the real ones; any real network call fails 
    the wrong side, and no market to test on each leave the pilot unarmed. A key locked to a funded subaccount is
    walled; anything else is on the leash.
 4. The numbers: the leash until walled, the full ones after, each under its ceiling in code.
-5. The college basketball fixtures, armed: the push's resting middle and lead single go to Kalshi at pilot size,
-   written to the table first; the shadow rows are still planned; the push says what the pilot did. A fill is read
+5. The college basketball fixtures, armed: the pilot does what each push says, at pilot size. The PLAY's lead single
+   is taken (and no resting middle posted on that game, since a PLAY push names none); the read's REST A MIDDLE
+   legs are posted. Each is written to the table first; the shadow rows are still planned; the push says what the
+   pilot did. A fill is read
    back with its price and fee, the unfilled leg comes down when the second half starts, the final grades what
    filled, and one push sums the night.
 6. The walls: the night cap holds a pair back as a pair, the wallet stops it for good, an unreadable table stops it,
@@ -337,6 +339,9 @@ for r in rows:
     if r['kind'] == 'rest':
         pairs.setdefault((r['game_id'], r['pair']), []).append(r)
 assert pairs and all(len(v) == 2 and {x['side'] for x in v} == {'yes', 'no'} and v[0]['count'] == v[1]['count'] for v in pairs.values()), pairs
+# a PLAY push names its single and no resting middle, so on that game the pilot posts none; the read's game gets the pair and no take
+assert 'REST A MIDDLE' not in next(p for p in pushes if 'Terriers' in p[0])[1] and not [r for r in rows if r['game_id'] == '601' and r['kind'] == 'rest'], 'a resting leg was posted on a PLAY game'
+assert 'REST A MIDDLE' in next(p for p in pushes if 'Dragons' in p[0])[1] and {r['kind'] for r in rows if r['game_id'] == '604'} == {'rest'}
 rm4 = rec4['sheet'].get('rest_mid')
 legs4 = pairs.get(('604', f"{rm4['a_line']:g}/{rm4['b_line']:g}"))
 assert legs4 and {(x['side'], x['strike'], x['price_c']) for x in legs4} == {('yes', rm4['a_line'], rm4['a_price']), ('no', rm4['b_line'], rm4['b_price'])}, (rm4, legs4)

@@ -7,8 +7,8 @@ Two things live here.
    they would have filled. Nothing goes to Kalshi. This is the fill model the scorecard reads.
 
 2. The pilot (config auto.pilot): the only way an order leaves this module. For the sports it lists, at the first
-   look at the half, the worker posts the push's resting middle and takes the push's lead single, at pilot size,
-   and only when all of these hold at the moment of sending:
+   look at the half, the worker does what the push says, at pilot size: on a PLAY it takes the lead single, on a
+   read it posts the REST A MIDDLE block's two legs. Only when all of these hold at the moment of sending:
      a. config.json has an auto.pilot block with the sport in pilot.sports and a wallet above zero
      b. the environment has TRADE_ENABLED=1
      c. the trade key is in the environment: KALSHI_TRADE_KEY_ID and KALSHI_TRADE_PRIVATE_KEY (a second Kalshi
@@ -553,9 +553,11 @@ class Trader:
         return out
 
     def plan_pilot(self, g, stage, m, rows, sug, quotes, ev, sizing, ts, held_legs=None, plays_live=True):
-        """The pilot's orders for this break: the push's resting middle and the push's lead single, at pilot size.
-        Returns (orders, note). An unarmed pilot plans nothing and writes nothing. plays_live: the sport's PLAYs
-        are live on the phone (not in a shadow week), so its single may be taken."""
+        """The pilot's orders for this break, at pilot size: what the push itself says to do. On a PLAY the push leads
+        with a single, and the pilot takes it; on a read (an UPDATE) the push carries the REST A MIDDLE block, and
+        the pilot posts those two legs. Never both on one game: a PLAY push names no resting middle, so none is
+        posted. Returns (orders, note). An unarmed pilot plans nothing and writes nothing. plays_live: the sport's
+        PLAYs are live on the phone (not in a shadow week), so its single may be taken."""
         sport = g['sport']
         if stage != 'half' or not self.pilot_wants(sport) or not self.armed():
             return [], None
@@ -575,16 +577,16 @@ class Trader:
                             kalshi_order_id=None, sent_at=None, filled_count=None, fill_price_c=None, filled_at=None, touched_at=None, touch_phase=None,
                             touch_s=None, pnl=None, graded_at=None, final_total=None, note=None))
         has = lambda strike, price_c: bool((quotes.get(float(strike)) or {}).get('ticker')) and price_c is not None and 1 <= int(price_c) <= 99
-        # the take first: an ask can be gone in a second, a resting bid waits
+        singles, mid = engine.chosen(sug, 1)
+        is_play = bool(singles or mid or engine.chosen_rev(sug))   # engine.order_sheet: anything that clears makes the push a PLAY
         if 'take' in kinds and plays_live and lim['single_cost'] > 0:
-            singles, _ = engine.chosen(sug, 1)
             if singles and has(singles[0]['line'], singles[0]['price_c']):
                 s = singles[0]
                 n = min(int(s['contracts']), int(lim['single_cost'] * 100 / int(s['price_c']) + 1e-9), most(s['price_c']))
                 if n >= 1:
                     add('yes' if s['kind'] == 'over' else 'no', s['line'], s['price_c'], n, 'take', 'single', None)
-        if 'rest' in kinds and lim['rest_pairs'] >= 1:
-            # the same resting middle the push names: engine.rest_block makes this call with these numbers
+        if 'rest' in kinds and lim['rest_pairs'] >= 1 and not is_play:
+            # the resting middle the read names: engine.rest_block makes this call with these numbers
             rp = engine.rest_plan(m, rows, 'fg', sizing.get('margin', 0.03), sizing.get('bankroll', self.bank), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0),
                                   mid_loss=sizing.get('mid_loss'), near_pts=sizing.get('near_pts', 3.5))
             md = rp.get('middle')

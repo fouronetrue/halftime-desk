@@ -406,10 +406,11 @@ prints the readout (orders, fills at the break vs in play, both legs of a middle
 carries the same line.
 
 **The pilot** (`auto.pilot`, Nov 12) is the only way an order leaves the repo. For the sports it lists (college
-basketball), at the first look at the half, the worker posts the push's resting middle (both legs, post-only,
-expiring with the break) and takes the push's lead single (immediate-or-cancel at the ask the push named), at
-pilot size. It stays out of any game where you already hold the total, and the push carries one line saying what
-it did so nobody places the same orders by hand.
+basketball), at the first look at the half, the worker does what the push says, at pilot size. On a PLAY it takes
+the lead single (immediate-or-cancel at the ask the push named). On a read it posts the two legs of the REST A
+MIDDLE block (post-only, expiring with the break, cancelled when the second half starts). Never both on one game:
+a PLAY push names no resting middle, so none is posted. It stays out of any game where you already hold the
+total, and the push carries one line saying what it did so nobody places the same orders by hand.
 
 | key | meaning | config |
 |---|---|---|
