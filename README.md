@@ -88,13 +88,14 @@ floor on singles, quarter Kelly, 2.5% risk and 7.5% cost a game, 20% a day, two 
 under the caps, never over them, and comes off in one line of `config.json`.
 
 **2. Resting orders come down when play resumes.** The shadow fill model posted 1,251 resting orders from
-Oct 23 to Nov 11 and the ladder reached 945 of them. The 605 reached after play resumed lost $910 on $9,980
-(minus 9%), lost on 20 of 28 sport-nights, and lost at both sizes the shadow ran (about minus 10% on the first
-three nights, minus 9% since). Resampling the 19 slates puts that return about three standard errors under
-zero: the firmest number the test produced. The 340 reached during the break made $479 on $5,194, but nearly all
-of it on those first three nights at five times the later size; since then they are plus $8 on about $3,300. A
-fair price, not a proven profit. It is mostly an NBA result (break fills plus 14%, in-play fills minus 10%);
-college basketball was flat both ways and football has too few fills to say. The reason is the old one: a bid
+Oct 23 to Nov 11 and the ladder reached 945 of them. After the maker fee every one of those fills would have
+paid (see Fees below; the numbers here were first written without it), the 605 reached after play resumed lost
+$991 on $9,980 (minus 10%), at both sizes the shadow ran; before the fee they lost on 20 of 28 sport-nights, and
+resampling the 19 slates put the return about three standard errors under zero: the firmest number the test
+produced. The 341 reached during the break made $435 on $5,194, but nearly all of it on the first three nights
+at five times the later size; since then they are about $20 down on about $3,300. A fair price at best, not a
+proven profit. It is mostly an NBA result (break fills plus 13%, in-play fills minus 11%); college basketball
+was flat both ways (plus 0.8% at the break, minus 1.1% in play) and football has too few fills to say. The reason is the old one: a bid
 left up in a live game fills when the game moves against it. So the push now says to cancel unfilled legs when
 play resumes (`engine.cancel_by`), not at the 4th quarter, and a live auto order expires with the break whatever
 `auto.rest_until` says (shadow keeps resting to the 4th, which is how the scorecard keeps telling the two kinds
@@ -229,7 +230,7 @@ block out of every JSON column; `tests/export.py` holds it to that. Once the fil
 pruned from Supabase before the free tier fills (around March at the current rate).
 
 Two readouts ride along, since the export job is where the Supabase keys are (`scripts/readout.py`, `tests/readout.py`):
-`data/desk/shadow/DATE.csv` is the auto orders' night in counts and dollars (per sport and mode: resting orders
+`data/desk/shadow/DATE.csv` is the shadow orders' night in counts and dollars (per sport: resting orders
 posted, would-fills at the break and in play, tight and wide pairs, seconds to the fill, middles with both legs or
 one leg filled, P&L at the fill model split the same way, takes), never an order; a fill at the break is counted
 by the break of the stage that posted the order, so a half order touched at the end of the third is a fill in
@@ -377,37 +378,83 @@ Every push's tap target is the Kalshi event page (`kalshi.com/markets/<series>/e
 notification carries an Open market button; Pushover gets the same as its supplementary URL. One tap from the
 alert to the market. The Today card at a break and the Desk have the same button.
 
-## Auto orders (trade.py), shadow first
+## Auto orders (trade.py): the shadow planner, and the pilot
 `trade.py` is the one module that may send an order, and `tests/readonly.py` fails the build if any other file
-names an order endpoint. It runs in the worker only, and only with an `auto` block in `config.json`:
+names an order endpoint. It runs in the worker only, and only with an `auto` block in `config.json`. Two things
+live in it.
+
+**The shadow planner** records what the desk would have posted and whether it would have filled. Nothing it plans
+is ever sent.
 
 | key | meaning | default |
 |---|---|---|
-| mode | shadow (record what it would send, send nothing) or live | shadow |
+| mode | the label on the planner's rows. It is `shadow`, and it sends nothing whatever it says | shadow |
 | sports | which sports it plans for | nba |
 | rest_mode | pair: the push's resting middle legs (tight and wide for the NBA); ladder: YES on every strike at or below fair and NO on every strike at or above it, within rest_near_pts | pair |
-| rest_until | how long a shadow resting order lives: break (the end of the half) or q4 (the start of the fourth, so the readout can split break fills from in-play fills). A live order always expires with the break | q4 |
+| rest_until | how long a shadow resting order lives: break (the end of the half) or q4 (the start of the fourth, so the readout can split break fills from in-play fills) | q4 |
 | pair_miss_pct, pair_miss_max | per game: if every resting order filled, the worst final loses at most this % of bankroll (or this many dollars when set), less what you already hold on the total | 0.5, none |
-| night_loss_pct, night_loss_max | once the night's graded auto orders have lost this much, nothing new is posted | 5, none |
+| night_loss_pct, night_loss_max | once the night's graded shadow orders have lost this much, nothing new is planned | 5, none |
 | rest_capital_pct | open resting orders at once, % of bankroll | 40 |
-| singles | also send the push's lead (the cleared middle, else the first single) as immediate-or-cancel orders at the ask (phase 3); shadow records them regardless | false |
 | max_orders_per_game, max_orders_per_night | hard stops | 12, 200 |
 
 At the first look at a break the worker plans the orders at the resting limits the push names, sizes them under
-the cap (the caps count every leg at once, plus a middle you already hold), and in shadow mode writes them to the
-`orders` table (`supabase/011_orders.sql`). It then keeps reading that game's ladder through the third quarter: a
-resting bid is marked touched when the ask reaches it, with the phase (the break or in play) and the seconds since
-the first look, and at the final every touched order is graded. `python trade.py --readout` prints the readout
-(orders, fills at the break vs in play, both legs of a middle filled, P&L); the scorecard carries the same line.
+the cap (the caps count every leg at once, plus a middle you already hold), and writes them to the `orders` table
+(`supabase/011_orders.sql`). It then keeps reading that game's ladder through the third quarter: a resting bid is
+marked touched when the ask reaches it, with the phase (the break or in play) and the seconds since the first
+look, and at the final every touched order is graded with the fee it would have paid. `python trade.py --readout`
+prints the readout (orders, fills at the break vs in play, both legs of a middle filled, P&L); the scorecard
+carries the same line.
 
-Live mode sends only when, at the moment of sending, all of these hold: `auto.mode` is live, the environment has
-`TRADE_ENABLED=1`, the trade key is present (`KALSHI_TRADE_KEY_ID` and `KALSHI_TRADE_PRIVATE_KEY`, a second
+**The pilot** (`auto.pilot`, Nov 12) is the only way an order leaves the repo. For the sports it lists (college
+basketball), at the first look at the half, the worker posts the push's resting middle (both legs, post-only,
+expiring with the break) and takes the push's lead single (immediate-or-cancel at the ask the push named), at
+pilot size. It stays out of any game where you already hold the total, and the push carries one line saying what
+it did so nobody places the same orders by hand.
+
+| key | meaning | config |
+|---|---|---|
+| sports | the sports the pilot trades | cbb |
+| wallet | the most the pilot may lose, ever. At minus this it stops for good | 500 |
+| night_cap | the most order money it may post in a night, filled or not, with a walled key | 200 |
+| rest_pairs | pairs in a resting middle | 5 |
+| single_cost | dollars on a play | 15 |
+| kinds | rest (the resting middle), take (the single) | both |
+| leash | the night cap and sizes until the trade key is walled | 50 a night, 3 pairs, $5 a play |
+
+Sending needs all of these at the moment of sending: the `auto.pilot` block with the sport and a wallet, the
+environment's `TRADE_ENABLED=1`, the trade key (`KALSHI_TRADE_KEY_ID` and `KALSHI_TRADE_PRIVATE_KEY`, a second
 Kalshi key kept in the Railway worker's variables only, never in GitHub secrets, so the Actions backup can never
-trade), and the `control` row (id `trade`) does not say kill. Every order is a buy limit order at the engine's
-price and count, post-only when resting, with a `client_order_id` built from the game, window, strike, side and
-price (a restart cannot post it twice) and an `expiration_ts` at the window's end (a dead worker leaves nothing
-resting). The kill switch cancels what is resting and stops every send until it is turned off. `tests/trade_guard.py`
-pins all of it, and the fixtures run plans in shadow with the network forbidden.
+trade), the `control` row (id `trade`) not saying kill, and the self-test passed in this process. The self-test
+(`Trader.preflight`) runs once the switches are on and every ten minutes until it passes: the key reads its
+balance, a one-contract YES bid at 1c and a one-contract NO bid at 1c are posted on a market whose asks are
+nowhere near, read back, checked for side and price, and cancelled. The phone gets the result once: armed, with
+the numbers in force, or not armed, with the step it stopped at and Kalshi's words.
+
+The walls, checked inside `send()` for every order whatever planned it:
+- **The wallet.** The pilot's realized P&L is read from the `orders` table before every order (an order from an
+  earlier night that may have filled and was never graded counts as lost). At minus the wallet it stops.
+- **The night cap.** A sum of what was posted, not a model of what is at risk: a resting order that expires
+  unfilled still counts. A pair goes as a pair or not at all.
+- **The leash.** A key is walled when it is locked to a numbered Kalshi subaccount that holds the wallet and no
+  more; then Kalshi itself refuses a cent past it, and the full numbers apply. Any other key (one that can reach
+  the whole account) gets the leash's numbers. Subaccounts are an API-only Kalshi feature: money moved into one
+  does not show in the Kalshi app.
+- **The ceilings.** `trade.PILOT_HARD`, in code: a $500 wallet, $250 a night, $20 and 40 contracts an order, 150
+  orders a night. A typo in config cannot open more; raising one is a commit with a reason.
+- **No read, no send; no record, no send.** An unreadable `orders` table or `control` row stops an order. Every
+  order is claimed in the table before it is sent, and the table's key is the order's id, so a restart cannot
+  send it twice. An order that got no clean answer from Kalshi counts as posted, and as lost until it is settled.
+- **The kill switch** (the Record tab) cancels what is resting and stops every send, the self-test's included.
+
+Kalshi's order API as read on Nov 12, 2026 (docs.kalshi.com): orders are created and cancelled on the V2
+event-order path, which replaced the old write calls in June 2026; the legacy calls this module was first written
+for were never used. The book is the YES book: the over is a bid at its price, the under an ask at 100 minus its
+price. Counts and prices are fixed-point strings. A fill is read back with the price and fee Kalshi booked, and
+that is what the final grades. When the night's last live order is graded, one push sums it: orders posted,
+fills, P&L after fees, the wallet left, and the pilot's fill rate beside the shadow model's at the break, which
+is the number the pilot exists to produce. Live orders never reach the public export (`scripts/export_desk.py`
+filters them out at the query and again after it); they show on the app's Record page.
+`tests/trade_guard.py` and `tests/pilot.py` (a fake Kalshi built from the documented calls) pin all of it.
 
 ## Fees, and the fee watch
 The engine prices a take at 7% x P x (1 - P) and a resting order that fills at 1.75% x P x (1 - P)
@@ -522,8 +569,12 @@ sign of a bad read and the NBA model alone is a ruler, not a compass.
   The windows run until about 4 AM Eastern after each game night so West Coast finals get graded.
 - A game the watcher never saw before kickoff has no pregame line on record and is skipped at the half, on
   purpose: a line read after kickoff is the live line, and pricing off it cost real money on Oct 17.
-- Nothing places an order until `auto.mode` is live and every switch in the Auto orders section is on. Until then
+- Nothing places an order except the pilot (the Auto orders section): college basketball, inside its wallet and
+  night cap, and only once you have put the trade key in Railway and it has passed its self-test. Everything else,
   you tap buy.
+- The pilot's order calls were written from Kalshi's documentation and a fake built from it. The first real
+  check is the self-test, and the first real fills are the test of the rest: until a few nights reconcile against
+  Kalshi's own record, treat its numbers as provisional.
 
 ## Files
 `engine.py` model and pricing (pure). `feeds.py` ESPN and Kalshi readers and game matching. `watch.py` the loop,
