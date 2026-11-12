@@ -139,23 +139,45 @@ class HalfModel:
         return 'no strong lean'
 
 
-# The spot lane (Nov 7, claude/scorecard-readout-nov07.md). Cells of the halftime study whose second half runs over
-# the desk's own blended number by enough to carry, measured on the halftime data with a 2H line against the blend
-# the desk prices from (not only against the book's line, which the model already half-knows):
-#   NFL home favorite trailing: +1.5 over the blend (n 181, z 2.0; +2.2, +0.5, +1.7, +1.8 by season 2023-26);
-#   CFB home favorite trailing by 1-7: +1.8 (n 171, z 2.1), but +0.5 in 2025;
-#   CFB first half 10+ over the pace: +1.1 (n 424, z 2.1), but +0.2 in 2025.
-# config spots.<sport>.<cell>: {lean, mode}. A live cell's lean is added to the blended mean (HalfModel lean); a
-# shadow cell is named on the push and kept on the sheet, never applied, until the graded rows earn it.
+# The spot lane (Nov 7, claude/scorecard-readout-nov07.md; re-measured Nov 12, claude/go-live-nov12.md). Cells of
+# the halftime study whose second half runs over or under the desk's own blended number, measured on the halves
+# with a book 2H line (2023 on) against the blend the desk prices from, not only against the book's line, which
+# the model already half-knows. Each is then checked against the model alone on every season in the game table:
+#   NFL home favorite trailing: +1.5 over the blend (n 181, se 0.8; +2.2, +0.5, +1.7, +1.8 by season 2023-26) and
+#     58% over the book's line (104 of 179; 55, 61, 60, 56 by season). The 23 seasons before 2023 show nothing
+#     against the model (+0.1 on 1,359), so the lane is live at half size and has to earn the rest.
+#   CFB favorite leading by 1-7: +1.1 over the blend (n 446, se 0.5) and 56% over the book's line 2023-25 (247 of
+#     442; 58, 54, 56 by season). Against the model on 20 seasons: +0.1 on 2,793. Shadow. (The cell this replaced,
+#     "home favorite trailing by 1-7", was read off a game table whose home spread carried the wrong sign on 5,644
+#     games; with the favorite named right it is 51% over on 177. scripts/repair_cfb_spreads.py.)
+#   CFB first half 10+ over the pace: +1.0 over the blend (n 424, se 0.5) and 55% over the book's line 2023-25
+#     (233 of 422; 59, 55, 53 by season). Against the model on 20 seasons: +0.1 on 2,778. Shadow.
+#   CBB 15+ point favorite not up by 15 at the half (ahead by less, or behind): 1.6 under the model on 2,944
+#     games 2015-16 to 2023-24, and 44% over the market's own 2H line on 1,023 games 2007-08 to 2010-11. Shadow:
+#     Kalshi's line already sits lower in these games (the first 71 live rows went 49% over it).
+# config spots.<sport>.<cell>: {lean, mode, stake, note}. A live cell's lean is added to the blended mean (HalfModel
+# lean) and its side is priced at the model's full weight (suggest(lane=...)); a shadow cell is named on the push
+# and kept on the sheet, never applied, until the graded rows earn it.
+def _fav_margin(hs, h1h, h1a):
+    """The pregame favorite's halftime margin (minus = the favorite trails); None on a pick or with no spread."""
+    if hs is None or hs == 0:
+        return None
+    return (h1h - h1a) if hs < 0 else (h1a - h1h)
+
+
 SPOT_CELLS = {
     'home_fav_trailing': ('home favorite trailing', lambda total, hs, h1h, h1a: hs is not None and hs < 0 and h1h < h1a),
     'home_fav_trailing_1_7': ('home favorite trailing by 1-7', lambda total, hs, h1h, h1a: hs is not None and hs < 0 and 0 < h1a - h1h <= 7),
     'hot_first_half': ('first half 10+ over the pace', lambda total, hs, h1h, h1a: bool(total) and h1h + h1a > total / 2 + 10),
+    'fav_leading_1_7': ('favorite leading by 1-7', lambda total, hs, h1h, h1a: _fav_margin(hs, h1h, h1a) is not None and 0 < _fav_margin(hs, h1h, h1a) <= 7),
+    'mismatch_hanging': ('15+ point favorite not up by 15', lambda total, hs, h1h, h1a: hs is not None and abs(hs) >= 15 and _fav_margin(hs, h1h, h1a) < 15),
 }
 
 
 def spot_lane(sport, spots, total, home_spread, h1h, h1a):
-    """The first configured cell this half is in: dict(name, label, lean, mode), else None."""
+    """The first configured cell this half is in: dict(name, label, lean, mode, side, stake, note), else None.
+    side is the way the lean points (over for a plus lean); stake scales a live cell's plays (0.5 = half size, a
+    lane still earning its place); note is one line of the lane's record for the push."""
     for name, cell in ((spots or {}).get(sport) or {}).items():
         meta = SPOT_CELLS.get(name)
         if not meta or not isinstance(cell, dict):
@@ -166,7 +188,13 @@ def spot_lane(sport, spots, total, home_spread, h1h, h1a):
         except Exception:
             hit = False
         if hit:
-            return dict(name=name, label=label, lean=float(cell.get('lean') or 0.0), mode='live' if cell.get('mode') == 'live' else 'shadow')
+            lean = float(cell.get('lean') or 0.0)
+            try:
+                stake = max(0.0, min(1.0, float(cell.get('stake', 1.0))))
+            except (TypeError, ValueError):
+                stake = 1.0
+            return dict(name=name, label=label, lean=lean, mode='live' if cell.get('mode') == 'live' else 'shadow',
+                        side='over' if lean >= 0 else 'under', stake=stake, note=str(cell.get('note') or '') or None)
     return None
 
 
@@ -328,7 +356,8 @@ def fair_line(model, mode='fg'):
     return math.floor(x) + 0.5
 
 
-def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0, max_risk=75.0, max_cost=225.0, price_band=(15, 85), mid_loss=None, single_band=None):
+def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0, max_risk=75.0, max_cost=225.0, price_band=(15, 85), mid_loss=None, single_band=None,
+            lane=None, stake=1.0, edge_cap=None):
     """quotes: {line: {'y': yes_ask_cents, 'n': no_ask_cents}} (None when missing).
     Legs priced outside price_band are ignored: the model's tails are its least trusted part, and a 3-cent edge
     on a 10-cent contract is a claim the data cannot back. Returns singles and middles sorted by edge.
@@ -336,9 +365,28 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
     single_band: the narrower band a single must sit in to be a play (Nick, Nov 7: no single under 40c; the
     desk's football leads under 40c were 1-7, and a sub-40c lead only exists when the model is far from the
     book, which is mostly the model being wrong). A single that clears the edge below it is kept with ok False
-    and floor True, so the suggestions rows still show what the floor left out. Pairs keep price_band."""
+    and floor True, so the suggestions rows still show what the floor left out. Pairs keep price_band.
+
+    lane: a live spot lane (spot_lane()'s dict, plus band, the cents a lane single may cost): the rows already
+    carry the lane's lean, and a single on the lane's side inside its band is scored at the model's full weight,
+    not halved against Kalshi's own price. The lean was measured against the market's line, so blending it back
+    toward that line halves a number that was already net of it: until Nov 12 the lane could name a spot and
+    never call a play (GB at NE, Nov 8: home favorite down 24-14, fair 63.5, no play, final 72). A lane single
+    carries lane=<cell> so the record grades the lane apart, and is sized at the cell's own stake.
+    stake: scales the budget of every single and reverse middle (config stake_scale; 0.5 while the desk's live
+    plays have not shown a profit). It is applied after the risk cap, so a half-stake play risks at most half the
+    cap whatever its price. Middles are sized by their loss cap, not Kelly, and do not move.
+    edge_cap: the most edge (a probability, 0.06 = 6c) a play is credited when it is sized. A bigger claimed
+    edge did not mean a better bet: on the 791 halves graded through Nov 11 the desk's blend cleared 3c at the
+    first-look ask 97 times, and the 60 calls claiming 3 to 5c won 42 (+13c a contract) while the 37 claiming
+    5c or more won 17 (-8c). A big gap to the market is more often the model missing something than the market,
+    so a large claimed edge buys no more size than a 6c one."""
     fee = lambda p: fee_per(p, order)
     slo, shi = single_band or price_band
+    lane = lane if (lane and lane.get('side') in ('over', 'under')) else None
+    llo, lhi = (lane or {}).get('band') or (slo, shi)
+    stake = max(0.0, float(1.0 if stake is None else stake))
+    credit = (lambda e: e) if edge_cap is None else (lambda e: min(e, float(edge_cap)))
     legs = []
     for r in rows:
         qq = quotes.get(r['line']) or {}
@@ -368,9 +416,20 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
         p = l['price_c'] / 100
         clears = l['edge'] >= margin - 1e-9
         in_band = slo <= l['price_c'] <= shi
+        scale = stake
+        if lane and l['kind'] == lane['side'] and llo <= l['price_c'] <= lhi:
+            lane_edge = l['fair_model'] - l['eff']
+            if lane_edge >= margin - 1e-9 and lane_edge > l['edge']:
+                # the lane's side at the model's full weight (the rows carry the lane's lean); a new dict, so the
+                # leg the pairs use keeps its blended number
+                l = dict(l, fair_used=l['fair_model'], edge=lane_edge, lane=lane.get('name'))
+                clears = in_band = True
+                scale = stake * float(lane.get('stake', 1.0))
         ok = clears and in_band
-        f = max(0.0, 0.25 * (l['fair_used'] - l['eff']) / max(0.01, 1 - l['eff']))
-        budget = min(f * bankroll, max_risk)
+        f = max(0.0, 0.25 * credit(l['fair_used'] - l['eff']) / max(0.01, 1 - l['eff']))
+        # the stake comes off after the cap: at 83c a 4c edge is 6% of bankroll at quarter Kelly, so the 2.5% cap
+        # binds and a stake applied before it would leave the priciest plays at full size
+        budget = min(f * bankroll, max_risk) * scale
         contracts = int(budget / (p + fee(p)) + 1e-9) if ok else 0
         cost = round(contracts * p + order_fee(contracts, p, order), 2) if contracts else 0.0
         singles.append(dict(l, ok=ok, floor=clears and not in_band, contracts=contracts, cost=cost, win=round(contracts - cost, 2)))
@@ -426,8 +485,8 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
             ev = 1 - c - p_hole
             pairs = 0
             if ev >= margin - 1e-9 and c < 1:
-                f = max(0.0, 0.25 * ev / (1 - c))
-                budget = min(f * bankroll, max_risk)
+                f = max(0.0, 0.25 * credit(ev) / (1 - c))
+                budget = min(f * bankroll, max_risk) * stake
                 pairs = min(int(budget / c + 1e-9), int(max_cost / c + 1e-9))
             ok = pairs >= 1
             pa, pb = a['price_c'] / 100, b['price_c'] / 100
@@ -797,6 +856,14 @@ def rev_lines(r, alone):
             f"final {r['lo']:.0f} to {r['hi']:.0f} loses both (-${-r['lose']:.0f}). Edge +{100 * r['ev']:.1f}c a pair."]
 
 
+def spot_note(sp, singles):
+    """One line under a spot lane's play: that the play is the spot's, and the lane's record in a sentence (the
+    cell's note in config). None when no single on the sheet came from the lane."""
+    if not sp or not any(s.get('lane') for s in singles or []):
+        return None
+    return 'Spot play' + (f": {sp['note']}" if sp.get('note') else f" ({sp.get('label')}).")
+
+
 def cancel_by(model):
     """When a resting order comes down: when play resumes. The shadow fill model split 945 touched resting legs
     (Oct 23 to Nov 11, four sports) by when the ask reached the bid. The 605 touched after play resumed lost $910
@@ -907,6 +974,9 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
                 out.append(f"Buy {side} {s['line']:.1f} for ${s['cost']:.0f} at {s['price_c']}c ({american(s['price_c'])})")
             if len(singles) > 1:
                 out.append('Best first. The others are backups if that price is gone, not a stack.')
+            note = spot_note(inp.get('spot_lane'), singles)
+            if note:
+                out.append(note)
             out.append('')
         if rev:
             out += rev_lines(rev, not (mid or singles)) + ['']
@@ -933,6 +1003,9 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
                 out.append(f"Buy {side} {s['line']:.1f} for ${s['cost']:.0f} at {s['price_c']}c ({american(s['price_c'])})")
             if len(singles) > 1:
                 out.append('Best first. The others are backups if that price is gone, not a stack.')
+            note = spot_note(inp.get('spot_lane'), singles)
+            if note:
+                out.append(note)
             out.append('')
         if mid:
             m = mid

@@ -14,6 +14,10 @@ scratch = tempfile.mkdtemp()
 watch.LOG_PATH = os.path.join(scratch, 'halftime_log.csv')
 watch.RESULTS_PATH = os.path.join(scratch, 'results.csv')
 cfg = watch.load_json(watch.CONFIG_PATH, {})
+# The fixture half (Bills 13 at Rams 7, Rams -3.5) sits in the live NFL spot lane, whose own play would clear at the
+# first look. This test is about a line that clears for one look after a read, so it runs with the lanes off and at
+# full stake (tests/lanes.py has the lane's play).
+cfg = dict(cfg, spots={}, stake_scale=1.0, edge_cap_c=None)
 pushes = []
 notify.push = lambda title, body, priority='default', tags='football': (pushes.append((title, body)) or ['test'])
 

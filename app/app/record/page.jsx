@@ -231,7 +231,7 @@ export default function Record() {
                   <span className="recscore">Half {r.half}. Final {r.final}, {g.T} points.</span>
                   {play ? (
                     <span className={`call ${play.win ? 'win' : 'loss'}`}>
-                      <b>{g.shadow ? 'SHADOW ' : ''}{play.win ? 'WIN' : 'LOSS'}</b> {play.kind === 'over' ? 'Over' : 'Under'} {Number(play.line)} at {play.price_c}c, {play.contracts} shares
+                      <b>{g.shadow ? 'SHADOW ' : ''}{play.lane ? 'SPOT ' : ''}{play.win ? 'WIN' : 'LOSS'}</b> {play.kind === 'over' ? 'Over' : 'Under'} {Number(play.line)} at {play.price_c}c, {play.contracts} shares
                       <em className={play.pnl >= 0 ? 'pos' : 'neg'}>{signed(play.pnl)}</em>
                     </span>
                   ) : g.mid || g.rev ? null : (

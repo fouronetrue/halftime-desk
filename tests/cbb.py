@@ -125,7 +125,7 @@ gf = copy.deepcopy(g1); gf.update(state='post', status='STATUS_FINAL', period=2,
 gf['home']['linescores'], gf['away']['linescores'] = [41, 37], [30, 36]
 d.settle(gf, rec)
 rows = list(csv.DictReader(open(watch.RESULTS_PATH)))
-assert len(rows) == 1 and rows[0]['sport'] == 'cbb' and rows[0]['final_total'] == '144' and rows[0]['plays'].startswith('shadow over 140.5@70 W'), rows[0]
+assert len(rows) == 1 and rows[0]['sport'] == 'cbb' and rows[0]['final_total'] == '144' and rows[0]['plays'].startswith('shadow spot mismatch_hanging -1.0 shadow; over 140.5@70 W'), rows[0]
 assert float(rows[0]['plays_pnl']) > 0 and rows[0]['q3_score'] == ''
 sc = watch.scorecard(watch.RESULTS_PATH)
 assert 'none with a play' in sc and 'shadow plays (not live, graded only): 1, $+' in sc and 'middles called' not in sc, sc

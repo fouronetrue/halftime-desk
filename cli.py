@@ -21,7 +21,11 @@ cfg = json.load(open(os.path.join(HERE, 'config.json')))
 h1a, h1h = [int(x) for x in a.half.split('-')]
 cmp = (cfg.get('center_model_pct') or {}).get(a.sport)
 center = None if a.center is None or cmp is None else a.center - (h1a + h1h)
-m = engine.HalfModel(a.sport, a.total, a.spread, h1h, h1a, center=center, center_w=1.0 if cmp is None else cmp / 100)
+# the spot lane the half sits in (config spots), applied the way the watcher applies it: a live cell's lean on the
+# blended mean, its own side priced at the model's full weight inside the lane's band
+sp = engine.spot_lane(a.sport, cfg.get('spots'), a.total, a.spread, h1h, h1a) if a.mode == 'fg' else None
+live = sp if sp and sp['mode'] == 'live' else None
+m = engine.HalfModel(a.sport, a.total, a.spread, h1h, h1a, center=center, center_w=1.0 if cmp is None else cmp / 100, lean=live['lean'] if live else 0.0)
 quotes = {}
 for part in [p for p in a.quotes.split(',') if p.strip()]:
     import re
@@ -35,9 +39,13 @@ step = 2 if a.sport == 'nba' else 3 if a.sport == 'cbb' else 1   # Kalshi's NBA 
 lines = sorted(set(list(quotes) + [fair + step * k for k in range(-5, 6)]))
 rows = engine.price_lines(m, lines, a.mode, cfg['margin_c'] / 100)
 bank = float(cfg['bankroll'])
-sug = engine.suggest(rows, quotes, a.order or cfg['order'], cfg['margin_c'] / 100, cfg['trust_pct'] / 100, bank, bank * cfg['risk_pct'] / 100, bank * cfg['cost_pct'] / 100, (cfg.get('min_price_c', 15), cfg.get('max_price_c', 85)), cfg.get('mid_loss_cap'))
+lo, hi = cfg.get('min_price_c', 15), cfg.get('max_price_c', 85)
+ecap = cfg.get('edge_cap_c')
+sug = engine.suggest(rows, quotes, a.order or cfg['order'], cfg['margin_c'] / 100, cfg['trust_pct'] / 100, bank, bank * cfg['risk_pct'] / 100, bank * cfg['cost_pct'] / 100, (lo, hi), cfg.get('mid_loss_cap'),
+                     single_band=(max(lo, cfg.get('single_min_price_c') or 0), hi), lane=dict(live, band=tuple(cfg.get('lane_band_c') or (40, 60))) if live else None,
+                     stake=float(cfg.get('stake_scale') or 1.0), edge_cap=None if ecap is None else float(ecap) / 100)
 sizing = dict(bankroll=bank, max_risk=bank * cfg['risk_pct'] / 100, max_cost=bank * cfg['cost_pct'] / 100, margin=cfg['margin_c'] / 100, mid_loss=cfg.get('mid_loss_cap'))
-kind, head, body = engine.order_sheet(m, dict(away=a.away, home=a.home, h1a=h1a, h1h=h1h), rows, sug, sizing, a.mode)
+kind, head, body = engine.order_sheet(m, dict(away=a.away, home=a.home, h1a=h1a, h1h=h1h, spot_lane=sp), rows, sug, sizing, a.mode)
 print(head); print(body)
 print('\nfull ladder and resting limits:')
 print(engine.describe(m, dict(away=a.away, home=a.home, h1a=h1a, h1h=h1h), rows, sug, a.mode, sizing=sizing))

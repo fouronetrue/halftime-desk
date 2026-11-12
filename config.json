@@ -33,13 +33,19 @@
     "nba": 10,
     "cbb": 10
   },
+  "stake_scale": 0.5,
+  "edge_cap_c": 6,
+  "lane_band_c": [40, 60],
   "spots": {
     "nfl": {
-      "home_fav_trailing": {"lean": 1.5, "mode": "live"}
+      "home_fav_trailing": {"lean": 1.5, "mode": "live", "stake": 0.5, "note": "58% over the book's 2H line since 2023 (104 of 179). Half size until it earns more."}
     },
     "cfb": {
-      "home_fav_trailing_1_7": {"lean": 1.8, "mode": "shadow"},
-      "hot_first_half": {"lean": 1.1, "mode": "shadow"}
+      "fav_leading_1_7": {"lean": 1.1, "mode": "shadow"},
+      "hot_first_half": {"lean": 1.0, "mode": "shadow"}
+    },
+    "cbb": {
+      "mismatch_hanging": {"lean": -1.0, "mode": "shadow"}
     }
   },
   "day_cost_pct": 20,

@@ -39,6 +39,15 @@ DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct
                 break_confirm_seconds=3, score_hold_pts={'nfl': 6, 'cfb': 6, 'nba': 10, 'cbb': 10},
                 # The spot lane (engine.spot_lane): per sport, cells of the halftime study and their lean, live or shadow.
                 spots={},
+                # The cents a live lane's own single may cost: the strikes around the line, where the lean was
+                # measured (a play on a game that could go either way, at a price near even money).
+                lane_band_c=[40, 60],
+                # Sizing guards from the Nov 12 go-live readout (claude/go-live-nov12.md). stake_scale multiplies the
+                # budget of every single and reverse middle, after the risk cap (a half-stake play risks at most half
+                # the cap): the desk's 20 live plays through Nov 11 were 6-14 and minus $150, so plays run at half size
+                # until 50 graded live plays show a profit (config.json sets 0.5). edge_cap_c is the most edge a play is credited when sized: the calls that claimed 5c or more
+                # lost where the 3 to 5c ones won (engine.suggest). Neither touches the 3-cent margin, the band or the caps.
+                stake_scale=1.0, edge_cap_c=None,
                 # Per sport, the weight the model's own second-half number keeps against the market's center (Kalshi's
                 # implied total at the half minus the first-half points). Football keeps its own center (100). The NBA
                 # model's center never beats the market, so it keeps 25 and the ladder is shaped around the market's number.
@@ -930,9 +939,15 @@ class Desk:
         cap = self.cfg.get('mid_loss_cap')
         held_miss = engine.held_miss_loss(held_legs) if held_legs else 0.0
         mid_loss = None if cap is None else max(0.0, cap - held_miss)
+        # A live spot lane prices its own side at the model's full weight inside the lane's band (engine.suggest);
+        # the half only, since the cells are halftime cells.
+        sp_live = rec.get('spot_lane') if (not q3 and (rec.get('spot_lane') or {}).get('mode') == 'live') else None
+        spot = dict(sp_live, band=tuple(self.cfg.get('lane_band_c') or (40, 60))) if sp_live else None
+        ecap = self.cfg.get('edge_cap_c')
         sug = engine.suggest(rows, quotes, self.cfg['order'], self.cfg['margin_c'] / 100, self.cfg['trust_pct'] / 100,
                              bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']), mid_loss,
-                             single_band=(max(self.cfg['min_price_c'], self.cfg.get('single_min_price_c') or 0), self.cfg['max_price_c']))
+                             single_band=(max(self.cfg['min_price_c'], self.cfg.get('single_min_price_c') or 0), self.cfg['max_price_c']),
+                             lane=spot, stake=float(self.cfg.get('stake_scale') or 1.0), edge_cap=None if ecap is None else float(ecap) / 100)
         inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'], h1a=away_pts, h1h=home_pts,
                    sharp=(rec.get('h2') or {}).get('line') if center_src == 'sharp' else None,
                    weather=weather.text(rec.get('weather')) if not q3 else None, spot_lane=rec.get('spot_lane') if not q3 else None)
@@ -1135,8 +1150,12 @@ class Desk:
                    center_src=(rec or {}).get('center_src'), sharp=((rec or {}).get('h2') or {}).get('line'), sharp_books=((rec or {}).get('h2') or {}).get('books'),
                    pace=(rec or {}).get('pace'), spread_half=(rec or {}).get('spread_half'), spot_lane=(rec or {}).get('spot_lane'), lean=round(getattr(m, 'lean', 0.0), 2),
                    fair=engine.fair_line(m), mkt=feeds.kalshi_total_line(ev), held_miss=sizing.get('held_miss') or 0,
-                   singles=[dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost']) for s in singles],
-                   mid=None, rest_mid=None)
+                   # each single with what it claimed (the fair it was scored at and the edge after the fee), so the
+                   # record can be cut by edge size, and the spot lane it came from when it is the lane's own play
+                   singles=[dict(dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost'],
+                                      fair_c=round(100 * s['fair_used'], 1), edge_c=round(100 * s['edge'], 1)), **({'lane': s['lane']} if s.get('lane') else {}))
+                            for s in singles],
+                   stake=float(self.cfg.get('stake_scale') or 1.0), mid=None, rest_mid=None)
         if rev:
             # a_line is the under's strike (the lower one), b_line the over's; the hole is the numbers between
             out['rev'] = dict(a_line=rev['a']['line'], a_price=rev['a']['price_c'], b_line=rev['b']['line'], b_price=rev['b']['price_c'], pairs=rev['pairs'], cost=rev['cost'])
@@ -1339,8 +1358,9 @@ def grade_sheet(sh, T):
     for i, x in enumerate(singles):
         win = T > x['line'] if x['kind'] == 'over' else T < x['line']
         p = round((x['contracts'] - x['cost']) if win else -x['cost'], 2)
-        options.append(dict(kind=x['kind'], line=x['line'], price_c=x['price_c'], contracts=x['contracts'], cost=x['cost'], win=win, pnl=p, play=i == 0 and lead == 'single'))
-        detail.append(f"{'' if i == 0 else 'alt '}{x['kind']} {x['line']:g}@{x['price_c']} {'W' if win else 'L'} {p:+.0f}")
+        options.append(dict(kind=x['kind'], line=x['line'], price_c=x['price_c'], contracts=x['contracts'], cost=x['cost'], win=win, pnl=p, play=i == 0 and lead == 'single',
+                            lane=x.get('lane')))
+        detail.append(f"{'' if i == 0 else 'alt '}{'lane ' if x.get('lane') else ''}{x['kind']} {x['line']:g}@{x['price_c']} {'W' if win else 'L'} {p:+.0f}")
     m, mid_pnl, mid_hit = sh.get('mid'), None, None
     if m:
         mid_hit = m['a_line'] < T < m['b_line']
