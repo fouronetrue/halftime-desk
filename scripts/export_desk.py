@@ -11,7 +11,8 @@ and is named for the day it started. games, suggestions and results pick rows by
 sent_at; quote_snapshots and venue_quotes by taken_at.
 
 The repo is public, so this never exports what is Nick's own: bets, positions, portfolio_snapshots,
-desk_state (the bankroll), control, orders (shadow today, his real orders once live). From suggestions it
+desk_state (the bankroll), control, orders (the shadow orders are summarised, see below; a live order, the
+pilot's, is never read here at all). From suggestions it
 drops bankroll, max_risk, max_cost and held; inside every JSON column it drops any 'held' or 'held_miss'
 key (the sheet carries the YOU HOLD block). Sized plays stay: they are already in log/ and the scorecard.
 
@@ -186,9 +187,13 @@ def fetch_suggestions(day, alert_at):
 
 
 def fetch_orders(day=None):
-    """The orders table, one slate or all of it: read for the summaries only, never written out as rows."""
-    where = {'date_et': f'eq.{day.isoformat()}'} if day else {}
-    return query('orders', where)
+    """The shadow orders, one slate or all of them: read for the summaries only, never written out as rows. A live
+    order (the pilot's, mode 'live') is one of Nick's own bets: the filter keeps it in Supabase, so not even a
+    count of it reaches the public repo. The app's Record page and the pilot's nightly push are where those show."""
+    where = {'mode': 'neq.live'}
+    if day:
+        where['date_et'] = f'eq.{day.isoformat()}'
+    return [o for o in query('orders', where) if o.get('mode') != 'live']
 
 
 def thin_quotes(rows):

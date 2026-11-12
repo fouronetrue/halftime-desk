@@ -78,8 +78,13 @@ def fake_get(url, headers=None, timeout=None, params=None):
                         game='BOS @ DET', date_et='2026-10-22', event_ticker='KXNBATOTAL-26OCT22BOSDET', market_ticker=f'KXNBATOTAL-26OCT22BOSDET-{strike:g}',
                         strike=strike, side=side, action='buy', kind='rest', stage='half', price_c=price, count=50, cost=50 * price / 100, reason=reason,
                         pair=pair, mode='shadow', status=status, touch_phase=phase, touch_s=secs, pnl=pnl)
-        return R([o(1, 'yes', 210.5, 46, 'rest_mid', '210.5/216.5', 'touched', 'half', 40, 27.0), o(2, 'no', 216.5, 50, 'rest_mid', '210.5/216.5', 'touched', 'live', 1900, -25.0),
-                  o(3, 'yes', 206.5, 40, 'rest_mid wide', '206.5/220.5', 'expired'), o(4, 'no', 220.5, 44, 'rest_mid wide', '206.5/220.5', 'touched', 'q3end', 1700, -22.0)])
+        rows = [o(1, 'yes', 210.5, 46, 'rest_mid', '210.5/216.5', 'touched', 'half', 40, 27.0), o(2, 'no', 216.5, 50, 'rest_mid', '210.5/216.5', 'touched', 'live', 1900, -25.0),
+                o(3, 'yes', 206.5, 40, 'rest_mid wide', '206.5/220.5', 'expired'), o(4, 'no', 220.5, 44, 'rest_mid wide', '206.5/220.5', 'touched', 'q3end', 1700, -22.0)]
+        # a live order, the pilot's: one of Nick's own bets. The export asks Supabase to leave it out, and drops it again
+        # if a database ever answers with one anyway (this fake does, to prove the second guard).
+        assert params.get('mode') == 'neq.live', f'the export must not ask for live orders: {params}'
+        rows.append(dict(o(5, 'yes', 212.5, 47, 'rest_mid', '212.5/218.5', 'filled', None, None, 777.77), mode='live', filled_count=50))
+        return R(rows)
     if table == 'results':
         return R([dict(id=1, settled_at='2026-10-23T02:00:00+00:00', game_id='g1', sport='nba', game='BOS @ DET', date_et='2026-10-22', fair=228.5, mkt=230.0,
                        final_total=214, model_err=14.5, mkt_err=16.0, plays_cost=0.0, plays_pnl=0.0, rest_mid_pnl=12.0, sheet={'held': [{'t': 1}], 'mu_model': 112.0, 'h1a': 50, 'h1h': 55},
@@ -158,7 +163,7 @@ assert list(srows[0].keys()) == ro.SHADOW_COLS and len(srows) == 1, shadow
 s = srows[0]
 assert (s['sport'], s['mode'], s['games'], s['rest_orders'], s['rest_touched'], s['touched_break'], s['touched_play']) == ('nba', 'shadow', '1', '4', '3', '1', '2'), s
 assert (s['middles'], s['middles_both'], s['middles_one'], s['pnl'], s['pnl_both'], s['pnl_lone']) == ('2', '1', '1', '-20.0', '2.0', '-22.0'), s
-for word in ('KXNBA', 'deadbeef', 'BOS @ DET', '210.5', '216.5', '206.5', '220.5', 'client', 'ticker', 'strike', 'price'):
+for word in ('KXNBA', 'deadbeef', 'BOS @ DET', '210.5', '216.5', '206.5', '220.5', 'client', 'ticker', 'strike', 'price', 'live', '777'):
     assert word not in shadow, word
 # the honest scorecard: the results table plus the CSV's own games, the held block never printed
 ex.RESULTS_CSV = os.path.join(ex.OUT, 'results.csv')
@@ -172,8 +177,8 @@ card = open(path, encoding='utf-8').read()
 assert 'from the Supabase results table (1 games' in card and 'plus the 1 games only log/results.csv has' in card and '2 windows on 2 games' in card, card
 assert '| Oct 18 to Oct 18 | NFL | 1 | 1 | $65 | $+77 |' in card and '| NBA | shadow | 1 | 1 | 4 | 3 | 1 | 1 of 2 | 0 | 1 | $-20 | $+27 | $-47 | $+2 | $-22 |' in card, card
 assert '- NBA: finals vs the model -3.0 on 1 game' in card, card
-for word in ('held', 'KXNBA', 'deadbeef', '210.5'):
-    assert word not in card, word
+for word in ('held', 'KXNBA', 'deadbeef', '210.5', '| live |', '777'):
+    assert word not in card, word   # the last two: a live order never reaches the scorecard, as a row or as a dollar
 assert ex.scorecard() is None, 'an unchanged scorecard is not rewritten'
 print('export: the shadow summary and the scorecard carry counts and dollars only')
 
