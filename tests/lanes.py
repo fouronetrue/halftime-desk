@@ -1,16 +1,17 @@
 """The go-live sizing and the live lane's own play (Nov 12, claude/go-live-nov12.md). No network.
 1. engine.suggest(lane=...): a single on a live lane's side, inside the lane's band, is scored at the model's full
-   weight (the rows already carry the lane's lean). It carries lane=<cell>, is sized at the cell's stake, and
-   leaves the legs the pairs use on their blended numbers. The other side, a price outside the band, a shadow cell
-   and a missing lane change nothing.
-2. stake scales the budget of singles (config stake_scale) after the risk cap, so half stake is half the size at
-   any price and never more than half the cap; middles are sized by their loss cap and do not move.
+   weight (the rows already carry the lane's lean). It carries lane=<cell>, is sized at the cell's own stake (a
+   share of full size, whatever the desk's stake is), and leaves the legs the pairs use on their blended numbers.
+   The other side, a price outside the band, a shadow cell and a missing lane change nothing. A cell with stake 0
+   keeps its lean and calls no play.
+2. stake scales the budget of singles on price (config stake_scale) after the risk cap, so half stake is half the
+   size at any price and never more than half the cap; at 0 the plays on price are off and a live lane is
+   untouched; middles are sized by their loss cap and do not move.
 3. edge_cap: a claimed edge past the cap buys no more size than the cap.
 4. The cancel rule on the push: a resting order comes down when play resumes, in every sport and window.
 5. The desk on the NFL fixture (Bills 13 at Rams 7, Rams -3.5: the live cell) under config.json: one PLAY, the
-   lane's over, at a quarter of the old size (half stake, half again for the lane), named on the push with the
-   lane's record, kept on the sheet, graded with the lane tag, charged to the day cap. With the cell in shadow
-   the same half is a read.
+   lane's over, at a quarter of full size (the cell's stake), named on the push with the lane's record, kept on
+   the sheet, graded with the lane tag, charged to the day cap. With the cell in shadow the same half is a read.
 6. A live resting order never outlives the break (trade.py), whatever rest_until says."""
 import sys, os, copy, json, tempfile, datetime as dt
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -31,7 +32,7 @@ lines = [42.5, 45.5, 48.5]
 # (model 47%) asks 41c. Against the model alone both clear; halved against Kalshi's own price neither does.
 quotes = {42.5: dict(y=52, n=50), 45.5: dict(y=41, n=61), 48.5: dict(y=31, n=71)}
 lane = dict(engine.spot_lane('nfl', cfg0['spots'], 44.5, -3.5, 7, 13), band=(40, 60))
-assert lane['side'] == 'over' and lane['stake'] == 0.5 and lane['mode'] == 'live'
+assert lane['side'] == 'over' and lane['stake'] == 0.25 and lane['mode'] == 'live'
 
 def sug_of(risk=RISK, **kw):
     rows = engine.price_lines(m, lines, 'fg', 0.03)
@@ -51,16 +52,23 @@ assert not [s for s in laned['singles'] if s['kind'] == 'under' and (s['ok'] or 
 key = lambda x: (x['a']['line'], x['b']['line'], x['ok'], x['pairs'], round(x['ev'], 6))
 assert [key(x) for x in plain['mids']] == [key(x) for x in laned['mids']], 'the lane moved a middle'
 assert all(abs(a['used_over'] - b['used_over']) < 1e-12 for a, b in zip(rows0, rows1)), 'the lane moved the blended ladder'
-# the cell's stake: the same play at full lane stake is twice the size (to the contract), cap or no cap, and a
-# half-stake lane play never risks more than half the risk cap
+# the cell's stake: the same play at full lane stake is four times the size (to the contract), cap or no cap, and
+# a quarter-stake lane play never risks more than a quarter of the risk cap
 for risk in (10**6, RISK):
-    _, half_ = sug_of(risk=risk, lane=lane)
+    _, qtr = sug_of(risk=risk, lane=lane)
     _, full = sug_of(risk=risk, lane=dict(lane, stake=1.0))
-    for a, b in zip([s for s in half_['singles'] if s['ok']], [s for s in full['singles'] if s['ok']]):
-        assert a['line'] == b['line'] and abs(2 * a['contracts'] - b['contracts']) <= 1 and a['contracts'] > 0, (a['contracts'], b['contracts'])
+    for a, b in zip([s for s in qtr['singles'] if s['ok']], [s for s in full['singles'] if s['ok']]):
+        assert a['line'] == b['line'] and abs(4 * a['contracts'] - b['contracts']) <= 3 and a['contracts'] > 0, (a['contracts'], b['contracts'])
 _, capped_full = sug_of(lane=dict(lane, stake=1.0))
-assert all(s['cost'] <= RISK + 1 for s in capped_full['singles'] if s['ok']) and all(s['cost'] <= RISK / 2 + 1 for s in ok)
+assert all(s['cost'] <= RISK + 1 for s in capped_full['singles'] if s['ok']) and all(s['cost'] <= RISK / 4 + 1 for s in ok)
 assert any(s['cost'] > RISK - 2 for s in capped_full['singles'] if s['ok']), 'the scenario should hit the risk cap at full stake'
+# the lane is its own tier: the desk's stake does not move it, and with the plays on price off (stake 0) it still plays
+for st in (1.0, 0.5, 0.0):
+    _, x = sug_of(lane=lane, stake=st)
+    assert [(s['line'], s['contracts']) for s in x['singles'] if s['ok']] == [(s['line'], s['contracts']) for s in ok], st
+# a cell with stake 0 keeps its lean on the ladder and calls no play of its own
+_, lean_only = sug_of(lane=dict(lane, stake=0))
+assert not [s for s in lean_only['singles'] if s['ok'] or s.get('lane')]
 # outside the band the lane does nothing: the same over at 39c or 61c is not the lane's play
 far = {39.5: dict(y=62, n=40), 45.5: dict(y=39, n=63)}
 rows = engine.price_lines(m, list(far), 'fg', 0.03)
@@ -98,7 +106,11 @@ c1, c5 = capped(), capped(stake=0.5)
 ok1 = [(a, b) for a, b in zip(c1['singles'], c5['singles']) if a['ok']]
 assert ok1 and all(74 < a['cost'] <= 75 + 1 and b['cost'] <= 37.5 + 1 and abs(a['contracts'] - 2 * b['contracts']) <= 1 for a, b in ok1), [(a['cost'], b['cost']) for a, b in ok1]
 first_ok = lambda sug: next(s for s in sug['singles'] if s['ok'])
-assert first_ok(s1)['contracts'] > 0 and first_ok(big(stake=0))['contracts'] == 0 and first_ok(big(stake=None))['contracts'] == first_ok(s1)['contracts'], 'stake 0 buys nothing, no stake is full stake'
+assert first_ok(s1)['contracts'] > 0 and first_ok(big(stake=None))['contracts'] == first_ok(s1)['contracts'], 'no stake given is full stake'
+# stake 0 switches the plays on price off: every line is still on the row with its edge, none is a play
+off = big(stake=0)
+assert not [s for s in off['singles'] if s['ok'] or s['contracts']] and [round(s['edge'], 9) for s in off['singles']] == [round(s['edge'], 9) for s in s1['singles']]
+assert not [r for r in off.get('revs') or [] if r['ok']] and [(x['a']['line'], x['b']['line'], x['pairs']) for x in off['mids']] == [(x['a']['line'], x['b']['line'], x['pairs']) for x in s1['mids']]
 print('stake: half stake is half the contracts on every single, at half the cap where the cap binds; middles unmoved')
 
 # 3. the edge cap
@@ -146,12 +158,12 @@ body = half[0][1]
 L = body.split('\n')
 assert L[0].endswith('Spot: home favorite trailing, +1.5 on the number.') and any(l.startswith('Buy OVER ') for l in L), body
 note = [l for l in L if l.startswith('Spot play')]
-assert note == ["Spot play: 58% over the book's 2H line since 2023 (104 of 179). Half size until it earns more."], note
+assert note == ["Spot play: 58% over the book's 2H line since 2023 (104 of 179). Quarter size until it earns more."], note
 assert not any(l.startswith('Buy UNDER') for l in L)
 assert sh['kind'] == 'play' and sh['lead'] == 'single' and sh['stake'] == 0.5 and sh['singles'] and all(x['kind'] == 'over' and x['lane'] == 'home_fav_trailing' and 40 <= x['price_c'] <= 60 for x in sh['singles']), sh['singles']
 lead = sh['singles'][0]
 assert lead['edge_c'] >= 3 and lead['fair_c'] > lead['price_c'], lead
-# a quarter of the full-stake, full-lane size: the same half priced with stake 1 and the cell at stake 1
+# a quarter of full size: the same half priced with the cell at stake 1
 cfg_full = dict(cfg, stake_scale=1.0, edge_cap_c=None, spots=dict(cfg['spots'], nfl=dict(home_fav_trailing=dict(cfg['spots']['nfl']['home_fav_trailing'], stake=1.0))))
 pushes_n = len(pushes)
 d1 = watch.Desk(cfg_full, {}, FIX); d1.run_pass()
@@ -160,7 +172,7 @@ lead1 = next(x for x in sh1['singles'] if x['line'] == lead['line'])
 pp = lead['price_c'] / 100
 eff = pp + engine.fee_per(pp)
 cap = cfg['bankroll'] * cfg['risk_pct'] / 100
-want = int(min(0.25 * min(0.06, lead1['edge_c'] / 100) / (1 - eff) * cfg['bankroll'], cap) * 0.5 * 0.5 / eff + 1e-9)     # quarter Kelly on at most 6c, under the cap, half stake, half again for the lane
+want = int(min(0.25 * min(0.06, lead1['edge_c'] / 100) / (1 - eff) * cfg['bankroll'], cap) * 0.25 / eff + 1e-9)     # quarter Kelly on at most 6c, under the cap, at the lane's quarter stake
 assert lead1['contracts'] > 0 and abs(lead['contracts'] - want) <= 1, (lead['contracts'], want, lead1['contracts'], lead1['edge_c'])
 assert lead['cost'] < lead1['cost'] / 3 and lead1['cost'] <= cfg['bankroll'] * cfg['risk_pct'] / 100 + 1
 # charged to the day cap, written to the suggestions row, graded with the lane tag
@@ -170,6 +182,11 @@ assert [s for s in row['singles'] if s.get('lane') == 'home_fav_trailing' and s[
 win, lose = watch.grade_sheet(sh, lead['line'] + 1), watch.grade_sheet(sh, lead['line'] - 1)
 assert f"lane over {lead['line']:g}@{lead['price_c']} W" in win['detail'] and win['pnl'] == round(lead['contracts'] - lead['cost'], 2) and win['options'][0]['lane'] == 'home_fav_trailing', win
 assert f"lane over {lead['line']:g}@{lead['price_c']} L" in lose['detail'] and lose['pnl'] == -lead['cost'], lose
+# with the plays on price switched off (stake_scale 0) the lane still plays, at the same size
+d0 = watch.Desk(dict(cfg, stake_scale=0), {}, FIX); d0.run_pass()
+sh0 = d0.state['games']['401'].get('play_sheet') or d0.state['games']['401'].get('sheet')
+assert d0.stake() == 0.0 and watch.Desk(dict(cfg, stake_scale=None), {}, FIX).stake() == 1.0 and d.stake() == 0.5
+assert sh0['kind'] == 'play' and sh0['stake'] == 0 and [(x['line'], x['contracts'], x.get('lane')) for x in sh0['singles']] == [(x['line'], x['contracts'], x.get('lane')) for x in sh['singles']]
 # the cell in shadow: named on the push, never applied, never a play
 pushes.clear()
 cfg_sh = dict(cfg, spots=dict(cfg['spots'], nfl=dict(home_fav_trailing=dict(cfg['spots']['nfl']['home_fav_trailing'], mode='shadow'))))

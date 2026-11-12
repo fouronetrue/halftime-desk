@@ -116,7 +116,7 @@ print('readout: scorecard dedupes to the table, counts both windows, flags the m
 
 # 3. the go-live sections (Nov 12): the tiers, the spot cells at Kalshi's line, the rules, the fills as a return
 assert ro.GO_LIVE == '2026-11-12' and ro.RULES['plays_n'] == 50 and ro.RULES['lane_n'] == 30 and ro.RULES['cell_n'] == 150 and ro.RULES['rest_n'] == 300
-SPOTS = {'nfl': {'home_fav_trailing': {'lean': 1.5, 'mode': 'live', 'stake': 0.5}}, 'cfb': {'fav_leading_1_7': {'lean': 1.1, 'mode': 'shadow'}},
+SPOTS = {'nfl': {'home_fav_trailing': {'lean': 1.5, 'mode': 'live', 'stake': 0.25}}, 'cfb': {'fav_leading_1_7': {'lean': 1.1, 'mode': 'shadow'}},
          'cbb': {'mismatch_hanging': {'lean': -1.0, 'mode': 'shadow'}}}
 def half(sport, game, date, away, home, total, spread, mkt, final, cost=0.0, pnl=0.0, lane=None, fair=None, src='db', plays=None):
     sh = dict(h1a=away, h1h=home, mu_model=20.0, lead='single' if cost else 'rest',
@@ -160,7 +160,7 @@ fl = ro.fill_lines(orders2)
 assert '| NBA | 3 | $85 | $+36 | +42.4% | 1 | $50 | $-25 | -50.0% |' in fl and fl[-1].startswith('| ALL | 3 | $85 |'), fl
 rl = ro.rule_lines(w2, rows2, orders2, SPOTS)
 assert rl[0] == '- Plays on price: 1 of 50 graded since Nov 12, 1 won, $+45 on $40. Half stake stays (49 more to the review).', rl[0]
-assert rl[1] == '- Spot lane home_fav_trailing: 3 of 30 graded plays since Nov 12, 2 won, $+34 on $65. Half lane stake stays (27 more to the review).', rl[1]
+assert rl[1] == '- Spot lane home_fav_trailing: 3 of 30 graded plays since Nov 12, 2 won, $+34 on $65. The lane stays at its stake (27 more to the review).', rl[1]
 assert "- Shadow cell CBB 15+ point favorite not up by 15 (under): 1 of 2 on its side of Kalshi's line (50%). Stays in shadow (148 more to the first review)." in rl, rl
 assert "- Shadow cell CFB favorite leading by 1-7 (over): 1 of 1 on its side of Kalshi's line (100%). Stays in shadow (149 more to the first review)." in rl, rl
 assert rl[-1] == '- Resting orders, filled at the break (shadow fill model): 2 of 300 since Nov 12, $+6 on $65 (+9.2%). The resting block stays on the push (298 more to the review).', rl[-1]
@@ -168,9 +168,9 @@ assert rl[-1] == '- Resting orders, filled at the break (shadow fill model): 2 o
 many = [dict(sport='nfl', game=f'g{i}', date='2026-11-20', stage='half', cost=10.0, pnl=(12.0 if i % 5 else -10.0), rest=None, mid=None, src='db', gap=1.0, shadow=False, lane=None) for i in range(50)]
 assert 'REVIEW: in profit at the mark, full stake is earned' in ro.rule_lines(many, [], [], {})[0]
 lost = [dict(w, pnl=(9.0 if i % 3 == 0 else -10.0)) for i, w in enumerate(many)]
-assert 'REVIEW: down more than a tenth of the money risked, plays on price become reads' in ro.rule_lines(lost, [], [], {})[0]
+assert 'REVIEW: down more than a tenth of the money risked, plays on price become reads (config stake_scale 0)' in ro.rule_lines(lost, [], [], {})[0]
 lane30 = [dict(w, lane='home_fav_trailing', pnl=(12.0 if i % 3 else -10.0)) for i, w in enumerate(many[:30])]
-assert 'REVIEW: the lane has earned its full stake' in ro.rule_lines(lane30, [], [], SPOTS)[1]
+assert 'REVIEW: the lane has earned double its stake' in ro.rule_lines(lane30, [], [], SPOTS)[1]
 cold = [dict(w, lane='home_fav_trailing', pnl=(12.0 if i % 3 == 0 else -10.0)) for i, w in enumerate(many[:30])]
 assert 'REVIEW: under 48 percent, the lane goes back to shadow' in ro.rule_lines(cold, [], [], SPOTS)[1]
 text2 = ro.scorecard_md(db2, csv2, orders2, now=dt.datetime(2026, 11, 17, 12, tzinfo=dt.timezone.utc), spots=SPOTS)

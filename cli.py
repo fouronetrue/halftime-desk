@@ -43,7 +43,7 @@ lo, hi = cfg.get('min_price_c', 15), cfg.get('max_price_c', 85)
 ecap = cfg.get('edge_cap_c')
 sug = engine.suggest(rows, quotes, a.order or cfg['order'], cfg['margin_c'] / 100, cfg['trust_pct'] / 100, bank, bank * cfg['risk_pct'] / 100, bank * cfg['cost_pct'] / 100, (lo, hi), cfg.get('mid_loss_cap'),
                      single_band=(max(lo, cfg.get('single_min_price_c') or 0), hi), lane=dict(live, band=tuple(cfg.get('lane_band_c') or (40, 60))) if live else None,
-                     stake=float(cfg.get('stake_scale') or 1.0), edge_cap=None if ecap is None else float(ecap) / 100)
+                     stake=1.0 if cfg.get('stake_scale') is None else float(cfg['stake_scale']), edge_cap=None if ecap is None else float(ecap) / 100)
 sizing = dict(bankroll=bank, max_risk=bank * cfg['risk_pct'] / 100, max_cost=bank * cfg['cost_pct'] / 100, margin=cfg['margin_c'] / 100, mid_loss=cfg.get('mid_loss_cap'))
 kind, head, body = engine.order_sheet(m, dict(away=a.away, home=a.home, h1a=h1a, h1h=h1h, spot_lane=sp), rows, sug, sizing, a.mode)
 print(head); print(body)

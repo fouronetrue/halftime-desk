@@ -35,9 +35,9 @@ import engine
 GO_LIVE = '2026-11-12'
 # The go-live rules, written before the plays they judge (claude/go-live-nov12.md, the Playbook):
 #   plays on price run at half stake; 50 graded since go-live with a profit puts them back to full stake, 50 graded
-#   and down more than a tenth of the money risked turns them into reads;
-#   a live spot lane is reviewed at 30 graded plays: 55 percent winners and a profit earns the full lane stake, under
-#   48 percent sends it back to shadow;
+#   and down more than a tenth of the money risked turns them into reads (config stake_scale 0);
+#   a live spot lane is reviewed at 30 graded plays: 55 percent winners and a profit doubles its stake (a quarter to
+#   a half), under 48 percent sends it back to shadow;
 #   a shadow cell goes live at half size once 150 graded halves have landed on its side of Kalshi's line 55 percent
 #   of the time, and is dropped if 300 have and it is under 50;
 #   the resting block stays on the push while the fills at the break return more than minus 5 percent on 300 more.
@@ -495,7 +495,7 @@ def rule_lines(wins, rows, orders, spots):
     elif pnl > 0:
         verdict = 'REVIEW: in profit at the mark, full stake is earned (config stake_scale 1.0)'
     elif cost and pnl / cost < R['plays_stop']:
-        verdict = 'REVIEW: down more than a tenth of the money risked, plays on price become reads'
+        verdict = 'REVIEW: down more than a tenth of the money risked, plays on price become reads (config stake_scale 0)'
     else:
         verdict = 'half stake stays (at the mark, not in profit)'
     out.append(f"- Plays on price: {len(pp)} of {R['plays_n']} graded since {md(GO_LIVE)}, {sum(1 for w in pp if w['pnl'] > 0)} won, ${pnl:+,.0f} on ${cost:,.0f}. {verdict[0].upper() + verdict[1:]}.")
@@ -504,13 +504,13 @@ def rule_lines(wins, rows, orders, spots):
         ws = [w for w in live if tier_of(w) == name]
         cost, pnl, won = sum(w['cost'] for w in ws), sum(w['pnl'] for w in ws), sum(1 for w in ws if w['pnl'] > 0)
         if len(ws) < R['lane_n']:
-            verdict = f"half lane stake stays ({R['lane_n'] - len(ws)} more to the review)"
+            verdict = f"the lane stays at its stake ({R['lane_n'] - len(ws)} more to the review)"
         elif won / len(ws) >= R['lane_up'] and pnl > 0:
-            verdict = 'REVIEW: the lane has earned its full stake'
+            verdict = 'REVIEW: the lane has earned double its stake'
         elif won / len(ws) < R['lane_down']:
             verdict = 'REVIEW: under 48 percent, the lane goes back to shadow'
         else:
-            verdict = 'half lane stake stays'
+            verdict = 'the lane stays at its stake'
         out.append(f"- Spot lane {name}: {len(ws)} of {R['lane_n']} graded plays since {md(GO_LIVE)}, {won} won, ${pnl:+,.0f} on ${cost:,.0f}. {verdict[0].upper() + verdict[1:]}.")
     for (sport, name), t in sorted(cell_table(rows, spots).items(), key=lambda kv: (str(kv[0][0]), kv[0][1])):
         if t['mode'] != 'shadow':
@@ -564,7 +564,7 @@ def scorecard_md(db_rows, csv_rows, orders, now=None, spots=None):
         lines += ['', f"End of 3rd (NBA): {len(q3)} windows graded, {len(q3p)} with a play, ${sum(w['pnl'] for w in q3p):+,.0f} on ${sum(w['cost'] for w in q3p):,.0f}."]
     lines += ['', f'## The tiers (live {md(GO_LIVE)})', '',
               'What each live play was made on: the price (the desk number against the ask) or a spot lane. Misreads and shadow plays are left out. '
-              'Plays on price run at half stake and a lane at half of that until the rules below say otherwise.', '']
+              'Plays on price run at half stake and the live lane at a quarter of full size until the rules below say otherwise.', '']
     lines += tier_lines(wins)
     lines += ['', '## Spot cells at the Kalshi line', '',
               'Every graded half that sat in a configured cell, live or shadow, counted on the side the cell leans: the final against the Kalshi 50-50 line at the break. '

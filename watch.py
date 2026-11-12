@@ -43,9 +43,10 @@ DEFAULTS = dict(bankroll=3000, risk_pct=2.5, cost_pct=7.5, margin_c=3, trust_pct
                 # measured (a play on a game that could go either way, at a price near even money).
                 lane_band_c=[40, 60],
                 # Sizing guards from the Nov 12 go-live readout (claude/go-live-nov12.md). stake_scale multiplies the
-                # budget of every single and reverse middle, after the risk cap (a half-stake play risks at most half
-                # the cap): the desk's 20 live plays through Nov 11 were 6-14 and minus $150, so plays run at half size
-                # until 50 graded live plays show a profit (config.json sets 0.5). edge_cap_c is the most edge a play is credited when sized: the calls that claimed 5c or more
+                # budget of every single on price and every reverse middle, after the risk cap (a half-stake play
+                # risks at most half the cap): the desk's 20 live plays through Nov 11 were 6-14 and minus $150, so
+                # plays run at half size until 50 graded live plays show a profit (config.json sets 0.5). 0 turns the
+                # plays on price off and leaves a live spot lane alone (a lane is sized by its own stake). edge_cap_c is the most edge a play is credited when sized: the calls that claimed 5c or more
                 # lost where the 3 to 5c ones won (engine.suggest). Neither touches the 3-cent margin, the band or the caps.
                 stake_scale=1.0, edge_cap_c=None,
                 # Per sport, the weight the model's own second-half number keeps against the market's center (Kalshi's
@@ -598,6 +599,15 @@ class Desk:
         print(f"{g['short']}: sharp 2H {line} ({source}, {n} books)")
         return rec['h2']
 
+    def stake(self):
+        """config stake_scale as a number: the share of full size a play on price is sized at. Missing is full
+        size; 0 is a real setting (plays on price off), not a missing one."""
+        ss = self.cfg.get('stake_scale')
+        try:
+            return 1.0 if ss is None else max(0.0, float(ss))
+        except (TypeError, ValueError):
+            return 1.0
+
     def market_center(self, g, ev, h1, stage='half', rec=None):
         """(expected points left, weight the model keeps, source) for the center of the ladder; (None, 1.0, None)
         when the model is on its own. At the half the sharp second-half line comes first when one is in hand
@@ -947,7 +957,7 @@ class Desk:
         sug = engine.suggest(rows, quotes, self.cfg['order'], self.cfg['margin_c'] / 100, self.cfg['trust_pct'] / 100,
                              bank, max_risk, max_cost, (self.cfg['min_price_c'], self.cfg['max_price_c']), mid_loss,
                              single_band=(max(self.cfg['min_price_c'], self.cfg.get('single_min_price_c') or 0), self.cfg['max_price_c']),
-                             lane=spot, stake=float(self.cfg.get('stake_scale') or 1.0), edge_cap=None if ecap is None else float(ecap) / 100)
+                             lane=spot, stake=self.stake(), edge_cap=None if ecap is None else float(ecap) / 100)
         inp = dict(away=g['away']['abbr'], home=g['home']['abbr'], away_name=g['away']['short'] or g['away']['abbr'], home_name=g['home']['short'] or g['home']['abbr'], h1a=away_pts, h1h=home_pts,
                    sharp=(rec.get('h2') or {}).get('line') if center_src == 'sharp' else None,
                    weather=weather.text(rec.get('weather')) if not q3 else None, spot_lane=rec.get('spot_lane') if not q3 else None)
@@ -1155,7 +1165,7 @@ class Desk:
                    singles=[dict(dict(kind=s['kind'], line=s['line'], price_c=s['price_c'], contracts=s['contracts'], cost=s['cost'],
                                       fair_c=round(100 * s['fair_used'], 1), edge_c=round(100 * s['edge'], 1)), **({'lane': s['lane']} if s.get('lane') else {}))
                             for s in singles],
-                   stake=float(self.cfg.get('stake_scale') or 1.0), mid=None, rest_mid=None)
+                   stake=self.stake(), mid=None, rest_mid=None)
         if rev:
             # a_line is the under's strike (the lower one), b_line the over's; the hole is the numbers between
             out['rev'] = dict(a_line=rev['a']['line'], a_price=rev['a']['price_c'], b_line=rev['b']['line'], b_price=rev['b']['price_c'], pairs=rev['pairs'], cost=rev['cost'])

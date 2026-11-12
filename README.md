@@ -95,13 +95,13 @@ unfilled legs when play resumes (`engine.cancel_by`), not at the 4th quarter, an
 the break whatever `auto.rest_until` says (shadow keeps resting to the 4th, which is how the two are told apart).
 Only 12 of 722 resting middles filled both legs inside a break: a resting middle is mostly one fair single.
 
-**3. One spot has a live lane, at a quarter of the old size. The rest are watched.** A spot lane
+**3. One spot has a live lane, at a quarter of full size. The rest are watched.** A spot lane
 (`engine.spot_lane`, config `spots.<sport>.<cell>`) is a cell of the halftime study, measured against the
 book's own second-half line and the blend the desk prices from:
 
 | sport | cell | lean | record against the book's 2H line | against the model, every season | mode |
 |---|---|---|---|---|---|
-| NFL | home favorite trailing at the half | over, +1.5 | 104 of 179 over (58%), 2023-26: 55, 61, 60, 56 by season | +0.1 on 1,359 games 2000-22, +1.4 on 182 since | live, half lane stake |
+| NFL | home favorite trailing at the half | over, +1.5 | 104 of 179 over (58%), 2023-26: 55, 61, 60, 56 by season | +0.1 on 1,359 games 2000-22, +1.4 on 182 since | live, quarter stake |
 | CFB | favorite leading by 1-7 | over, +1.1 | 247 of 442 over (56%), 2023-25 | +0.1 on 2,793 games | shadow |
 | CFB | first half 10+ over the pace | over, +1.0 | 233 of 422 over (55%), 2023-25 | +0.1 on 2,778 games | shadow |
 | CBB | 15+ point favorite not up by 15 | under, -1.0 | 454 of 1,023 over (44%), 2007-08 to 2010-11 | -1.6 on 2,944 games | shadow |
@@ -110,24 +110,26 @@ A live cell does two things. Its lean is added to the blended mean, and a single
 (`lane_band_c`) is scored at the model's full weight instead of halved against Kalshi's own price. The lean was
 measured against the market's line, so blending it back toward that line threw half of it away: from Nov 7 to
 Nov 12 the lane named the spot and could not call a play. A lane's play carries `lane` on the sheet, the grade
-and the record, says `Spot play:` and the lane's record on the push, and is sized at the cell's `stake` (0.5)
-on top of `stake_scale`. A shadow cell is named on the push (`Spot (watch): ...`) and never applied. Against
+and the record, says `Spot play:` and the lane's record on the push, and is sized at the cell's own `stake`
+(0.25 of full size). A lane does not ride on `stake_scale`: each tier has its own knob, so `stake_scale` 0 turns
+the plays on price into reads and leaves the lane alone, and a cell with `stake` 0 keeps its lean and calls no
+play. A shadow cell is named on the push (`Spot (watch): ...`) and never applied. Against
 Kalshi's own halftime line this season the shadow cells have not shown it (the scorecard's "Spot cells at the
 Kalshi line" table), which is why they are shadow.
 
 | key | meaning | config.json |
 |---|---|---|
-| stake_scale | multiplies the budget of every single and reverse middle, after the risk cap; middles are sized by their loss cap and do not move | 0.5 |
+| stake_scale | multiplies the budget of every single on price and every reverse middle, after the risk cap; 0 turns them off (the lines stay on the row, none is a play); middles are sized by their loss cap and do not move | 0.5 |
 | edge_cap_c | the most edge, in cents, a play is credited when sized (the edge on record is still the claim) | 6 |
 | lane_band_c | the prices a live lane's own single may cost | 40 to 60 |
-| spots.SPORT.CELL | lean (points, plus is over), mode (live or shadow), stake (0 to 1, a live lane's share of the stake), note (one line of the lane's record, printed on the push) | above |
+| spots.SPORT.CELL | lean (points, plus is over), mode (live or shadow), stake (0 to 1, a live lane's share of full size), note (one line of the lane's record, printed on the push) | above |
 | play_push.SPORT | min puts a sport's PLAYs in a shadow week (silent, marked, graded apart); empty since Nov 12, when college basketball went live | {} |
 
 The rules that move any of this were written down before the plays they judge, and the nightly scorecard
 (`data/desk/scorecard.md`, section "The go-live rules, and where each stands") prints where each one is:
-plays on price go back to full stake at 50 graded plays with a profit, and become reads if those 50 are down
-more than a tenth of the money risked; a live lane is reviewed at 30 graded plays (55% winners and a profit
-earns its full stake, under 48% sends it back to shadow); a shadow cell goes live at half size once 150 graded
+plays on price go back to full stake at 50 graded plays with a profit, and become reads (`stake_scale` 0) if
+those 50 are down more than a tenth of the money risked; a live lane is reviewed at 30 graded plays (55% winners
+and a profit doubles its stake, under 48% sends it back to shadow); a shadow cell goes live at half size once 150 graded
 halves have landed on its side of Kalshi's line 55% of the time; the resting block stays on the push while the
 break fills return better than minus 5% on the next 300. `tests/lanes.py` pins the sizing and the lane's play.
 

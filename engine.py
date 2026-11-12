@@ -145,7 +145,7 @@ class HalfModel:
 # the model already half-knows. Each is then checked against the model alone on every season in the game table:
 #   NFL home favorite trailing: +1.5 over the blend (n 181, se 0.8; +2.2, +0.5, +1.7, +1.8 by season 2023-26) and
 #     58% over the book's line (104 of 179; 55, 61, 60, 56 by season). The 23 seasons before 2023 show nothing
-#     against the model (+0.1 on 1,359), so the lane is live at half size and has to earn the rest.
+#     against the model (+0.1 on 1,359), so the lane is live at a quarter of full size and has to earn the rest.
 #   CFB favorite leading by 1-7: +1.1 over the blend (n 446, se 0.5) and 56% over the book's line 2023-25 (247 of
 #     442; 58, 54, 56 by season). Against the model on 20 seasons: +0.1 on 2,793. Shadow. (The cell this replaced,
 #     "home favorite trailing by 1-7", was read off a game table whose home spread carried the wrong sign on 5,644
@@ -176,8 +176,9 @@ SPOT_CELLS = {
 
 def spot_lane(sport, spots, total, home_spread, h1h, h1a):
     """The first configured cell this half is in: dict(name, label, lean, mode, side, stake, note), else None.
-    side is the way the lean points (over for a plus lean); stake scales a live cell's plays (0.5 = half size, a
-    lane still earning its place); note is one line of the lane's record for the push."""
+    side is the way the lean points (over for a plus lean); stake is a live cell's share of full size (0.25 = a
+    quarter, a lane still earning its place; it does not ride on the desk's stake_scale); note is one line of
+    the lane's record for the push."""
     for name, cell in ((spots or {}).get(sport) or {}).items():
         meta = SPOT_CELLS.get(name)
         if not meta or not isinstance(cell, dict):
@@ -372,10 +373,14 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
     not halved against Kalshi's own price. The lean was measured against the market's line, so blending it back
     toward that line halves a number that was already net of it: until Nov 12 the lane could name a spot and
     never call a play (GB at NE, Nov 8: home favorite down 24-14, fair 63.5, no play, final 72). A lane single
-    carries lane=<cell> so the record grades the lane apart, and is sized at the cell's own stake.
-    stake: scales the budget of every single and reverse middle (config stake_scale; 0.5 while the desk's live
-    plays have not shown a profit). It is applied after the risk cap, so a half-stake play risks at most half the
-    cap whatever its price. Middles are sized by their loss cap, not Kelly, and do not move.
+    carries lane=<cell> so the record grades the lane apart, and is sized at the cell's own stake (a share of
+    full size, not of the desk's stake: each tier has its own knob, so one can be turned without the other). A
+    cell with stake 0 keeps its lean on the ladder and calls no play of its own.
+    stake: scales the budget of every single on price and every reverse middle (config stake_scale; 0.5 while
+    the desk's live plays have not shown a profit). It is applied after the risk cap, so a half-stake play risks
+    at most half the cap whatever its price. At 0 the plays on price are off: the lines stay on the row with
+    their edges, none is a play, and a live lane is untouched. Middles are sized by their loss cap, not Kelly,
+    and do not move.
     edge_cap: the most edge (a probability, 0.06 = 6c) a play is credited when it is sized. A bigger claimed
     edge did not mean a better bet: on the 791 halves graded through Nov 11 the desk's blend cleared 3c at the
     first-look ask 97 times, and the 60 calls claiming 3 to 5c won 42 (+13c a contract) while the 37 claiming
@@ -386,6 +391,7 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
     lane = lane if (lane and lane.get('side') in ('over', 'under')) else None
     llo, lhi = (lane or {}).get('band') or (slo, shi)
     stake = max(0.0, float(1.0 if stake is None else stake))
+    lane_stake = max(0.0, float((lane or {}).get('stake', 1.0)))
     credit = (lambda e: e) if edge_cap is None else (lambda e: min(e, float(edge_cap)))
     legs = []
     for r in rows:
@@ -417,15 +423,16 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
         clears = l['edge'] >= margin - 1e-9
         in_band = slo <= l['price_c'] <= shi
         scale = stake
-        if lane and l['kind'] == lane['side'] and llo <= l['price_c'] <= lhi:
+        if lane and lane_stake > 0 and l['kind'] == lane['side'] and llo <= l['price_c'] <= lhi:
             lane_edge = l['fair_model'] - l['eff']
             if lane_edge >= margin - 1e-9 and lane_edge > l['edge']:
                 # the lane's side at the model's full weight (the rows carry the lane's lean); a new dict, so the
                 # leg the pairs use keeps its blended number
                 l = dict(l, fair_used=l['fair_model'], edge=lane_edge, lane=lane.get('name'))
                 clears = in_band = True
-                scale = stake * float(lane.get('stake', 1.0))
-        ok = clears and in_band
+                scale = lane_stake
+        # a tier whose stake is zero is switched off: the line is on the row with its edge, and is not a play
+        ok = clears and in_band and scale > 0
         f = max(0.0, 0.25 * credit(l['fair_used'] - l['eff']) / max(0.01, 1 - l['eff']))
         # the stake comes off after the cap: at 83c a 4c edge is 6% of bankroll at quarter Kelly, so the 2.5% cap
         # binds and a stake applied before it would leave the priciest plays at full size

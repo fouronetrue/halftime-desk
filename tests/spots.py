@@ -11,7 +11,7 @@ import watch, feeds, store, notify, engine
 cfg0 = watch.load_json(watch.CONFIG_PATH, {})
 spots = cfg0.get('spots') or {}
 nfl_cell = (spots.get('nfl') or {}).get('home_fav_trailing', {})
-assert nfl_cell.get('mode') == 'live' and nfl_cell.get('stake') == 0.5 and nfl_cell.get('note'), 'config.json: the NFL trailing-home-favorite cell is live at half size, with its record in a line'
+assert nfl_cell.get('mode') == 'live' and nfl_cell.get('stake') == 0.25 and nfl_cell.get('note'), 'config.json: the NFL trailing-home-favorite cell is live at a quarter of full size, with its record in a line'
 assert set(spots.get('cfb') or {}) == {'fav_leading_1_7', 'hot_first_half'}, 'config.json: the college cells of the Nov 12 re-measure (the old trailing 1-7 cell was a spread-sign artifact)'
 assert all(v.get('mode') == 'shadow' for sp in ('cfb', 'cbb') for v in (spots.get(sp) or {}).values()), 'config.json: the college cells stay in shadow until the rows earn them'
 assert (spots.get('cbb') or {}).get('mismatch_hanging', {}).get('lean') == -1.0, 'config.json: the college basketball mismatch cell leans under'
@@ -20,7 +20,7 @@ assert (cfg0.get('auto') or {}).get('mode') == 'shadow' and set((cfg0.get('auto'
 # 1. the cells
 sp = engine.spot_lane('nfl', spots, 44.5, -3.5, 7, 13)        # home favorite by 3.5, trailing 7-13
 assert sp and sp['name'] == 'home_fav_trailing' and sp['mode'] == 'live' and sp['lean'] == 1.5, sp
-assert sp['side'] == 'over' and sp['stake'] == 0.5 and sp['note'].startswith("58% over the book's 2H line since 2023 (104 of 179)"), sp
+assert sp['side'] == 'over' and sp['stake'] == 0.25 and sp['note'].startswith("58% over the book's 2H line since 2023 (104 of 179)"), sp
 assert engine.spot_lane('nfl', spots, 44.5, -3.5, 13, 7) is None, 'the favorite leading is no cell'
 assert engine.spot_lane('nfl', spots, 44.5, 3.5, 7, 13) is None, 'a home dog trailing is no cell'
 assert engine.spot_lane('nfl', spots, 44.5, None, 7, 13) is None, 'no spread, no cell'
@@ -43,7 +43,7 @@ assert engine.spot_lane('cbb', spots, 150.5, -14.5, 41, 30) is None, 'a 14.5-poi
 assert engine.spot_lane('cbb', spots, 150.5, None, 41, 30) is None
 assert engine.spot_lane('nba', spots, 221.5, -1.5, 50, 58) is None, 'no NBA cells'
 assert engine.spot_lane('nfl', {'nfl': {'no_such_cell': {'lean': 9, 'mode': 'live'}}}, 44.5, -3.5, 7, 13) is None, 'an unknown cell name is ignored'
-# a cell's stake is clamped to 0..1 (a lane never sizes past the desk's own stake), and a bad value means full
+# a cell's stake is a share of full size, clamped to 0..1, and a bad value means full
 assert engine.spot_lane('nfl', {'nfl': {'home_fav_trailing': {'lean': 1.5, 'mode': 'live', 'stake': 3}}}, 44.5, -3.5, 7, 13)['stake'] == 1.0
 assert engine.spot_lane('nfl', {'nfl': {'home_fav_trailing': {'lean': 1.5, 'mode': 'live', 'stake': 'x'}}}, 44.5, -3.5, 7, 13)['stake'] == 1.0
 print('spots: the cells')
