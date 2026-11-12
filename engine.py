@@ -532,7 +532,7 @@ def describe(model, inp, rows, sug, mode='fg', top=3, tickers=None, sizing=None)
         if rp['middle']:
             m = rp['middle']
             lines.append(f"RESTING MIDDLE: post YES on Over {m['a']['line']:.1f}{mk(m['a']['line'])} at {m['a']['over_rest']}c and NO on Over {m['b']['line']:.1f}{mk(m['b']['line'])} at {m['b']['under_rest']}c, {m['pairs']} shares each (${m['cost']:.0f} if both fill). "
-                         f"Both filled: final {m['a']['line'] + 0.5:.0f} to {m['b']['line'] - 0.5:.0f} pays +${m['best']:.0f}, hits {100*m['p_mid']:.0f}%; any other final {m['worst']:+.0f}. One side alone is a fair single. Cancel what has not filled by the 4th quarter.")
+                         f"Both filled: final {m['a']['line'] + 0.5:.0f} to {m['b']['line'] - 0.5:.0f} pays +${m['best']:.0f}, hits {100*m['p_mid']:.0f}%; any other final {m['worst']:+.0f}. One side alone is a fair single. Cancel what has not filled {cancel_by(model)}.")
         if rp['legs']:
             parts = [f"Over {l['line']:.1f}: YES {l['y_n']} sh at {l['y_c']}c (${l['y_cost']:.0f}) or NO {l['n_n']} sh at {l['n_c']}c (${l['n_cost']:.0f})" for l in rp['legs']]
             lines.append('Resting singles, pick a side per line: ' + '; '.join(parts) + '.')
@@ -798,7 +798,19 @@ def rev_lines(r, alone):
 
 
 def cancel_by(model):
-    return 'by the first timeout of the 4th' if getattr(model, 'stage', None) == 'q3' else 'by the 4th'
+    """When a resting order comes down: when play resumes. The shadow fill model split 945 touched resting legs
+    (Oct 23 to Nov 11, four sports) by when the ask reached the bid. The 605 touched after play resumed lost $910
+    and lost on 20 of 28 sport-nights: a resting bid that fills in play fills because the game has moved against
+    it. The 340 touched during the break made $479, nearly all of it on the first three nights at five times
+    the later size, and about nothing since: resting at the break is a fair price, not a proven profit. Until
+    Nov 12 the push said to leave the orders up until the 4th quarter."""
+    if getattr(model, 'stage', None) == 'q3':
+        return 'when the 4th starts'
+    return 'when the 2nd half starts' if getattr(model, 'sport', None) == 'cbb' else 'when the 3rd starts'
+
+
+def rest_head(model):
+    return f'REST A MIDDLE (cancel unfilled legs {cancel_by(model)}):'
 
 
 def mid_lines(a_line, a_c, b_line, b_c, pairs, best, worst, p_mid, tail=''):
@@ -808,7 +820,7 @@ def mid_lines(a_line, a_c, b_line, b_c, pairs, best, worst, p_mid, tail=''):
             f"{a_line + 0.5:.0f} to {b_line - 0.5:.0f} pays +${best:.0f} ({100 * p_mid:.0f}%). Any other final {miss_text(worst)}.{tail}"]
 
 
-def rest_block(model, rows, sizing, mode='fg', head='REST A MIDDLE:', both=False):
+def rest_block(model, rows, sizing, mode='fg', head=None, both=False):
     """The resting-middle lines of a push: the best resting middle for football, a tight one and a wide one
     (both=True, the NBA) for a sport that sets near_pts wide enough to hold both. When what you already hold on
     the total has used up the middle loss cap (sizing['held_miss'] against sizing['mid_loss_cap']), one line
@@ -816,6 +828,7 @@ def rest_block(model, rows, sizing, mode='fg', head='REST A MIDDLE:', both=False
     rp = rest_plan(model, rows, mode, sizing.get('margin', 0.03), sizing.get('bankroll', 3000.0), sizing.get('max_risk', 75.0), sizing.get('max_cost', 225.0),
                    mid_loss=sizing.get('mid_loss'), near_pts=sizing.get('near_pts', 3.5))
     out = []
+    head = head or rest_head(model)
     mids = (rp.get('middles') or []) if both else [m for m in [rp.get('middle')] if m]
     for i, m in enumerate(mids):
         a, b = m['a'], m['b']
@@ -905,7 +918,7 @@ def order_sheet(model, inp, rows, sug, sizing, mode='fg', tickers=None, top=3, f
             out.append('')
         if held:
             out += held + ['']
-        rest, rp = rest_block(model, rows, sizing, mode, head=f'REST A MIDDLE (cancel what has not filled {cancel_by(model)}):', both=True)
+        rest, rp = rest_block(model, rows, sizing, mode, both=True)
         if rest:
             out += rest
         elif not (mid or singles or rev):

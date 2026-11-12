@@ -31,8 +31,9 @@ Shadow fill model: a resting YES bid at P counts as touched when a later quote s
 (someone sold through our price), a NO bid the same way on the NO ask; a take counts when the ask it was
 priced at is still at or under the price on the next quote. The worker keeps reading the ladder for a game with
 open orders through the third quarter (rest_until 'q4'), so the readout can split fills at the break from fills
-in play, which is the question the live phase answers: a fill in play is a fill because the game moved against
-the leg, and only the live week says what that is worth.
+in play. The split came back on Nov 12 (claude/go-live-nov12.md): the legs touched in play lost, the legs touched
+during the break about broke even. So a live resting order expires at the end of the break whatever rest_until
+says; rest_until 'q4' is the shadow model's measuring window, not a live setting.
 
 Nothing here runs unless config.json carries an "auto" block.
 """
@@ -225,7 +226,10 @@ class Trader:
         if cap < 1:
             return [], f"what you hold already risks ${held_miss:.0f} on a miss, the ${self.cap_game():.0f} auto cap"
         brk, q4 = self.expiries(sport, stage, ts)
-        expire = q4 if self.cfg.get('rest_until') == 'q4' else brk
+        # Shadow mode rests to the 4th so the readout keeps splitting break fills from in-play fills. A live order
+        # never outlives the break, whatever rest_until says: the in-play fills are the ones that lost (605 touched
+        # legs, -$910, Oct 23 to Nov 11; engine.cancel_by), and the push tells the phone the same thing.
+        expire = q4 if (self.cfg.get('rest_until') == 'q4' and self.mode() != 'live') else brk
         margin = sizing.get('margin', 0.03)
         near_pts = sizing.get('near_pts', 3.5)
         rp = engine.rest_plan(m, rows, 'fg', margin, self.bank, sizing['max_risk'], sizing['max_cost'], mid_loss=cap, near_pts=near_pts)

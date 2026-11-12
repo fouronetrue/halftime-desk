@@ -133,7 +133,7 @@ d = watch.Desk(cfg, {}, FIX); d.run_pass()
 rec3 = d.state['games']['503']
 assert rec3['third'] == {'away': 82, 'home': 85} and rec3.get('sheet_q3') and rec3['slots'].get('q3') == 'play', (rec3.get('third'), rec3.get('slots'))
 p3 = [p for p in pushes if 'end of 3rd' in p[0]]
-assert len(p3) == 1 and p3[0][0] == 'PLAY: Thunder 82, Spurs 85 (end of 3rd, NBA)' and p3[0][2] == 'high' and 'first timeout of the 4th' in p3[0][1], p3
+assert len(p3) == 1 and p3[0][0] == 'PLAY: Thunder 82, Spurs 85 (end of 3rd, NBA)' and p3[0][2] == 'high' and 'REST A MIDDLE (cancel unfilled legs when the 4th starts):' in p3[0][1], p3
 assert 'Over 230.5 at 15c' in p3[0][1] and 'REST A MIDDLE' in p3[0][1], p3[0][1]
 sh3 = rec3['sheet_q3']
 assert sh3['stage'] == 'q3' and sh3['h1a'] == 82 and sh3['h1h'] == 85 and sh3['fair'] and sh3['mkt'] == 223.5 and sh3['center'] == 223.5 - 167, sh3

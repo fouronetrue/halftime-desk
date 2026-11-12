@@ -56,18 +56,21 @@ assert lines[2].startswith("Together it's a 51 to 57 middle: 50 or less -$97 (")
 assert lines[3].startswith(f"NO-LOSE HEDGE: buy Under 51.5 at 19c, {hd['shares']} sh (${hd['cost']:.0f}). Then 50 or less $0, 51 +$") and '58 or more +$' in lines[3], lines[3]
 inp = dict(away='NE', home='CHI', away_name='Patriots', home_name='Bears', h1a=14, h1h=20, sharp=25.5)
 kind, head, body = engine.order_sheet(m, inp, rows, sug, sizing, held=lines)
+# the resting block's head carries the cancel rule: a resting order comes down when play resumes (engine.cancel_by)
+REST_HEAD = 'REST A MIDDLE (cancel unfilled legs when the 3rd starts):'
+assert engine.rest_head(m) == REST_HEAD
 assert kind == 'UPDATE' and head == 'UPDATE: Patriots 14, Bears 20'
 L = body.split('\n')
 assert L[0] == 'Fair 58.5. Book 59.5.' and L[1] == '' and L[2].startswith('YOU HOLD Over 50.5'), L[:3]
 assert 'lean' not in body and 'Sharp' not in body and 'FREE' not in body and 'POSSIBLE' not in body, body
-assert body.index('NO-LOSE HEDGE') < body.index('REST A MIDDLE:'), 'the position comes before the resting middle'
-rest = body[body.index('REST A MIDDLE:'):].split('\n')
+assert body.index('NO-LOSE HEDGE') < body.index(REST_HEAD), 'the position comes before the resting middle'
+rest = body[body.index(REST_HEAD):].split('\n')
 assert rest[1].startswith('Over ') and ' sh ($' in rest[1] and rest[2].startswith('Under ') and ' pays +$' in rest[3] and 'Any other final -$' in rest[3] and rest[3].endswith('One leg alone is a fair single.'), rest
 print('patriots: one position, the window and the finals in dollars, the hedge sized to the downside, the fixed order')
 
 # the same read with nothing held: the push is the header and the resting middle
 kind, head, body0 = engine.order_sheet(m, dict(inp, sharp=None), rows, sug, sizing)
-assert body0.split('\n')[0] == 'Fair 58.5.' and 'Book' not in body0 and 'YOU HOLD' not in body0 and body0.split('\n')[2] == 'REST A MIDDLE:', body0
+assert body0.split('\n')[0] == 'Fair 58.5.' and 'Book' not in body0 and 'YOU HOLD' not in body0 and body0.split('\n')[2] == REST_HEAD, body0
 
 # 2. East Carolina 16, Memphis 3: the 42.5/45.5 middle already held (117 sh at 62c, 121 sh at 50c) risks $20 on a
 #    miss, past the $15 cap, so nothing new is posted and the cleared middle (if any) is not a play
@@ -91,7 +94,7 @@ assert body2.rstrip().endswith('Nothing new to post: what you hold already risks
 sizing3 = dict(sizing, mid_loss=15, held_miss=0)
 sug3 = engine.suggest(rows2, q2, 'taker', 0.03, 0.5, BANK, RISK, COST, (15, 85), 15)
 kind, head, body3 = engine.order_sheet(m2, dict(away='ECU', home='MEM', h1a=16, h1h=3), rows2, sug3, sizing3)
-assert 'REST A MIDDLE:' in body3 and 'Nothing new to post' not in body3, body3
+assert REST_HEAD in body3 and 'Nothing new to post' not in body3, body3
 # a lone leg spends none of the cap
 assert engine.held_miss_loss(legs2[:1]) == 0 and engine.held_miss_loss([legs2[1]]) == 0
 assert engine.held_miss_loss([dict(legs2[0], strike=45.5), dict(legs2[1], strike=42.5)]) == 0, 'a reverse is not a middle'
