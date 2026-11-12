@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { etTime, gradeSheet, money } from '@/lib/desk';
+import { etTime, fillPnl, gradeSheet, money } from '@/lib/desk';
 
 // Record: every halftime the desk graded, newest first, and how the P&L got where it is. Plays are graded at
 // the sizes the push suggested (the first single is the play, the rest are backups; a middle is graded on its
@@ -111,18 +111,31 @@ export default function Record() {
   // at the break vs in play, both legs of a middle, P&L of the graded fills.
   const auto = useMemo(() => {
     const os = orders.filter((o) => sport === 'all' || o.sport === sport);
-    const filled = os.filter((o) => ['touched', 'filled', 'partial'].includes(o.status));
-    const atBreak = filled.filter((o) => ['half', 'early3', 'q3end', 'early4'].includes(o.touch_phase || 'half'));
+    const isFilled = (o) => ['touched', 'filled', 'partial'].includes(o.status);
+    // a break is a break for the stage that posted the order (scripts/readout.py): a half order touched at the end of
+    // the third was filled in play
+    const BREAK = { half: ['half', 'early3', ''], q3: ['q3end', 'early4', ''] };
+    const isBreak = (o) => (BREAK[o.stage || 'half'] || BREAK.half).includes(o.touch_phase || '');
+    const filled = os.filter(isFilled);
+    const atBreak = filled.filter(isBreak);
     const graded = filled.filter((o) => o.pnl !== null && o.pnl !== undefined);
     const pairs = {};
     for (const o of os) if (o.pair) (pairs[`${o.game_id}|${o.stage}|${o.pair}|${o.reason}`] ||= []).push(o);
-    const both = Object.values(pairs).filter((v) => v.filter((o) => ['touched', 'filled', 'partial'].includes(o.status)).length >= 2).length;
+    const bothSets = Object.values(pairs).filter((v) => v.filter(isFilled).length >= 2);
+    const both = bothSets.length;
+    const bothBreak = bothSets.filter((v) => v.filter(isFilled).every(isBreak)).length;
+    // resting fills as money, each window apart, every fill regraded with the maker fee it pays
+    const sum = (xs, f) => xs.reduce((s, o) => s + f(o), 0);
+    const gRest = graded.filter((o) => o.kind === 'rest');
+    const gBreak = gRest.filter(isBreak), gPlay = gRest.filter((o) => !isBreak(o));
     const rests = os.filter((o) => o.kind === 'rest'), takes = os.filter((o) => o.kind === 'take');
     const games = new Set(os.map((o) => o.game_id)).size;
     const byGame = {};
     for (const o of orders) (byGame[o.game_id] ||= []).push(o);
     return { n: os.length, games, rests: rests.length, takes: takes.length, filled: filled.length, atBreak: atBreak.length, inPlay: filled.length - atBreak.length,
-             pairs: Object.keys(pairs).length, both, graded: graded.length, pnl: graded.reduce((s, o) => s + Number(o.pnl), 0), cost: graded.reduce((s, o) => s + Number(o.cost || 0), 0),
+             pairs: Object.keys(pairs).length, both, bothBreak, graded: graded.length, pnl: sum(graded, fillPnl), cost: sum(graded, (o) => Number(o.cost || 0)),
+             brk: { n: gBreak.length, pnl: sum(gBreak, fillPnl), cost: sum(gBreak, (o) => Number(o.cost || 0)) },
+             play: { n: gPlay.length, pnl: sum(gPlay, fillPnl), cost: sum(gPlay, (o) => Number(o.cost || 0)) },
              mode: os.length ? os[0].mode : null, byGame };
   }, [orders, sport]);
 
@@ -162,7 +175,8 @@ export default function Record() {
           {curve.length > 1 && <p className="sparkcap">Plays P&amp;L, one point per play, oldest to newest</p>}
           <Spark points={curve} />
           <p className="sub">
-            Resting middles, what-if: {rests.length} games, {restHits} finals inside the window, {signed(restPnl)} if every one had filled both sides.
+            Resting middles: {restHits} of {rests.length} finals landed inside the window. That is {signed(restPnl)} only if every pair had filled both legs, which is a ceiling, not a result.
+            {auto.pairs > 0 ? ` In the fill model ${auto.both} of ${auto.pairs} pairs filled both legs, ${auto.bothBreak} of them inside the break.` : ''}
             {youCount ? ` Your Kalshi totals on these games, after fees: ${signed(youTotal)} across ${youCount}.` : ''}
           </p>
           {withFlickers > 0 && (
@@ -192,7 +206,8 @@ export default function Record() {
             <div><dt>At the break / in play</dt><dd>{auto.atBreak} / {auto.inPlay}</dd></div>
             <div><dt>Middles both legs</dt><dd>{auto.both} of {auto.pairs}</dd></div>
           </dl>
-          {auto.graded > 0 && <p className="sub">Graded fills: {auto.graded}, <b className={auto.pnl >= 0 ? 'pos' : 'neg'}>{signed(auto.pnl)}</b> on {money(auto.cost)}.</p>}
+          {auto.graded > 0 && <p className="sub">Graded fills: {auto.graded}, <b className={auto.pnl >= 0 ? 'pos' : 'neg'}>{signed(auto.pnl)}</b> on {money(auto.cost)}, fees in.
+            {auto.brk.n + auto.play.n > 0 ? ` Resting fills at the break: ${signed(auto.brk.pnl)} on ${money(auto.brk.cost)} (${auto.brk.n}). In play: ${signed(auto.play.pnl)} on ${money(auto.play.cost)} (${auto.play.n}).` : ''}</p>}
           {control && (
             <p className="sub kill">
               Kill switch: <b className={control.kill ? 'neg' : 'pos'}>{control.kill ? 'ON, nothing is sent' : 'off'}</b>.{' '}

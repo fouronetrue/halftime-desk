@@ -86,7 +86,7 @@ function HeldReadout({ r, heldName, otherName, otherPrice, budget, maxCost }) {
     <>
       <Verdict free={r.free} verdict={r.verdict}>Pair {(100 * r.c).toFixed(1)}c all in with your {held} at cost, breakeven {(100 * r.breakeven).toFixed(1)}c</Verdict>
       <p className="mc-big">{pick.n}<small> {other} shares at {otherPrice}c</small></p>
-      <p className="mc-miss"><b>{money(pick.dollars)}</b>{pick.fee ? `plus ${money(pick.fee)} fee` : 'no fee resting'}, {money(r.costA + pick.dollars + pick.fee)} in the game all told</p>
+      <p className="mc-miss"><b>{money(pick.dollars)}</b>{pick.fee ? ` plus ${money(pick.fee)} fee` : ''}, {money(r.costA + pick.dollars + pick.fee)} in the game all told</p>
       <p className="mc-note">{why}</p>
       <Finals rows={rows} />
       <p className="mc-note">
