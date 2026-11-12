@@ -874,10 +874,12 @@ def spot_note(sp, singles):
 def cancel_by(model):
     """When a resting order comes down: when play resumes. The shadow fill model split 945 touched resting legs
     (Oct 23 to Nov 11, four sports) by when the ask reached the bid. The 605 touched after play resumed lost $910
-    and lost on 20 of 28 sport-nights: a resting bid that fills in play fills because the game has moved against
-    it. The 340 touched during the break made $479, nearly all of it on the first three nights at five times
-    the later size, and about nothing since: resting at the break is a fair price, not a proven profit. Until
-    Nov 12 the push said to leave the orders up until the 4th quarter."""
+    on $9,980 (minus 9%), on 20 of 28 sport-nights and at both sizes the shadow ran; resampling the 19 slates
+    puts that about three standard errors under zero. The 340 touched during the break made $479 on $5,194,
+    nearly all of it on the first three nights at five times the later size, and about nothing since: a fair
+    price, not a proven profit. Mostly an NBA result (college basketball was flat both ways). The reason is the
+    old one: a bid left up in a live game fills when the game has moved against it. Until Nov 12 the push said
+    to leave the orders up until the 4th quarter. The scorecard's fills table keeps score of both windows."""
     if getattr(model, 'stage', None) == 'q3':
         return 'when the 4th starts'
     return 'when the 2nd half starts' if getattr(model, 'sport', None) == 'cbb' else 'when the 3rd starts'

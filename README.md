@@ -87,13 +87,19 @@ The rules that do not change without a reason did not change: the 3-cent margin,
 floor on singles, quarter Kelly, 2.5% risk and 7.5% cost a game, 20% a day, two pushes a game. The stake works
 under the caps, never over them, and comes off in one line of `config.json`.
 
-**2. A resting order that fills in play is a losing order.** The shadow fill model posted 1,251 resting orders
-from Oct 23 to Nov 11 and 945 were reached. The 605 reached after play resumed lost $910 and lost on 20 of 28
-sport-nights. The 340 reached during the break made $479, nearly all of it on the first three nights at five
-times the later size, and about nothing since: a fair price, not a proven profit. So the push now says to cancel
-unfilled legs when play resumes (`engine.cancel_by`), not at the 4th quarter, and a live auto order expires with
-the break whatever `auto.rest_until` says (shadow keeps resting to the 4th, which is how the two are told apart).
-Only 12 of 722 resting middles filled both legs inside a break: a resting middle is mostly one fair single.
+**2. Resting orders come down when play resumes.** The shadow fill model posted 1,251 resting orders from
+Oct 23 to Nov 11 and the ladder reached 945 of them. The 605 reached after play resumed lost $910 on $9,980
+(minus 9%), lost on 20 of 28 sport-nights, and lost at both sizes the shadow ran (about minus 10% on the first
+three nights, minus 9% since). Resampling the 19 slates puts that return about three standard errors under
+zero: the firmest number the test produced. The 340 reached during the break made $479 on $5,194, but nearly all
+of it on those first three nights at five times the later size; since then they are plus $8 on about $3,300. A
+fair price, not a proven profit. It is mostly an NBA result (break fills plus 14%, in-play fills minus 10%);
+college basketball was flat both ways and football has too few fills to say. The reason is the old one: a bid
+left up in a live game fills when the game moves against it. So the push now says to cancel unfilled legs when
+play resumes (`engine.cancel_by`), not at the 4th quarter, and a live auto order expires with the break whatever
+`auto.rest_until` says (shadow keeps resting to the 4th, which is how the scorecard keeps telling the two kinds
+of fill apart). Only 12 of 722 resting middles filled both legs inside a break: a resting middle is mostly one
+fair single.
 
 **3. One spot has a live lane, at a quarter of full size. The rest are watched.** A spot lane
 (`engine.spot_lane`, config `spots.<sport>.<cell>`) is a cell of the halftime study, measured against the
