@@ -155,7 +155,7 @@ break fills return better than minus 5% on the next 300. `tests/lanes.py` pins t
 | cost_pct | most to spend on one game, % | 7.5 |
 | margin_c | edge needed before a play is called, cents | 3 |
 | trust_pct | weight on the model vs the market price in the fair number | 50 |
-| order | taker (fee) or maker (resting, no fee) when pricing the asks | taker |
+| order | taker (7% x P x (1 - P)) or maker (resting, 1.75% x P x (1 - P)) when pricing the asks | taker |
 | read_push | per sport, the ntfy priority of an UPDATE: default (normal), min (silent, shows in the app list only), off | nfl default, cfb default |
 | min_price_c, max_price_c | ignore legs priced outside this band (model tails are not trusted) | 15, 85 |
 | day_cost_pct | most to suggest across all plays in one day, % of bankroll | 20 |
@@ -409,16 +409,31 @@ price (a restart cannot post it twice) and an `expiration_ts` at the window's en
 resting). The kill switch cancels what is resting and stops every send until it is turned off. `tests/trade_guard.py`
 pins all of it, and the fixtures run plans in shadow with the network forbidden.
 
-## The fee watch
-The engine prices a take at 7% x P x (1 - P) and a resting fill at no fee. That is what Kalshi's fee schedule
-(the July 7, 2026 update) says for the total series: maker fees, 1.75% x P x (1 - P) on a resting order that
-fills, are charged only on the series the schedule lists, the NFL and college football game-winner series among
-them and no total or spread series. One outside write-up says total series carry them too, and Kalshi has
-changed the table before, so every six hours the worker reads Kalshi's own record of each total series it
-prices (`/series/TICKER`: `fee_type`, `fee_multiplier`) and pushes once, high priority, if a series reads
-`quadratic_with_maker_fees` or `flat`, or its record changes from the first clean read (`watch.Desk.fee_check`,
-`tests/fees.py`). It tells the phone; it does not reprice. With maker fees a resting fill at 50c would cost
-about 0.44c a share, which is the amount every REST limit would then be too high by.
+## Fees, and the fee watch
+The engine prices a take at 7% x P x (1 - P) and a resting order that fills at 1.75% x P x (1 - P)
+(`engine.FEE_RATE`, `engine.MAKER_RATE`): 1.75c and 0.44c a share at 50c. Both are inside every number the desk
+prints: a REST limit is the highest price whose all-in cost (price plus the maker fee) still leaves the margin, a
+resting pair's cost, win and miss carry the fee on both fills, the auto cap counts it, the held-leg math
+(`held.py`) charges it on a resting hedge, and a shadow or live fill is graded net of it (`engine.fill_pnl`). The
+app mirrors the same two rates (`app/lib/desk.js`; `tests/fees.py` and `tests/held.py` hold the two to each other).
+
+Until Nov 12, 2026 the desk priced a resting fill at no fee. That came from Kalshi's published fee schedule (the
+July 7, 2026 update), whose list of maker-fee series names the game-winner series and no total series. Kalshi's
+own record of each series says otherwise: `/series/TICKER` reads `fee_type quadratic_with_maker_fees`, multiplier
+1, for all four total series, and `/series/fee_changes` dates that to Nov 15, 2025 for college basketball, the NBA
+and college football. The record is what gets charged, so the engine follows the record. Two consequences of the
+old pricing: about four REST limits in ten were a cent too high, and the shadow fills were graded about 0.9% of
+the money risked too kindly. The orders table's `pnl` column still holds the old grading on rows graded before
+Nov 12; every reader (`scripts/readout.py`, the app's Record page, `trade.net_pnl`) regrades from the order and
+its final, so the scorecard is net of the fee across the whole history. The per-slate files in
+`data/desk/shadow/` written before Nov 12 are not rewritten and read before the maker fee.
+
+Every six hours the worker reads Kalshi's record of each total series it prices and compares it with what the
+engine charges itself (`watch.Desk.fee_check`, `tests/fees.py`). A record that differs is pushed once: high
+priority when Kalshi charges more than the desk counts (a higher multiplier, a flat fee: the desk's limits are too
+high, skip that sport), normal priority when it charges less (a series drops the maker fee: the limits are a
+touch low, which is safe). When a series that was pushed reads as priced again, one push says so. The watch
+covers the total series only; the Sharp Bet Ledger's prop series are not read.
 
 ## Polymarket price log
 At every break the worker also reads Polymarket's total lines for the same game (the public Gamma API, no key;
