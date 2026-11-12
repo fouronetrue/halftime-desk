@@ -17,8 +17,31 @@ and dollars only. Two things:
 
 A break is a break for the stage that posted the order: a half order touched at the end of the third was
 filled in play, after the score moved, whatever the phase label says.
+
+Since the desk went live (Nov 12, 2026, claude/go-live-nov12.md) the scorecard also carries the tiers (the plays
+on price and each live spot lane, apart, before and since that day), every spot cell graded at Kalshi's own line
+at the break (live or shadow, on every graded half, whether the cell existed that day or not), the resting fills
+as a return on the money at the break and in play, and where each go-live rule stands. The rules were written
+down before the plays they judge.
 """
-import csv, io, json, datetime as dt
+import csv, io, json, os, sys, datetime as dt
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+import engine
+
+# The slate the desk went from testing to live sizing on. Plays from this slate on count toward the rules.
+GO_LIVE = '2026-11-12'
+# The go-live rules, written before the plays they judge (claude/go-live-nov12.md, the Playbook):
+#   plays on price run at half stake; 50 graded since go-live with a profit puts them back to full stake, 50 graded
+#   and down more than a tenth of the money risked turns them into reads;
+#   a live spot lane is reviewed at 30 graded plays: 55 percent winners and a profit earns the full lane stake, under
+#   48 percent sends it back to shadow;
+#   a shadow cell goes live at half size once 150 graded halves have landed on its side of Kalshi's line 55 percent
+#   of the time, and is dropped if 300 have and it is under 50;
+#   the resting block stays on the push while the fills at the break return more than minus 5 percent on 300 more.
+RULES = dict(plays_n=50, plays_stop=-0.10, lane_n=30, lane_up=0.55, lane_down=0.48, cell_n=150, cell_up=0.55, cell_drop_n=300, rest_n=300, rest_stop=-0.05)
 
 BREAK_PHASES = {'half': ('half', 'early3', ''), 'q3': ('q3end', 'early4', '')}
 FILLED = ('touched', 'filled', 'partial')
@@ -26,7 +49,7 @@ SHADOW_COLS = ['date_et', 'sport', 'mode', 'games', 'rest_orders', 'rest_cost', 
                'tight_orders', 'tight_touched', 'wide_orders', 'wide_touched', 'other_orders', 'other_touched',
                'touch_under_60s', 'touch_1_5m', 'touch_5_15m', 'touch_later', 'touch_median_s',
                'middles', 'middles_both', 'middles_one', 'middles_both_break', 'graded', 'pnl', 'pnl_both', 'pnl_lone', 'pnl_break', 'pnl_play',
-               'pnl_both_break', 'pnl_cost', 'takes', 'takes_available', 'takes_pnl']
+               'pnl_both_break', 'pnl_cost', 'takes', 'takes_available', 'takes_pnl', 'cost_break', 'cost_play']
 # A quarter-break misread (claude/breaks-oct25.md: ESPN's "period 2, 0:00" priced as the half, "period 3, 0:00" as
 # the end of the third; fixed Oct 25 at 8:32 PM ET) prices a quarter's score as a break and lands the fair line
 # tens of points from the market. Every true read since Oct 16 sat within 3.5 points of the market, every misread
@@ -97,7 +120,11 @@ def summarise(mine, date_et, sport, mode):
                 pnl_break=round(pnl_of(brk), 2), pnl_play=round(pnl_of(o for o in touched if o not in brk), 2),
                 pnl_both_break=round(pnl_of(o for v in both_break for o in v), 2),
                 pnl_cost=round(sum(num(o.get('cost')) or 0 for o in graded), 2),
-                takes=len(takes), takes_available=sum(1 for o in takes if is_filled(o)), takes_pnl=round(sum(num(o['pnl']) for o in tg), 2))
+                takes=len(takes), takes_available=sum(1 for o in takes if is_filled(o)), takes_pnl=round(sum(num(o['pnl']) for o in tg), 2),
+                # the money behind pnl_break and pnl_play (graded legs only), so each window reads as a return: the
+                # dollars alone are whatever size the shadow ran that week
+                cost_break=round(sum(num(o.get('cost')) or 0 for o in graded if o in brk), 2),
+                cost_play=round(sum(num(o.get('cost')) or 0 for o in graded if o not in brk), 2))
 
 
 def shadow_csv(rows):
@@ -161,9 +188,27 @@ def md(day):
     return f"{d.strftime('%b')} {d.day}"
 
 
+def lead_lane(r):
+    """The spot lane a half's lead play came from, else None: the sheet's first single carries lane=<cell> when the
+    play was the lane's own (engine.suggest); a row with no sheet (the CSV-only games) says it in the plays text
+    ('spot <cell> +1.5 live; lane over 48.5@40 W +32')."""
+    sh = sheet_of(r)
+    if sh:
+        if (sh.get('lead') or 'single') != 'single':
+            return None
+        first = (sh.get('singles') or [None])[0]
+        return (first or {}).get('lane') or None
+    parts = [p.strip() for p in str(r.get('plays') or '').split(';')]
+    parts = [p[7:] if p.startswith('shadow ') else p for p in parts]
+    cell = next((p.split()[1] for p in parts if p.startswith('spot ') and len(p.split()) > 1), None)
+    first = next((p for p in parts if p and not p.startswith(('spot ', 'void'))), '')
+    return cell if first.startswith('lane ') else None
+
+
 def windows(rows):
     """Every graded game window as one record: the half (every row) and the NBA's end of the third (rows with
-    q3_score). A window with plays_cost is a window the push led with a play."""
+    q3_score). A window with plays_cost is a window the push led with a play; lane is the spot lane that play
+    came from, when it was a lane's own."""
     out = []
     gap = lambda a, b: abs(num(a) - num(b)) if num(a) is not None and num(b) is not None else None
     for r in rows:
@@ -171,11 +216,11 @@ def windows(rows):
         shadow = str(r.get('plays') or '').startswith('shadow')
         out.append(dict(sport=(r.get('sport') or '') + (' shadow' if shadow else ''), game=r.get('game'), date=r['date'], stage='half', cost=num(r.get('plays_cost')) or 0.0,
                         pnl=num(r.get('plays_pnl')) or 0.0, rest=num(r.get('rest_mid_pnl')), mid=num(r.get('mid_pnl')), src=r.get('src'),
-                        gap=gap(r.get('fair'), r.get('mkt')), shadow=shadow))
+                        gap=gap(r.get('fair'), r.get('mkt')), shadow=shadow, lane=lead_lane(r)))
         if r.get('q3_score') not in (None, ''):
             out.append(dict(sport=r.get('sport'), game=r.get('game'), date=r['date'], stage='q3', cost=num(r.get('q3_plays_cost')) or 0.0,
                             pnl=num(r.get('q3_plays_pnl')) or 0.0, rest=num(r.get('q3_rest_mid_pnl')), mid=num(r.get('q3_mid_pnl')), src=r.get('src'),
-                            gap=gap(r.get('q3_fair'), r.get('q3_mkt')), shadow=False))
+                            gap=gap(r.get('q3_fair'), r.get('q3_mkt')), shadow=False, lane=None))
     return out
 
 
@@ -304,7 +349,7 @@ def shot_lines(rows):
             win = T > x['line'] if x['kind'] == 'over' else T < x['line']
             shots.append(dict(date=r['date'], win=win, pnl=(x['contracts'] - x['cost']) if win else -x['cost'], cost=x['cost']))
     if not shots:
-        return ['- no graded shots yet (the first Saturday of SHOT lines is Oct 31)']
+        return ['- no graded shots yet (a shot needs a 28+ point college spread and a side at 80c or more that the narrowed ladder still calls cheap)']
     out = ['| slate | shots | won | risked | P&L |', '|---|---|---|---|---|']
     for date in sorted({s['date'] for s in shots}):
         ss = [s for s in shots if s['date'] == date]
@@ -343,8 +388,165 @@ def auto_lines(orders):
     return out
 
 
-def scorecard_md(db_rows, csv_rows, orders, now=None):
+def pct(a, b):
+    return f"{100 * a / b:.0f}%" if b else ''
+
+
+def ret(pnl, cost):
+    return f"{100 * pnl / cost:+.1f}%" if cost else ''
+
+
+def tier_of(w):
+    """price (the desk's own number against the ask) or the spot lane the play came from; None for a window with
+    no play, a shadow play or a misread."""
+    if not w['cost'] or w.get('shadow') or misread(w):
+        return None
+    return w['lane'] or 'price'
+
+
+def tier_lines(wins):
+    """The live plays by tier, before and since go-live. A tier is what the play was made on: the price, or a
+    spot lane. Misreads and shadow plays are out of both."""
+    out = ['| tier | when | plays | won | risked | P&L | return |', '|---|---|---|---|---|---|---|']
+    tiers = sorted({tier_of(w) for w in wins if tier_of(w)}, key=lambda t: (t != 'price', t))
+    for tier in tiers or ['price']:
+        for label, keep in ((f"before {md(GO_LIVE)}", lambda w: w['date'] < GO_LIVE), (f"{md(GO_LIVE)} on", lambda w: w['date'] >= GO_LIVE)):
+            ws = [w for w in wins if tier_of(w) == tier and keep(w)]
+            name = 'plays on price' if tier == 'price' else f'spot lane: {tier}'
+            cost, pnl = sum(w['cost'] for w in ws), sum(w['pnl'] for w in ws)
+            out.append(f"| {name} | {label} | {len(ws)} | {sum(1 for w in ws if w['pnl'] > 0)} | ${cost:,.0f} | ${pnl:+,.0f} | {ret(pnl, cost)} |")
+    return out
+
+
+def half_score(r):
+    """(away, home) at the half from the sheet, else from the row's 'away-home' text."""
+    sh = sheet_of(r)
+    if sh and sh.get('h1a') is not None and sh.get('h1h') is not None:
+        return int(sh['h1a']), int(sh['h1h'])
+    try:
+        a, h = str(r.get('half') or '').split('-')
+        return int(a), int(h)
+    except ValueError:
+        return None
+
+
+def cell_table(rows, spots):
+    """Every configured spot cell on every graded half, at Kalshi's own line at the break: which side of that line
+    the final landed on. The cell is read off the row (pregame line, break score), so a half graded before the
+    cell existed counts the same as one graded after. Returns {(sport, cell): dict}."""
+    by = {}
+    for r in rows:
+        T, mkt, total = num(r.get('final_total')), num(r.get('mkt')), num(r.get('total'))
+        hs = half_score(r)
+        if T is None or mkt is None or total is None or hs is None:
+            continue
+        if num(r.get('fair')) is not None and abs(num(r['fair']) - mkt) >= MISREAD_GAP:
+            continue   # a misread break score names no cell
+        sp = engine.spot_lane(r.get('sport'), spots, total, num(r.get('home_spread')), hs[1], hs[0])
+        if not sp:
+            continue
+        t = by.setdefault((r.get('sport'), sp['name']), dict(label=sp['label'], mode=sp['mode'], side=sp['side'], lean=sp['lean'], n=0, on=0, push=0, diff=0.0))
+        d = (T - mkt) * (1 if sp['side'] == 'over' else -1)
+        t['n'] += 1
+        t['diff'] += d
+        if d == 0:
+            t['push'] += 1
+        elif d > 0:
+            t['on'] += 1
+    return by
+
+
+def cell_lines(rows, spots):
+    by = cell_table(rows, spots)
+    if not by:
+        return ['- no graded half has sat in a configured cell yet']
+    out = ['| sport | cell | mode | lane side | halves | on the lane side of the line | finals past the line, lane side |', '|---|---|---|---|---|---|---|']
+    for (sport, name), t in sorted(by.items(), key=lambda kv: (str(kv[0][0]), kv[0][1])):
+        dec = t['n'] - t['push']
+        out.append(f"| {str(sport).upper()} | {t['label']} | {t['mode']} | {t['side']} | {t['n']} | {t['on']} of {dec} ({pct(t['on'], dec)}) | {t['diff'] / t['n']:+.1f} |")
+    return out
+
+
+def fill_lines(orders):
+    """The resting fills as a return on the money, at the break and in play, shadow mode, every sport together and
+    apart. The dollar columns above ride on whatever size the shadow ran that week (five times larger on the
+    first three nights); this table does not."""
+    rows = [r for r in shadow_rows(orders) if r['mode'] == 'shadow']
+    if not rows:
+        return []
+    out = ['| sport | filled at the break | risked | P&L | return | filled in play | risked | P&L | return |', '|---|---|---|---|---|---|---|---|---|']
+    for sport in sorted({r['sport'] for r in rows}) + ['all']:
+        rs = [r for r in rows if sport == 'all' or r['sport'] == sport]
+        s = lambda k: sum(r[k] for r in rs)
+        out.append(f"| {sport.upper()} | {s('touched_break')} | ${s('cost_break'):,.0f} | ${s('pnl_break'):+,.0f} | {ret(s('pnl_break'), s('cost_break'))} | "
+                   f"{s('touched_play')} | ${s('cost_play'):,.0f} | ${s('pnl_play'):+,.0f} | {ret(s('pnl_play'), s('cost_play'))} |")
+    return out
+
+
+def rule_lines(wins, rows, orders, spots):
+    """Where each go-live rule stands. The rules were set on Nov 12, before any play they judge."""
+    R = RULES
+    out = []
+    live = [w for w in wins if tier_of(w) and w['date'] >= GO_LIVE]
+    pp = [w for w in live if tier_of(w) == 'price']
+    cost, pnl = sum(w['cost'] for w in pp), sum(w['pnl'] for w in pp)
+    if len(pp) < R['plays_n']:
+        verdict = f"half stake stays ({R['plays_n'] - len(pp)} more to the review)"
+    elif pnl > 0:
+        verdict = 'REVIEW: in profit at the mark, full stake is earned (config stake_scale 1.0)'
+    elif cost and pnl / cost < R['plays_stop']:
+        verdict = 'REVIEW: down more than a tenth of the money risked, plays on price become reads'
+    else:
+        verdict = 'half stake stays (at the mark, not in profit)'
+    out.append(f"- Plays on price: {len(pp)} of {R['plays_n']} graded since {md(GO_LIVE)}, {sum(1 for w in pp if w['pnl'] > 0)} won, ${pnl:+,.0f} on ${cost:,.0f}. {verdict[0].upper() + verdict[1:]}.")
+    lanes = {name for cells in (spots or {}).values() for name, c in (cells or {}).items() if isinstance(c, dict) and c.get('mode') == 'live'}
+    for name in sorted(lanes | {tier_of(w) for w in live if tier_of(w) != 'price'}):
+        ws = [w for w in live if tier_of(w) == name]
+        cost, pnl, won = sum(w['cost'] for w in ws), sum(w['pnl'] for w in ws), sum(1 for w in ws if w['pnl'] > 0)
+        if len(ws) < R['lane_n']:
+            verdict = f"half lane stake stays ({R['lane_n'] - len(ws)} more to the review)"
+        elif won / len(ws) >= R['lane_up'] and pnl > 0:
+            verdict = 'REVIEW: the lane has earned its full stake'
+        elif won / len(ws) < R['lane_down']:
+            verdict = 'REVIEW: under 48 percent, the lane goes back to shadow'
+        else:
+            verdict = 'half lane stake stays'
+        out.append(f"- Spot lane {name}: {len(ws)} of {R['lane_n']} graded plays since {md(GO_LIVE)}, {won} won, ${pnl:+,.0f} on ${cost:,.0f}. {verdict[0].upper() + verdict[1:]}.")
+    for (sport, name), t in sorted(cell_table(rows, spots).items(), key=lambda kv: (str(kv[0][0]), kv[0][1])):
+        if t['mode'] != 'shadow':
+            continue
+        dec = t['n'] - t['push']
+        share = t['on'] / dec if dec else 0.0
+        if dec >= R['cell_n'] and share >= R['cell_up']:
+            verdict = 'REVIEW: the cell has earned a live lane at half size'
+        elif dec >= R['cell_drop_n'] and share < 0.5:
+            verdict = 'REVIEW: under half on 300, the cell is dropped'
+        else:
+            verdict = f"stays in shadow ({max(0, R['cell_n'] - dec)} more to the first review)" if dec < R['cell_n'] else 'stays in shadow'
+        out.append(f"- Shadow cell {str(sport).upper()} {t['label']} ({t['side']}): {t['on']} of {dec} on its side of Kalshi's line ({pct(t['on'], dec)}). {verdict[0].upper() + verdict[1:]}.")
+    sh = [r for r in shadow_rows(orders) if r['mode'] == 'shadow' and r['date_et'] >= GO_LIVE]
+    n, cost, pnl = sum(r['touched_break'] for r in sh), sum(r['cost_break'] for r in sh), sum(r['pnl_break'] for r in sh)
+    if n < R['rest_n']:
+        verdict = f"the resting block stays on the push ({R['rest_n'] - n} more to the review)"
+    elif cost and pnl / cost < R['rest_stop']:
+        verdict = 'REVIEW: the break fills are losing more than 5 percent, the resting block comes off the push'
+    else:
+        verdict = 'the resting block stays on the push'
+    out.append(f"- Resting orders, filled at the break (shadow fill model): {n} of {R['rest_n']} since {md(GO_LIVE)}, ${pnl:+,.0f} on ${cost:,.0f}{' (' + ret(pnl, cost) + ')' if cost else ''}. {verdict[0].upper() + verdict[1:]}.")
+    return out
+
+
+def load_spots():
+    try:
+        with open(os.path.join(ROOT, 'config.json'), encoding='utf-8') as f:
+            return json.load(f).get('spots') or {}
+    except (OSError, ValueError):
+        return {}
+
+
+def scorecard_md(db_rows, csv_rows, orders, now=None, spots=None):
     now = now or dt.datetime.now(dt.timezone.utc)
+    spots = load_spots() if spots is None else spots
     rows = dedupe(db_rows, csv_rows)
     wins = windows(rows)
     n_db = sum(1 for r in rows if r['src'] == 'db')
@@ -360,6 +562,16 @@ def scorecard_md(db_rows, csv_rows, orders, now=None):
     if q3:
         q3p = [w for w in q3 if w['cost']]
         lines += ['', f"End of 3rd (NBA): {len(q3)} windows graded, {len(q3p)} with a play, ${sum(w['pnl'] for w in q3p):+,.0f} on ${sum(w['cost'] for w in q3p):,.0f}."]
+    lines += ['', f'## The tiers (live {md(GO_LIVE)})', '',
+              'What each live play was made on: the price (the desk number against the ask) or a spot lane. Misreads and shadow plays are left out. '
+              'Plays on price run at half stake and a lane at half of that until the rules below say otherwise.', '']
+    lines += tier_lines(wins)
+    lines += ['', '## Spot cells at the Kalshi line', '',
+              'Every graded half that sat in a configured cell, live or shadow, counted on the side the cell leans: the final against the Kalshi 50-50 line at the break. '
+              'A cell earns a lane here, at the market number, not against the model.', '']
+    lines += cell_lines(rows, spots)
+    lines += ['', '## The go-live rules, and where each stands', '', f'Set on {md(GO_LIVE)}, before the plays they judge (the Playbook has them in full).', '']
+    lines += rule_lines(wins, rows, orders, spots)
     lines += ['', '## Model against the market', '',
               'Miss is the distance from the final total. Finals vs a line is the final minus that line (plus means the overs hit); the pregame total is the closing line the game was priced off.', '']
     lines += model_lines(rows)
@@ -371,4 +583,7 @@ def scorecard_md(db_rows, csv_rows, orders, now=None):
               'Per slate in data/desk/shadow/. A fill at the break is the market handing the middle over; a fill in play is the game moving against the leg. '
               'P&L at the break is what the night would have made with every resting order pulled when the break ended.', '']
     lines += auto_lines(orders)
+    fills = fill_lines(orders)
+    if fills:
+        lines += ['', 'The same fills as a return on the money behind them (the dollars above ride on the size the shadow ran that week):', ''] + fills
     return '\n'.join(lines) + '\n'

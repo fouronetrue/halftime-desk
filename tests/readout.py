@@ -113,3 +113,69 @@ for word in ('KXNBA', 'c0ffee', '210.5'):
     assert word not in text, word
 assert chr(8212) not in text and chr(8212) not in open(os.path.join(ROOT, 'scripts', 'readout.py'), encoding='utf-8').read()
 print('readout: scorecard dedupes to the table, counts both windows, flags the misreads, grades shots and flickers from the sheet')
+
+# 3. the go-live sections (Nov 12): the tiers, the spot cells at Kalshi's line, the rules, the fills as a return
+assert ro.GO_LIVE == '2026-11-12' and ro.RULES['plays_n'] == 50 and ro.RULES['lane_n'] == 30 and ro.RULES['cell_n'] == 150 and ro.RULES['rest_n'] == 300
+SPOTS = {'nfl': {'home_fav_trailing': {'lean': 1.5, 'mode': 'live', 'stake': 0.5}}, 'cfb': {'fav_leading_1_7': {'lean': 1.1, 'mode': 'shadow'}},
+         'cbb': {'mismatch_hanging': {'lean': -1.0, 'mode': 'shadow'}}}
+def half(sport, game, date, away, home, total, spread, mkt, final, cost=0.0, pnl=0.0, lane=None, fair=None, src='db', plays=None):
+    sh = dict(h1a=away, h1h=home, mu_model=20.0, lead='single' if cost else 'rest',
+              singles=[dict(dict(kind='over', line=mkt, price_c=45, contracts=50, cost=cost), **({'lane': lane} if lane else {}))] if cost else [])
+    r = dict(sport=sport, game=game, final_total=final, mkt=mkt, total=total, home_spread=spread, fair=mkt if fair is None else fair, half=f'{away}-{home}',
+             model_err=1.0, mkt_err=1.0, plays_cost=cost, plays_pnl=pnl, plays=plays)
+    if src == 'db':
+        r.update(date_et=date, game_id=game.replace(' ', ''), sheet=sh)
+    else:
+        r.update(settled_utc=f'{date}T03:00:00+00:00', date=date)
+    return r
+db2 = [half('nfl', 'GB @ NE', '2026-11-08', 24, 14, 44.5, -3.0, 63.0, 72),                                          # the cell, before go-live, no play: over the line
+       half('nfl', 'BUF @ LAR', '2026-11-15', 13, 7, 55.5, -3.5, 46.5, 51, cost=23.0, pnl=32.0, lane='home_fav_trailing'),   # the lane's play, won
+       half('nfl', 'DAL @ PHI', '2026-11-15', 17, 10, 47.5, -4.5, 48.5, 40, cost=22.0, pnl=-22.0, lane='home_fav_trailing'), # the lane's play, lost
+       half('nfl', 'NYG @ WSH', '2026-11-15', 10, 13, 44.5, -3.0, 45.5, 50, cost=40.0, pnl=45.0),                    # a play on price (the favorite leads: no cell)
+       half('nfl', 'SEA @ SF', '2026-11-15', 3, 3, 46.5, -2.5, 48.5, 34, cost=60.0, pnl=-60.0, fair=30.5),            # a misread: in no tier
+       half('cfb', 'PITT @ UVA', '2026-11-14', 10, 14, 50.5, -6.5, 49.0, 49),                                        # the college cell, a push on the line
+       half('cfb', 'WVU @ ISU', '2026-11-14', 14, 10, 50.5, 3.0, 51.5, 60),                                           # the road favorite up 4: over, on the lane side
+       half('cbb', 'WOF @ TENN', '2026-11-13', 30, 41, 150.5, -17.5, 152.5, 144),                                     # a 17.5 favorite up 11: under, on the lane side
+       half('cbb', 'LEM @ CREI', '2026-11-13', 33, 30, 148.5, -20.5, 140.5, 151)]                                      # the favorite behind: over, against the lane
+csv2 = [half('nfl', 'MIA @ NYJ', '2026-11-16', 21, 7, 39.5, -3.5, 49.0, 54, cost=20.0, pnl=24.0, src='csv',
+             plays='spot home_fav_trailing +1.5 live; lane over 49.5@45 W +24; alt lane over 46.5@55 W +15')]          # a CSV-only row: the lane is read from the plays text
+rows2 = ro.dedupe(db2, csv2)
+w2 = ro.windows(rows2)
+assert {w['game'] for w in w2 if w['lane'] == 'home_fav_trailing'} == {'BUF @ LAR', 'DAL @ PHI', 'MIA @ NYJ'} and all(w['lane'] in (None, 'home_fav_trailing') for w in w2), [(w['game'], w['lane']) for w in w2]
+assert ro.lead_lane(dict(plays='over 45.5@50 W +20')) is None and ro.lead_lane(dict(plays='spot hot_first_half +1.0 shadow; under 76.5@54 L -19')) is None
+tl = ro.tier_lines(w2)
+assert '| plays on price | before Nov 12 | 0 | 0 | $0 | $+0 |  |' in tl and '| plays on price | Nov 12 on | 1 | 1 | $40 | $+45 | +112.5% |' in tl, tl
+assert '| spot lane: home_fav_trailing | Nov 12 on | 3 | 2 | $65 | $+34 | +52.3% |' in tl, tl                  # the misread is in neither tier
+cl = ro.cell_lines(rows2, SPOTS)
+assert '| NFL | home favorite trailing | live | over | 4 | 3 of 4 (75%) | +2.5 |' in cl, cl                    # +9, +4.5, -8.5 and +5 past the line; the misread half and the half with the favorite ahead name no cell
+assert '| CFB | favorite leading by 1-7 | shadow | over | 2 | 1 of 1 (100%) | +4.2 |' in cl, cl                # the push is a half, not a decision
+assert '| CBB | 15+ point favorite not up by 15 | shadow | under | 2 | 1 of 2 (50%) | -1.0 |' in cl, cl        # under side: +8.5 and -10.5
+orders2 = [order(1, 'BOSDET', 'half', 'yes', 210.5, 45, 100, 'rest_mid', 'p1', status='touched', phase='half', secs=30, pnl=10.0, date='2026-11-13'),
+           order(2, 'BOSDET', 'half', 'no', 214.5, 50, 100, 'rest_mid', 'p1', status='touched', phase='q3', secs=1200, pnl=-25.0, date='2026-11-13'),
+           order(3, 'OKCSA', 'half', 'yes', 220.5, 40, 50, 'rest_mid', 'p2', status='touched', phase='early3', secs=200, pnl=-4.0, date='2026-11-13'),
+           order(4, 'NYKMIA', 'half', 'yes', 218.5, 40, 50, 'rest_mid', 'p3', status='touched', phase='half', secs=20, pnl=30.0, date='2026-11-10')]   # before go-live: in the table, not in the rule
+srow = ro.shadow_rows(orders2, '2026-11-13')[0]
+assert (srow['touched_break'], srow['touched_play'], srow['cost_break'], srow['cost_play'], srow['pnl_break'], srow['pnl_play']) == (2, 1, 65.0, 50.0, 6.0, -25.0), srow
+fl = ro.fill_lines(orders2)
+assert '| NBA | 3 | $85 | $+36 | +42.4% | 1 | $50 | $-25 | -50.0% |' in fl and fl[-1].startswith('| ALL | 3 | $85 |'), fl
+rl = ro.rule_lines(w2, rows2, orders2, SPOTS)
+assert rl[0] == '- Plays on price: 1 of 50 graded since Nov 12, 1 won, $+45 on $40. Half stake stays (49 more to the review).', rl[0]
+assert rl[1] == '- Spot lane home_fav_trailing: 3 of 30 graded plays since Nov 12, 2 won, $+34 on $65. Half lane stake stays (27 more to the review).', rl[1]
+assert "- Shadow cell CBB 15+ point favorite not up by 15 (under): 1 of 2 on its side of Kalshi's line (50%). Stays in shadow (148 more to the first review)." in rl, rl
+assert "- Shadow cell CFB favorite leading by 1-7 (over): 1 of 1 on its side of Kalshi's line (100%). Stays in shadow (149 more to the first review)." in rl, rl
+assert rl[-1] == '- Resting orders, filled at the break (shadow fill model): 2 of 300 since Nov 12, $+6 on $65 (+9.2%). The resting block stays on the push (298 more to the review).', rl[-1]
+# the reviews fire at their marks
+many = [dict(sport='nfl', game=f'g{i}', date='2026-11-20', stage='half', cost=10.0, pnl=(12.0 if i % 5 else -10.0), rest=None, mid=None, src='db', gap=1.0, shadow=False, lane=None) for i in range(50)]
+assert 'REVIEW: in profit at the mark, full stake is earned' in ro.rule_lines(many, [], [], {})[0]
+lost = [dict(w, pnl=(9.0 if i % 3 == 0 else -10.0)) for i, w in enumerate(many)]
+assert 'REVIEW: down more than a tenth of the money risked, plays on price become reads' in ro.rule_lines(lost, [], [], {})[0]
+lane30 = [dict(w, lane='home_fav_trailing', pnl=(12.0 if i % 3 else -10.0)) for i, w in enumerate(many[:30])]
+assert 'REVIEW: the lane has earned its full stake' in ro.rule_lines(lane30, [], [], SPOTS)[1]
+cold = [dict(w, lane='home_fav_trailing', pnl=(12.0 if i % 3 == 0 else -10.0)) for i, w in enumerate(many[:30])]
+assert 'REVIEW: under 48 percent, the lane goes back to shadow' in ro.rule_lines(cold, [], [], SPOTS)[1]
+text2 = ro.scorecard_md(db2, csv2, orders2, now=dt.datetime(2026, 11, 17, 12, tzinfo=dt.timezone.utc), spots=SPOTS)
+for head in ('## The tiers (live Nov 12)', '## Spot cells at the Kalshi line', '## The go-live rules, and where each stands', 'The same fills as a return on the money behind them'):
+    assert head in text2, head
+assert text2.index('## Lead play per game window') < text2.index('## The tiers') < text2.index('## Spot cells') < text2.index('## The go-live rules') < text2.index('## Model against the market')
+assert chr(8212) not in text2
+print('readout: the tiers, the cells at the Kalshi line, the rules and the fills as a return, each at its mark')
