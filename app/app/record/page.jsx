@@ -109,8 +109,19 @@ export default function Record() {
 
   // Auto orders over the sport filter: planned, filled (shadow: the ladder reached the price; live: Kalshi filled),
   // at the break vs in play, both legs of a middle, P&L of the graded fills.
+  // The pilot: the worker's own orders at Kalshi (mode live), kept apart from the shadow fill model below.
+  const pilot = useMemo(() => {
+    const os = orders.filter((o) => o.mode === 'live' && (sport === 'all' || o.sport === sport) && !['skipped', 'rejected'].includes(o.status));
+    const fills = os.filter((o) => ['filled', 'partial'].includes(o.status));
+    const graded = fills.filter((o) => o.pnl !== null && o.pnl !== undefined);
+    const inFor = (o) => Number(o.filled_count ?? o.count) * Number(o.fill_price_c ?? o.price_c) / 100;
+    return { n: os.length, games: new Set(os.map((o) => o.game_id)).size, posted: os.reduce((s, o) => s + Number(o.cost || 0), 0),
+             fills: fills.length, in: fills.reduce((s, o) => s + inFor(o), 0), resting: os.filter((o) => ['resting', 'sent', 'unconfirmed'].includes(o.status)).length,
+             graded: graded.length, pnl: graded.reduce((s, o) => s + Number(o.pnl), 0), unknown: os.filter((o) => o.status === 'unconfirmed').length };
+  }, [orders, sport]);
+
   const auto = useMemo(() => {
-    const os = orders.filter((o) => sport === 'all' || o.sport === sport);
+    const os = orders.filter((o) => o.mode !== 'live' && (sport === 'all' || o.sport === sport));
     const isFilled = (o) => ['touched', 'filled', 'partial'].includes(o.status);
     // a break is a break for the stage that posted the order (scripts/readout.py): a half order touched at the end of
     // the third was filled in play
@@ -136,7 +147,7 @@ export default function Record() {
              pairs: Object.keys(pairs).length, both, bothBreak, graded: graded.length, pnl: sum(graded, fillPnl), cost: sum(graded, (o) => Number(o.cost || 0)),
              brk: { n: gBreak.length, pnl: sum(gBreak, fillPnl), cost: sum(gBreak, (o) => Number(o.cost || 0)) },
              play: { n: gPlay.length, pnl: sum(gPlay, fillPnl), cost: sum(gPlay, (o) => Number(o.cost || 0)) },
-             mode: os.length ? os[0].mode : null, byGame };
+             byGame };
   }, [orders, sport]);
 
   async function flipKill() {
@@ -194,11 +205,23 @@ export default function Record() {
         </>
       )}
 
+      {pilot.n > 0 && (
+        <div className="flick auto">
+          <h3>Pilot (live orders)</h3>
+          <p className="sub">
+            Orders the worker itself placed at Kalshi, inside the pilot's wallet. {pilot.n} posted on {pilot.games} games ({money(pilot.posted)} of orders), {pilot.fills} filled ({money(pilot.in)} in)
+            {pilot.resting ? `, ${pilot.resting} still open` : ''}.
+            {pilot.graded > 0 ? <> Graded: <b className={pilot.pnl >= 0 ? 'pos' : 'neg'}>{signed(pilot.pnl)}</b> after fees.</> : ''}
+            {pilot.unknown ? ` ${pilot.unknown} got no answer from Kalshi: check your Kalshi orders.` : ''}
+          </p>
+        </div>
+      )}
+
       {(auto.n > 0 || control) && (
         <div className="flick auto">
-          <h3>Auto orders{auto.mode ? ` (${auto.mode})` : ''}</h3>
+          <h3>Auto orders (shadow)</h3>
           <p className="sub">
-            {auto.mode === 'live' ? 'Orders the worker sent to Kalshi.' : 'What the worker would have posted at each break, nothing sent. A resting order counts as filled when the ladder reached its price.'}
+            What the worker would have posted at each break, nothing sent. A resting order counts as filled when the ladder reached its price.
             {' '}{auto.n} orders on {auto.games} games: {auto.rests} resting, {auto.takes} at the ask.
           </p>
           <dl className="mstats">
@@ -287,10 +310,10 @@ export default function Record() {
                     )}
                     {(auto.byGame[r.game_id] || []).length > 0 && (
                       <>
-                        <p className="alt"><b className="chalk">Auto orders</b> ({auto.byGame[r.game_id][0].mode}):</p>
+                        <p className="alt"><b className="chalk">Auto orders</b>:</p>
                         {auto.byGame[r.game_id].map((o) => (
                           <p key={o.client_order_id} className={`alt flickline ${['touched', 'filled', 'partial'].includes(o.status) ? (o.pnl === null || o.pnl === undefined ? '' : Number(o.pnl) >= 0 ? 'win' : 'loss') : ''}`}>
-                            <b>{o.status}</b> {o.side === 'yes' ? 'Over' : 'Under'} {Number(o.strike)} at {o.price_c}c, {o.count} sh ({o.kind === 'rest' ? 'resting' : 'at the ask'}, {o.reason}{o.stage === 'q3' ? ', end of 3rd' : ''})
+                            <b>{o.mode === 'live' ? 'LIVE ' : ''}{o.status}</b> {o.side === 'yes' ? 'Over' : 'Under'} {Number(o.strike)} at {o.price_c}c, {o.count} sh ({o.kind === 'rest' ? 'resting' : 'at the ask'}, {o.reason}{o.stage === 'q3' ? ', end of 3rd' : ''})
                             {o.touched_at ? `, reached ${o.touch_s !== null && o.touch_s !== undefined ? (o.touch_s < 60 ? `${o.touch_s}s` : `${Math.round(o.touch_s / 60)} min`) : ''} after the first look${['half', 'early3', 'q3end', 'early4'].includes(o.touch_phase) ? '' : ' (in play)'}` : ''}
                             {o.pnl !== null && o.pnl !== undefined ? `: ${signed(Number(o.pnl))}` : ''}
                           </p>

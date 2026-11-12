@@ -88,14 +88,23 @@ function Window({ g }) {
 // the ladder reached the price; live rows carry Kalshi's answer.
 function AutoLine({ orders }) {
   if (!orders || !orders.length) return null;
-  const mode = orders[0].mode;
-  const rests = orders.filter((o) => o.kind === 'rest');
-  const hit = orders.filter((o) => ['touched', 'filled', 'partial'].includes(o.status));
+  const line = (os, live) => {
+    if (!os.length) return null;
+    const rests = os.filter((o) => o.kind === 'rest'), takes = os.filter((o) => o.kind === 'take');
+    const hit = os.filter((o) => ['touched', 'filled', 'partial'].includes(o.status));
+    return (
+      <p className="autoline" key={live ? 'live' : 'shadow'}>
+        <b>{live ? 'Auto, LIVE at Kalshi' : 'Auto, shadow'}</b> {rests.length} resting order{rests.length === 1 ? '' : 's'}{live && takes.length ? ` and ${takes.length} at the ask` : ''} posted
+        {hit.length ? <>, <span className="pos">{hit.length} {live ? 'filled' : 'reached'}</span></> : live ? ', none filled yet' : ', none reached yet'}.
+      </p>
+    );
+  };
+  // the pilot's own orders (mode live) and the shadow fill model are two different things: one line each
   return (
-    <p className="autoline">
-      <b>{mode === 'live' ? 'Auto' : 'Auto, shadow'}</b> {rests.length} resting order{rests.length === 1 ? '' : 's'} posted
-      {hit.length ? <>, <span className="pos">{hit.length} reached</span></> : ', none reached yet'}.
-    </p>
+    <>
+      {line(orders.filter((o) => o.mode === 'live' && !['skipped', 'rejected'].includes(o.status)), true)}
+      {line(orders.filter((o) => o.mode !== 'live'), false)}
+    </>
   );
 }
 
