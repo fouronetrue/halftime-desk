@@ -84,7 +84,10 @@ watch.LOG_PATH = os.path.join(scratch, 'halftime_log.csv'); watch.RESULTS_PATH =
 cfg = dict(watch.load_json(watch.CONFIG_PATH, {}), sports=['cbb'])
 assert cfg.get('center_model_pct', {}).get('cbb') == 50, 'config.json: center_model_pct.cbb should be 50'
 assert cfg.get('sharp_model_pct', {}).get('cbb') == 50
-assert (cfg.get('play_push') or {}).get('cbb') == 'min' and cfg['read_push'].get('cbb') == 'min', 'the shadow week: silent pushes'
+assert not (cfg.get('play_push') or {}).get('cbb') and cfg['read_push'].get('cbb') == 'min', 'Nov 12: college basketball PLAYs went live (half stake, config stake_scale); the reads stay silent'
+# the shadow-week mechanism itself (config play_push <sport>: min), which the college game ran on from Nov 4 to
+# Nov 12 and the next new sport will run on: a silent PLAY, marked, graded apart, never charged to the day cap
+cfg = dict(cfg, play_push={'cbb': 'min'})
 d = watch.Desk(cfg, {}, FIX)
 d.run_pass()
 rec = d.state['games']['601']
@@ -145,7 +148,7 @@ assert mm and float(mm.group(1)) == held.PER_NUMBER['cbb'] == 0.034, 'college pe
 assert held.SPORT_OF['KXNCAAMBTOTAL'] == 'cbb'
 assert "series.includes('NCAAMB') ? 'cbb'" in js, 'the app must read the college series before the NBA one'
 cfg_file = watch.load_json(watch.CONFIG_PATH, {})
-assert 'cbb' in cfg_file['sports'] and cfg_file['read_push'].get('cbb') == 'min' and cfg_file['play_push'].get('cbb') == 'min'
+assert 'cbb' in cfg_file['sports'] and cfg_file['read_push'].get('cbb') == 'min' and not (cfg_file.get('play_push') or {}).get('cbb')
 assert 'cbb' in cfg_file['sharp_model_pct'] and cfg_file['rest_near_pts'].get('cbb') == 6.0
 print('cbb: ok')
 

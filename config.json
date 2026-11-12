@@ -17,9 +17,7 @@
     "nba": "default",
     "cbb": "min"
   },
-  "play_push": {
-    "cbb": "min"
-  },
+  "play_push": {},
   "poll_seconds": 60,
   "max_poll_minutes": 22,
   "keep_days": 10,
