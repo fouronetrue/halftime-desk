@@ -53,7 +53,7 @@ Set on Nov 12, before the plays they judge (the Playbook has them in full).
 - Shadow cell CBB 15+ point favorite not up by 15 (under): 36 of 71 on its side of Kalshi's line (51%). Stays in shadow (79 more to the first review).
 - Shadow cell CFB favorite leading by 1-7 (over): 29 of 62 on its side of Kalshi's line (47%). Stays in shadow (88 more to the first review).
 - Shadow cell CFB first half 10+ over the pace (over): 15 of 33 on its side of Kalshi's line (45%). Stays in shadow (117 more to the first review).
-- Resting orders, filled at the break (shadow fill model): 0 of 300 since Nov 12, $+0 on $0. The resting block stays on the push (300 more to the review).
+- Resting orders, filled at the break (shadow fill model): 1 of 300 since Nov 12, $+0 on $0. The resting block stays on the push (299 more to the review).
 
 ## Model against the market
 
@@ -101,17 +101,17 @@ Per slate in data/desk/shadow/. A fill at the break is the market handing the mi
 
 | sport | mode | nights | games | resting orders | would fill | at the break | middles both legs | both at the break | one leg | P&L all | P&L at the break | P&L in play | P&L (both) | P&L (lone) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| CBB | shadow | 5 | 161 | 316 | 246 | 100 | 85 of 161 | 4 | 76 | $+16 | $+20 | $-4 | $+307 | $-291 |
-| CFB | shadow | 3 | 22 | 46 | 37 | 22 | 15 of 23 | 1 | 7 | $-121 | $-11 | $-110 | $-19 | $-102 |
-| NBA | shadow | 19 | 138 | 861 | 640 | 202 | 167 of 524 | 5 | 306 | $-326 | $+481 | $-808 | $+795 | $-1,122 |
-| NFL | shadow | 2 | 14 | 28 | 22 | 16 | 8 of 14 | 2 | 6 | $-0 | $-12 | $+11 | $+36 | $-36 |
+| CBB | shadow | 6 | 162 | 318 | 247 | 101 | 85 of 162 | 4 | 77 | $-9 | $+10 | $-18 | $+290 | $-299 |
+| CFB | shadow | 3 | 22 | 46 | 37 | 22 | 15 of 23 | 1 | 7 | $-125 | $-14 | $-112 | $-23 | $-103 |
+| NBA | shadow | 19 | 138 | 861 | 640 | 202 | 167 of 524 | 5 | 306 | $-420 | $+452 | $-872 | $+735 | $-1,155 |
+| NFL | shadow | 2 | 14 | 28 | 22 | 16 | 8 of 14 | 2 | 6 | $-3 | $-14 | $+11 | $+34 | $-37 |
 
 The same fills as a return on the money behind them (the dollars above ride on the size the shadow ran that week):
 
 | sport | filled at the break | risked | P&L | return | filled in play | risked | P&L | return |
 |---|---|---|---|---|---|---|---|---|
-| CBB | 100 | $1,170 | $+20 | +1.7% | 146 | $1,715 | $-4 | -0.2% |
-| CFB | 22 | $328 | $-11 | -3.3% | 15 | $209 | $-110 | -52.6% |
-| NBA | 202 | $3,473 | $+481 | +13.9% | 438 | $7,980 | $-808 | -10.1% |
-| NFL | 16 | $224 | $-12 | -5.3% | 6 | $77 | $+11 | +14.8% |
-| ALL | 340 | $5,194 | $+479 | +9.2% | 605 | $9,980 | $-910 | -9.1% |
+| CBB | 101 | $1,170 | $+10 | +0.8% | 146 | $1,715 | $-18 | -1.1% |
+| CFB | 22 | $328 | $-14 | -4.1% | 15 | $209 | $-112 | -53.5% |
+| NBA | 202 | $3,473 | $+452 | +13.0% | 438 | $7,980 | $-872 | -10.9% |
+| NFL | 16 | $224 | $-14 | -6.1% | 6 | $77 | $+11 | +14.0% |
+| ALL | 341 | $5,194 | $+435 | +8.4% | 605 | $9,980 | $-991 | -9.9% |
