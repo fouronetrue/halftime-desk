@@ -65,6 +65,22 @@ def num(v):
         return None
 
 
+def net_pnl(o):
+    """A graded order's P&L with the fee it pays: the taker fee on a take, the maker fee on a resting fill. The orders
+    table's pnl column holds a resting fill at no fee on every row graded before Nov 12, 2026 (the desk priced it
+    that way until Kalshi's own record said otherwise), so this recomputes from the order and the final it was graded
+    on instead of trusting the column. None when the order was never graded."""
+    if num(o.get('pnl')) is None:
+        return None
+    T, strike, price = num(o.get('final_total')), num(o.get('strike')), num(o.get('price_c'))
+    if T is None or strike is None or price is None or o.get('side') not in ('yes', 'no'):
+        return num(o.get('pnl'))
+    n = num(o.get('filled_count')) if (o.get('mode') == 'live' and num(o.get('filled_count')) is not None) else num(o.get('count'))
+    if n is None:
+        return num(o.get('pnl'))
+    return engine.fill_pnl(o['side'], strike, price, n, o.get('kind'), T)
+
+
 def at_break(o):
     return (o.get('touch_phase') or '') in BREAK_PHASES.get(o.get('stage') or 'half', BREAK_PHASES['half'])
 
@@ -102,7 +118,7 @@ def summarise(mine, date_et, sport, mode):
     one = [v for v in pairs.values() if sum(1 for o in v if is_filled(o)) == 1]
     both_break = [v for v in both if all(at_break(o) for o in v if is_filled(o))]   # the middle the market handed over at the break
     graded = [o for o in touched if num(o.get('pnl')) is not None]
-    pnl_of = lambda os: sum(num(o.get('pnl')) or 0 for o in os if num(o.get('pnl')) is not None)
+    pnl_of = lambda os: sum(net_pnl(o) or 0 for o in os if num(o.get('pnl')) is not None)
     pnl_both = pnl_of(o for v in both for o in v)
     pnl_lone = pnl_of(o for v in one for o in v)
     tg = [o for o in takes if is_filled(o) and num(o.get('pnl')) is not None]
@@ -120,7 +136,7 @@ def summarise(mine, date_et, sport, mode):
                 pnl_break=round(pnl_of(brk), 2), pnl_play=round(pnl_of(o for o in touched if o not in brk), 2),
                 pnl_both_break=round(pnl_of(o for v in both_break for o in v), 2),
                 pnl_cost=round(sum(num(o.get('cost')) or 0 for o in graded), 2),
-                takes=len(takes), takes_available=sum(1 for o in takes if is_filled(o)), takes_pnl=round(sum(num(o['pnl']) for o in tg), 2),
+                takes=len(takes), takes_available=sum(1 for o in takes if is_filled(o)), takes_pnl=round(sum(net_pnl(o) for o in tg), 2),
                 # the money behind pnl_break and pnl_play (graded legs only), so each window reads as a return: the
                 # dollars alone are whatever size the shadow ran that week
                 cost_break=round(sum(num(o.get('cost')) or 0 for o in graded if o in brk), 2),

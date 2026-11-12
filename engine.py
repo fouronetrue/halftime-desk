@@ -7,14 +7,30 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(HERE, 'model.json')) as f:
     MODEL = json.load(f)
 FEE_RATE = 0.07
+# What a resting order pays when it fills: 1.75% x P x (1 - P), a quarter of the taker fee, 0.44c a share at 50c.
+# Kalshi's record of every total series the desk prices reads fee_type quadratic_with_maker_fees (college basketball,
+# the NBA and college football since Nov 15, 2025 by Kalshi's own fee change history; the NFL series reads the same).
+# Until Nov 12, 2026 the desk priced a resting fill at no fee, off the published schedule's list of maker-fee
+# series, which names no total series. Kalshi's record is what gets charged, so the engine follows the record, and
+# watch.Desk.fee_check reads the record against these two rates every six hours.
+MAKER_RATE = 0.0175
 
 
 def fee_per(p, order='taker'):
-    return 0.0 if order == 'maker' else FEE_RATE * p * (1 - p)
+    return (MAKER_RATE if order == 'maker' else FEE_RATE) * p * (1 - p)
 
 
 def order_fee(n, p, order='taker'):
     return math.ceil(n * fee_per(p, order) * 100 - 1e-9) / 100
+
+
+def fill_pnl(side, strike, price_c, n, kind, final):
+    """Dollars a filled order made on a final total, the fee in: the taker fee on a take ('take'), the maker fee on a
+    resting order that filled (anything else). side 'yes' is the over at strike, 'no' the under."""
+    p = float(price_c) / 100
+    win = final > strike if side == 'yes' else final < strike
+    fee = order_fee(int(n), p, 'taker' if kind == 'take' else 'maker')
+    return round((n * (1 - p) - fee) if win else (-n * p - fee), 2)
 
 
 def max_quote(max_all_in, order='taker'):
@@ -506,8 +522,9 @@ def suggest(rows, quotes, order='taker', margin=0.03, trust=0.5, bankroll=3000.0
 
 
 def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.0, max_cost=225.0, rest_scale=0.5, mid_loss=None, near_pts=3.5):
-    """Resting limit orders near fair: a quarter-Kelly size at the limit price (where the edge equals the margin),
-    scaled by rest_scale because a resting order fills when the market moves through it. Also the best resting
+    """Resting limit orders near fair: a quarter-Kelly size at the limit price (where the edge after the maker
+    fee is at least the margin), scaled by rest_scale because a resting order fills when the market moves through
+    it. Every cost here carries the maker fee a resting order pays when it fills. Also the best resting
     middle: YES on a lower line plus NO on a higher one, both at their limits ('middle'), and 'middles': that one
     plus the best wide one (strikes 6+ apart) when it is a different pair, so a push can offer a tight window and
     a wide one. near_pts is how far from fair a strike may sit: 3.5 for football, wider for the NBA ladder."""
@@ -517,8 +534,8 @@ def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.
         p = price_c / 100
         f = 0.25 * margin / max(0.05, 1 - p) * rest_scale
         budget = min(f * bankroll, max_risk)
-        n = int(budget / p + 1e-9)
-        return n, round(n * p, 2)
+        n = int(budget / (p + fee_per(p, 'maker')) + 1e-9)
+        return n, round(n * p + order_fee(n, p, 'maker'), 2)
     legs = []
     for r in near:
         ny, cy = size(r['over_rest'])
@@ -530,7 +547,8 @@ def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.
             if b['line'] - a['line'] < 3:
                 continue
             p_mid = max(0.0, a['p_over'] - b['p_over'] - b['p_push'])
-            c = (a['over_rest'] + b['under_rest']) / 100
+            pa, pb = a['over_rest'] / 100, b['under_rest'] / 100
+            c = pa + pb + fee_per(pa, 'maker') + fee_per(pb, 'maker')   # a pair all in: both limits and the maker fee on each fill
             ev = 1 - c + p_mid
             if ev <= 0:
                 continue
@@ -540,7 +558,8 @@ def rest_plan(model, rows, mode='fg', margin=0.03, bankroll=3000.0, max_risk=75.
             pairs = int(pairs * rest_scale)
             if pairs < 1:
                 continue
-            cand = dict(a=a, b=b, p_mid=p_mid, c=c, ev=ev, pairs=pairs, cost=round(pairs * c, 2), best=round(pairs * (2 - c), 2), worst=round(pairs * (1 - c), 2))
+            cost = round(pairs * (pa + pb) + order_fee(pairs, pa, 'maker') + order_fee(pairs, pb, 'maker'), 2)
+            cand = dict(a=a, b=b, p_mid=p_mid, c=c, ev=ev, pairs=pairs, cost=cost, best=round(2 * pairs - cost, 2), worst=round(pairs - cost, 2))
             if best is None or cand['ev'] > best['ev']:
                 best = cand
             if b['line'] - a['line'] < 6 and (best_tight is None or cand['ev'] > best_tight['ev']):

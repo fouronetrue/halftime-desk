@@ -17,7 +17,7 @@ tests/trade_guard.py pins all of it.
 What gets planned at each break (the first look at the half, and the NBA's end of the third):
   rest   the resting middle legs: 'pair' mode posts the push's resting middle(s) (the tight and wide pair for the
          NBA), 'ladder' mode posts YES on every strike at or below fair and NO on every strike at or above it
-         within rest_near_pts, each at the resting limit (fair minus the margin, maker, no fee). Sized by the
+         within rest_near_pts, each at the resting limit (fair minus the margin and the maker fee). Sized by the
          auto cap: if every order filled, the worst final loses at most pair_miss_pct of bankroll (pair_miss_max
          dollars when set, the phase 1 number), less what you already hold on the total.
   take   with "singles": true (phase 3), the push's first single and the cleared middle at the asks as
@@ -257,7 +257,7 @@ class Trader:
                 reason = 'rest_mid wide' if (focus and i > 0) else 'rest_mid'
                 add('yes', a['line'], a['over_rest'], md['pairs'], reason, pair)
                 add('no', b['line'], b['under_rest'], md['pairs'], reason, pair)
-        # the cap counts every leg at once: if all fill, the worst final may not lose more than cap (fees: maker, none)
+        # the cap counts every leg at once: if all fill, the worst final may not lose more than cap (the maker fee in)
         legs = self.fit_cap(list(legs.values()), held_legs, cap)
         # takes: what the push led with, at the asks it named (the middle in a middle-focus sport when one cleared,
         # else the first single; the backups are not a stack). Phase 3 sends them; shadow records them.
@@ -307,7 +307,8 @@ class Trader:
             return []
         def worst(scale):
             tbl = [dict(side=h['side'], strike=h['strike'], shares=int(h['shares']), paid_c=h['paid_c'], fee=h.get('fee') or 0) for h in held_legs]
-            tbl += [dict(side=l['side'], strike=l['strike'], shares=max(0, int(l['count'] * scale)), paid_c=l['price_c'], fee=0) for l in legs]
+            tbl += [dict(side=l['side'], strike=l['strike'], shares=max(0, int(l['count'] * scale)), paid_c=l['price_c'],
+                         fee=engine.order_fee(max(0, int(l['count'] * scale)), l['price_c'] / 100, 'maker')) for l in legs]
             regs = engine.pnl_regions(tbl)
             base = engine.pnl_regions([dict(side=h['side'], strike=h['strike'], shares=int(h['shares']), paid_c=h['paid_c'], fee=h.get('fee') or 0) for h in held_legs]) if held_legs else []
             base_min = min((r['pnl'] for r in base), default=0.0)
@@ -475,12 +476,11 @@ class Trader:
     # ---- grading ----
     @staticmethod
     def pnl_of(o, T):
-        """Dollars a filled order made on final total T (maker fills pay no fee; takes pay the taker fee)."""
+        """Dollars a filled order made on final total T, the fee in: a take pays the taker fee, a resting fill the
+        maker fee. Rows graded before Nov 12, 2026 hold a resting fill at no fee in their pnl column; the readers
+        (net_pnl below, scripts/readout.py) recompute from the order and its final, so every row reads the same way."""
         n = float(o.get('filled_count') if o.get('mode') == 'live' and o.get('filled_count') is not None else o['count'])
-        p = o['price_c'] / 100
-        win = T > o['strike'] if o['side'] == 'yes' else T < o['strike']
-        fee = engine.order_fee(int(n), p, 'taker') if o['kind'] == 'take' else 0.0
-        return round((n * (1 - p) - fee) if win else (-n * p - fee), 2)
+        return engine.fill_pnl(o['side'], float(o['strike']), float(o['price_c']), n, o.get('kind'), float(T))
 
     def grade(self, g, rec, T):
         """Grade this game's auto orders at the final: every touched (shadow) or filled (live) order gets a pnl."""
@@ -505,6 +505,16 @@ class Trader:
         return dict(fills=n, pnl=round(pnl, 2), orders=len(out))
 
 
+def net_pnl(o):
+    """A graded order's P&L with the fee it pays, whenever it was graded: recomputed from the order and the final it
+    was graded on. None when the order was never graded."""
+    if o.get('pnl') is None:
+        return None
+    if o.get('final_total') is None or o.get('strike') is None or o.get('price_c') is None:
+        return float(o['pnl'])
+    return Trader.pnl_of(o, float(o['final_total']))
+
+
 def readout(date_from=None, mode=None):
     """The shadow (or live) readout: orders by sport, kind and reason; fills at the break vs in play; P&L."""
     params = {'select': '*', 'limit': 20000, 'order': 'created_at'}
@@ -527,7 +537,7 @@ def readout(date_from=None, mode=None):
                 brk = [r for r in filled if (r.get('touch_phase') or '') in ('half', 'early3', 'q3end', 'early4', '')]
                 play = [r for r in filled if r not in brk]
                 graded = [r for r in filled if r.get('pnl') is not None]
-                pnl = sum(float(r['pnl']) for r in graded)
+                pnl = sum(net_pnl(r) for r in graded)
                 cost = sum(float(r.get('cost') or 0) for r in graded)
                 line = (f"auto {md} {sport} {kind}: {len(rs)} orders on {games} games, {len(filled)} filled ({len(brk)} at the break, {len(play)} in play)"
                         + (f", graded {len(graded)}: ${pnl:+.0f} on ${cost:.0f}" if graded else ''))

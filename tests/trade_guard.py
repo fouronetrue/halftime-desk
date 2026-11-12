@@ -8,7 +8,7 @@
    worst final loses at most the auto cap; the push's lead (the middle) as takes; deterministic ids; nothing
    sent. The night budget and a held middle spend the cap. fit_cap scales a set of legs under the cap.
 4. The shadow fill model: a resting bid is touched when the ask reaches it, not on the pass that planned it;
-   an order past its expiry is expired. pnl_of grades a touched leg (maker, no fee) and a take (taker fee).
+   an order past its expiry is expired. pnl_of grades a touched leg (the maker fee) and a take (the taker fee).
 5. The signer: POST and DELETE signatures verify."""
 import sys, os, re, json, base64, tempfile, datetime as dt
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -150,14 +150,16 @@ ch = t4.touch(dict(id='x'), rec4, {224.5: dict(y=70, n=31), 228.5: dict(y=60, n=
 st = {c['client_order_id']: c['status'] for c in ch}
 assert st == {'no228.5': 'touched', 'no236.5': 'expired'} and next(c for c in ch if c['client_order_id'] == 'no228.5')['touch_phase'] == 'live', st
 assert rec4['auto']['half']['open'] == []
-# grading: YES 224.5 at 63 x10 on a 230 final wins 3.70; NO 228.5 at 42 x10 loses 4.20; a take pays the fee
+# grading: YES 224.5 at 63 x10 on a 230 final wins 3.70 less the 5c maker fee; NO 228.5 at 42 x10 loses 4.20 and the
+# fee; a take pays the taker fee
 y = dict(side='yes', strike=224.5, price_c=63, count=10, kind='rest', mode='shadow')
 n = dict(side='no', strike=228.5, price_c=42, count=10, kind='rest', mode='shadow')
-assert trade.Trader.pnl_of(y, 230) == 3.7 and trade.Trader.pnl_of(n, 230) == -4.2 and trade.Trader.pnl_of(n, 226) == 5.8
+assert engine.order_fee(10, 0.63, 'maker') == 0.05 and engine.order_fee(10, 0.42, 'maker') == 0.05
+assert trade.Trader.pnl_of(y, 230) == 3.65 and trade.Trader.pnl_of(n, 230) == -4.25 and trade.Trader.pnl_of(n, 226) == 5.75
 tk = dict(side='yes', strike=224.5, price_c=63, count=10, kind='take', mode='shadow')
 assert trade.Trader.pnl_of(tk, 230) == round(3.7 - engine.order_fee(10, 0.63, 'taker'), 2)
 lv = dict(side='yes', strike=224.5, price_c=63, count=10, filled_count=4, kind='rest', mode='live')
-assert trade.Trader.pnl_of(lv, 230) == round(4 * 0.37, 2), 'a live partial fill is graded on what filled'
+assert trade.Trader.pnl_of(lv, 230) == round(4 * 0.37 - engine.order_fee(4, 0.63, 'maker'), 2) == 1.46, 'a live partial fill is graded on what filled'
 print('fill model: touched when the ask reaches the bid (break vs in play), expired past the window, graded at the final')
 
 # 5. the signer

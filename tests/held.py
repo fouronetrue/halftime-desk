@@ -4,7 +4,8 @@
 3. the same prices again: no repeat; 3c better: pushes again,
 4. a game at the half is left to the engine; a held under pairs with a lower over,
 5. the free tier: hold KC Under 50.5 at 51c. Over 46.5 at 53c is open (a miss costs); at 45c the under pays for the
-   over outright (no final loses) and the push says FREE MIDDLE with the protect size; 47c is free only resting."""
+   over outright (no final loses) and the push says FREE MIDDLE with the protect size; 46c is free only resting
+   (a resting fill pays the maker fee, a quarter of the taker fee)."""
 import sys, os, json, tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -91,7 +92,7 @@ tables['positions'] = [dict(ticker=f'{EV}-51', event_ticker=EV, position=-100, t
 tables['bets'] = [dict(ticker=f'{EV}-51', outcome_side='no', count=100, cost=51.0, fee=1.75)]
 h = held.holdings()[0]
 assert h['fee'] == 1.75 and h['paid_c'] == 51.0
-assert held.free_c(h) == 45 and held.free_c(h, 'rest') == 47, (held.free_c(h), held.free_c(h, 'rest'))
+assert held.free_c(h) == 45 and held.free_c(h, 'rest') == 46, (held.free_c(h), held.free_c(h, 'rest'))
 n = held.protect_size(h, 45)
 o = held.outcomes(h, 45, n)
 assert 0 <= o['held_alone'] < 1 and o['other_alone'] >= 0 and o['both'] > 90, (n, o)
@@ -99,7 +100,7 @@ quotes = {46.5: dict(y=53, n=50, yb=51, nb=48, ticker='k')}
 m = held.best_middle(h, 50.5, quotes)
 assert m['tier'] == 'open' and m['pairs'] == 100, m
 body = held.text(h, 50.5, m, None, 'LAC @ KC')[1]
-assert 'At 45c or less taken (47c resting)' in body, body
+assert 'At 45c or less taken (46c resting)' in body, body
 quotes[46.5]['y'] = 45
 m = held.best_middle(h, 50.5, quotes)
 assert m['tier'] == 'free' and m['pairs'] == n and m['held_alone'] == o['held_alone'] and m['other_alone'] == o['other_alone'], m

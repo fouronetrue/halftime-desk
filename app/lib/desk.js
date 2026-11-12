@@ -25,8 +25,25 @@ export function ago(iso, now = Date.now()) {
 }
 
 // Kalshi taker fee per contract at price p (dollars), and the rounded-up fee on n contracts: engine.fee_per / order_fee
-export const feePer = (p) => 0.07 * p * (1 - p);
-export const orderFee = (n, p) => Math.ceil(n * feePer(p) * 100 - 1e-9) / 100;
+// Kalshi's fee per share at price p (a probability): 7% x P x (1 - P) to take a price, 1.75% when a resting order
+// fills (engine.FEE_RATE and engine.MAKER_RATE; every total series the desk prices reads quadratic_with_maker_fees
+// on Kalshi's own record). fill is 'take' or 'rest'.
+export const feePer = (p, fill = 'take') => (fill === 'rest' ? 0.0175 : 0.07) * p * (1 - p);
+export const orderFee = (n, p, fill = 'take') => Math.ceil(n * feePer(p, fill) * 100 - 1e-9) / 100;
+// A filled auto order graded on the final it settled at, fee in: the taker fee on a take, the maker fee on a resting
+// fill (engine.fill_pnl). The orders table's pnl column left the maker fee out on every row graded before Nov 12,
+// 2026, so the screens regrade from the order itself. null when the order was never graded.
+export function fillPnl(o) {
+  if (o.pnl === null || o.pnl === undefined) return null;
+  const has = (v) => v !== null && v !== undefined && v !== '';
+  if (!has(o.final_total) || !has(o.strike) || !has(o.price_c) || !['yes', 'no'].includes(o.side)) return Number(o.pnl);
+  const T = Number(o.final_total), p = Number(o.price_c) / 100, strike = Number(o.strike);
+  const n = o.mode === 'live' && has(o.filled_count) ? Number(o.filled_count) : Number(o.count);
+  if (!Number.isFinite(n)) return Number(o.pnl);
+  const win = o.side === 'yes' ? T > strike : T < strike;
+  const fee = orderFee(Math.floor(n), p, o.kind === 'take' ? 'take' : 'rest');
+  return Math.round((win ? n * (1 - p) - fee : -n * p - fee) * 100) / 100;
+}
 
 // Middle breakeven from the project rules: pair cost under 0.97 plus 3.5c per winning number (NFL), 2.4c (CFB), 2.9c (NBA), 3.4c (college basketball)
 export const perNumber = (sport) => (sport === 'nfl' ? 0.035 : sport === 'nba' ? 0.029 : sport === 'cbb' ? 0.034 : 0.024);
@@ -175,11 +192,11 @@ export function tickerInfo(ticker, position) {
 }
 
 // Size a middle from the prices you actually see, against a loss budget you pick. a, b in cents; fills 'take' or 'rest'.
-// Taker fees use orderFee (rounded up per order); a resting fill pays none. budget and maxCost in dollars.
+// Fees use orderFee (rounded up per order): the taker fee on a take, the smaller maker fee on a resting fill. budget and maxCost in dollars.
 export function sizeMiddle({ a, b, oFill = 'take', uFill = 'take', numbers, sport, budget, maxCost, pHit }) {
   if (!(a > 0 && a < 100 && b > 0 && b < 100) || !(numbers >= 1)) return null;
   const pa = a / 100, pb = b / 100;
-  const fa = oFill === 'take' ? feePer(pa) : 0, fb = uFill === 'take' ? feePer(pb) : 0;
+  const fa = feePer(pa, oFill), fb = feePer(pb, uFill);
   const c = pa + fa + pb + fb;                              // all-in cost of one pair, dollars
   const over = c - 1;                                       // lost per pair when the total misses the window
   const breakeven = 0.97 + perNumber(sport) * numbers;
@@ -187,10 +204,10 @@ export function sizeMiddle({ a, b, oFill = 'take', uFill = 'take', numbers, spor
   let costCapped = over <= 0;
   if (maxCost > 0 && pairs * c > maxCost) { pairs = Math.floor(maxCost / c + 1e-9); costCapped = true; }
   pairs = Math.max(0, pairs);
-  const costOf = (n) => Math.round((n * (pa + pb) + (oFill === 'take' ? orderFee(n, pa) : 0) + (uFill === 'take' ? orderFee(n, pb) : 0)) * 100) / 100;
+  const costOf = (n) => Math.round((n * (pa + pb) + orderFee(n, pa, oFill) + orderFee(n, pb, uFill)) * 100) / 100;
   // fee rounding can push the real loss a cent past the budget: step down until it fits
   while (over > 0 && pairs > 0 && costOf(pairs) - pairs > budget + 1e-9) pairs -= 1;
-  const feeA = oFill === 'take' ? orderFee(pairs, pa) : 0, feeB = uFill === 'take' ? orderFee(pairs, pb) : 0;
+  const feeA = orderFee(pairs, pa, oFill), feeB = orderFee(pairs, pb, uFill);
   const cost = costOf(pairs);
   return {
     c, over, breakeven, pairs, cost, costCapped,
@@ -203,7 +220,7 @@ export function sizeMiddle({ a, b, oFill = 'take', uFill = 'take', numbers, spor
     // a free roll: the pair costs no more than it pays back on a miss, so no final loses
     free: over <= 0 && pairs > 0,
     // most the under can cost on screen once the over has filled at a, still inside the breakeven
-    maxB: Math.floor(100 * (breakeven - pa - fa - (uFill === 'take' ? feePer(pb) : 0))),
+    maxB: Math.floor(100 * (breakeven - pa - fa - feePer(pb, uFill))),
     // most the under can cost for the pair to be a free roll (a miss pays for itself), fees in
     freeB: freeUnder(pa, fa, uFill),
     ev: pHit === undefined ? null : 1 - c + pHit,
@@ -223,11 +240,11 @@ export function sizeHeld({ held, other, numbers, sport, budget, maxCost }) {
   if (!(pa > 0 && pa < 1 && pb > 0 && pb < 1) || !(numbers >= 1)) return null;
   const nA = held.shares !== undefined && held.shares !== '' ? Math.floor(Number(held.shares)) : Math.floor(Number(held.dollars || 0) / pa + 1e-9);
   if (!(nA >= 1)) return null;
-  const feeA = held.fill === 'take' ? orderFee(nA, pa) : 0;
+  const feeA = orderFee(nA, pa, held.fill);
   const costA = Math.round((nA * pa + feeA) * 100) / 100;
   const win = nA * (1 - pa) - feeA;                                    // the held leg's net if it wins, before any hedge
-  const fb = other.fill === 'take' ? feePer(pb) : 0;
-  const feeB = (n) => (other.fill === 'take' ? orderFee(n, pb) : 0);
+  const fb = feePer(pb, other.fill);
+  const feeB = (n) => orderFee(n, pb, other.fill);
   const at = (n) => ({
     n, dollars: Math.round(n * pb * 100) / 100, fee: feeB(n),
     heldAlone: Math.round((win - n * pb - feeB(n)) * 100) / 100,
@@ -238,7 +255,7 @@ export function sizeHeld({ held, other, numbers, sport, budget, maxCost }) {
   while (nP > 0 && nP * pb + feeB(nP) > win + 1e-9) nP -= 1;
   const protect = at(Math.max(0, nP));
   const even = at(nA);
-  const c = pa + (held.fill === 'take' ? feePer(pa) : 0) + pb + fb;   // all-in cost of one pair, the held leg at its price
+  const c = pa + feePer(pa, held.fill) + pb + fb;   // all-in cost of one pair, the held leg at its price
   const breakeven = 0.97 + perNumber(sport) * numbers;
   const free = protect.n >= 1 && protect.heldAlone >= -1e-9 && protect.otherAlone >= -1e-9;
   const pick = free ? protect : even;
@@ -246,7 +263,7 @@ export function sizeHeld({ held, other, numbers, sport, budget, maxCost }) {
   // the most the other side can cost for a free roll, and to stay inside breakeven, both with its fee in
   let freeC = 0, maxC = 0;
   for (let cc = 99; cc >= 1; cc--) {
-    const q = cc / 100, all = pa + (held.fill === 'take' ? feePer(pa) : 0) + q + (other.fill === 'take' ? feePer(q) : 0);
+    const q = cc / 100, all = pa + feePer(pa, held.fill) + q + feePer(q, other.fill);
     if (!maxC && all <= breakeven + 1e-9) maxC = cc;
     if (all <= 1 + 1e-9) { freeC = cc; break; }
   }
@@ -266,10 +283,10 @@ export function heldOutcomes({ over, under, numbers, sport, add }) {
   const nA = over.shares !== undefined && over.shares !== '' ? Math.floor(Number(over.shares)) : Math.floor(Number(over.dollars || 0) / pa + 1e-9);
   const nB = under.shares !== undefined && under.shares !== '' ? Math.floor(Number(under.shares)) : Math.floor(Number(under.dollars || 0) / pb + 1e-9);
   if (!(pa > 0 && pa < 1 && pb > 0 && pb < 1) || !(nA >= 1 && nB >= 1)) return null;
-  const feeA = over.fill === 'take' ? orderFee(nA, pa) : 0, feeB = under.fill === 'take' ? orderFee(nB, pb) : 0;
+  const feeA = orderFee(nA, pa, over.fill), feeB = orderFee(nB, pb, under.fill);
   const costA = nA * pa + feeA, costB = nB * pb + feeB;
   const r = (x) => Math.round(x * 100) / 100;
-  const c = pa + (over.fill === 'take' ? feePer(pa) : 0) + pb + (under.fill === 'take' ? feePer(pb) : 0);
+  const c = pa + feePer(pa, over.fill) + pb + feePer(pb, under.fill);
   const breakeven = numbers >= 1 ? 0.97 + perNumber(sport) * numbers : null;
   const out = { nA, nB, costA: r(costA), costB: r(costB), overAlone: r(nA - costA - costB), both: r(nA + nB - costA - costB), underAlone: r(nB - costA - costB),
                 c, breakeven, free: c <= 1 + 1e-9, verdict: breakeven === null ? null : c >= breakeven ? 'pass' : c > breakeven - 0.03 ? 'thin' : 'play', even: null };
@@ -277,7 +294,7 @@ export function heldOutcomes({ over, under, numbers, sport, add }) {
     const side = nA > nB ? 'under' : 'over', m = Math.abs(nA - nB);
     const q = Number(add?.price ?? (side === 'under' ? under.paid : over.paid)) / 100;
     if (q > 0 && q < 1) {
-      const fee = (add?.fill ?? 'take') === 'take' ? orderFee(m, q) : 0, costX = m * q + fee;
+      const fee = orderFee(m, q, add?.fill ?? 'take'), costX = m * q + fee;
       const all = costA + costB + costX, hi = Math.max(nA, nB);
       out.even = { side, n: m, price: Math.round(q * 100), dollars: r(m * q), fee: r(fee), miss: r(hi - all), both: r(nA + nB + m - all) };
     }
@@ -291,7 +308,7 @@ export function heldOutcomes({ over, under, numbers, sport, add }) {
 export function freeUnder(pa, fa, uFill = 'take') {
   for (let c = 99; c >= 1; c--) {
     const pb = c / 100;
-    if (pa + fa + pb + (uFill === 'take' ? feePer(pb) : 0) <= 1 + 1e-9) return c;
+    if (pa + fa + pb + feePer(pb, uFill) <= 1 + 1e-9) return c;
   }
   return 0;
 }

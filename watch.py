@@ -600,16 +600,19 @@ class Desk:
         return rec['h2']
 
     def fee_check(self):
-        """Ask Kalshi what a fill costs in each total series the desk prices, and tell the phone once when the answer
-        is not the one the engine is built on. The engine prices a take at 7% x P x (1 - P) and a resting fill at no
-        fee: Kalshi's schedule of July 7, 2026 charges maker fees only on the series it lists, the game-winner
-        series among them and no total series. If a total series moves onto maker fees, every resting limit the
-        desk posts is too high by the fee (0.44c a share at 50c) until the engine is told, and the resting fills'
-        record is overstated by it. The first clean read of a series is kept as its baseline; a later read that
-        differs, or any read that is not the general table (maker fees, a flat fee), is pushed once. Returns the
-        push titles."""
+        """Ask Kalshi what a fill costs in each total series the desk prices, and tell the phone when the answer is not
+        what the engine charges itself. The engine prices a take at 7% x P x (1 - P) and a resting fill at 1.75% x
+        P x (1 - P) (engine.FEE_RATE, engine.MAKER_RATE), which is Kalshi's record for these series: fee_type
+        quadratic_with_maker_fees, multiplier 1. A series that reads anything else is pushed once per distinct
+        record, with which way the desk is now wrong: a fee the desk does not price (a higher multiplier, a flat
+        fee) makes its limits too high, and is loud; a series that drops the maker fee makes them a touch too low,
+        which is safe, and is quiet. When a series that was pushed reads as priced again, one push says so.
+        History: the first version of this watch (Nov 12, 2026) found all four series on maker fees while the engine
+        priced a resting fill at no fee, off the published schedule's list, which names no total series. Kalshi's
+        fee change history dates the maker fee on these series to Nov 15, 2025. Returns the push titles."""
         fees = self.state.setdefault('fees', {})
-        out = []
+        out, cleared = [], []
+        take_pct, rest_pct = 100 * engine.FEE_RATE, 100 * engine.MAKER_RATE
         for sport in self.cfg.get('sports', []):
             series = (feeds.SERIES.get(sport) or {}).get('total')
             if not series:
@@ -625,35 +628,54 @@ class Desk:
                 mult = float(row.get('fee_multiplier'))
             except (TypeError, ValueError):
                 mult = None
-            now, was = dict(fee_type=ft, fee_multiplier=mult), fees.get(series) or {}
-            base = was.get('base')
-            # quadratic: the general table. quadratic_with_combo_maker_fees: the same for a single market (the maker
-            # fee there is on combos, which the desk never trades). Anything else is not what the engine prices.
-            maker = ft == 'quadratic_with_maker_fees'
-            odd = ft not in ('quadratic', 'quadratic_with_combo_maker_fees')
-            changed = bool(base) and (base.get('fee_type'), base.get('fee_multiplier')) != (ft, mult)
+            was = fees.get(series) or {}
             sig = f'{ft}|{mult}'
-            rec = dict(now, base=base or (None if odd else now), checked=now_iso(), alerted=was.get('alerted'))
-            changed = changed or odd
-            if changed and was.get('alerted') != sig:
-                per = 100 * 0.0175 * (mult if mult is not None else 1.0) * 0.25
-                title = f'FEES: {series} is now {ft}'
-                body = (f"Kalshi's record for {series} reads fee_type {ft}, multiplier {mult if mult is not None else 'n/a'}"
-                        + (f" (it was {base.get('fee_type')}, {base.get('fee_multiplier')})" if base else '') + '. '
-                        + (f"The desk prices a resting fill at no fee. With maker fees a resting fill at 50c costs about {per:.2f}c a share, "
-                           f"so every REST limit is that much too high until the engine is told. " if maker else
-                           'The desk prices a take at 7% x P x (1 - P) and a resting fill at no fee. Check the fee schedule before the next slate. ')
-                        + 'Nothing else changed.')
+            rec = dict(fee_type=ft, fee_multiplier=mult, checked=now_iso(), alerted=was.get('alerted'))
+            quad = ft in ('quadratic', 'quadratic_with_maker_fees', 'quadratic_with_combo_maker_fees')
+            # what Kalshi charges per share at 50c, in cents, next to what the engine charges itself. The combo
+            # variant puts its maker fee on combos, which the desk never trades: a single market there rests free.
+            k_take = take_pct * mult * 0.25 if (quad and mult is not None) else None
+            k_rest = (rest_pct * mult * 0.25 if ft == 'quadratic_with_maker_fees' else 0.0) if (quad and mult is not None) else None
+            e_take, e_rest = take_pct * 0.25, rest_pct * 0.25
+            priced = k_take is not None and abs(k_take - e_take) < 1e-9 and abs(k_rest - e_rest) < 1e-9
+            if priced:
+                if was.get('alerted'):
+                    cleared.append(series)
+                rec['alerted'] = None
+            elif was.get('alerted') != sig:
+                head = f"Kalshi's record for {series} reads fee_type {ft}, multiplier {'n/a' if mult is None else f'{mult:g}'}. "
+                desk = f"The desk prices a take at {take_pct:g}% x P x (1 - P) and a resting fill at {rest_pct:g}%. "
+                if k_take is None:
+                    pri = 'high'
+                    body = head + desk + "That is not a fee table the desk knows how to price. Skip that sport's orders and tell Claude."
+                elif k_take > e_take + 1e-9 or k_rest > e_rest + 1e-9:
+                    pri = 'high'
+                    body = (head + desk + f"At 50c Kalshi charges {k_take:.2f}c a share to take and {k_rest:.2f}c to rest; the desk counts {e_take:.2f}c and {e_rest:.2f}c. "
+                            "Every limit in that sport is too high by the difference. Skip its orders and tell Claude.")
+                else:
+                    pri = 'default'
+                    body = (head + desk + f"At 50c Kalshi charges {k_take:.2f}c a share to take and {k_rest:.2f}c to rest; the desk counts {e_take:.2f}c and {e_rest:.2f}c. "
+                            "The desk is charging itself more than Kalshi does, so its limits are a touch low. Safe to keep betting. Tell Claude when you get a minute.")
+                title = f'FEES: {series} reads {ft}'
                 try:
-                    notify.push(title, body, 'high', 'warning')
+                    notify.push(title, body, pri, 'warning')
                 except Exception as e:
                     print(f'fee alert failed to send ({e})')
                 rec['alerted'] = sig
                 out.append(title)
                 print(f'{series}: {title}')
-            elif not changed:
-                rec['alerted'] = None
             fees[series] = rec
+        if cleared:
+            title = 'FEES: priced in'
+            body = (f"Kalshi's record and the desk agree on {', '.join(sorted(cleared))}: {take_pct:g}% x P x (1 - P) to take a price, "
+                    f"{rest_pct:g}% when a resting order fills ({e_rest:.2f}c a share at 50c). Every limit on a push carries both. "
+                    "Nothing to skip.")
+            try:
+                notify.push(title, body, 'default', 'white_check_mark')
+            except Exception as e:
+                print(f'fee all-clear failed to send ({e})')
+            out.append(title)
+            print(title + ': ' + ', '.join(sorted(cleared)))
         return out
 
     def stake(self):
@@ -1236,8 +1258,9 @@ class Desk:
             mids = rp.get('middles') or []
             rm = (mids[0] if mids else None) if focus else rp.get('middle')
             def rest_row(r):
+                # cost: both limits and the maker fee on each fill (engine.rest_plan), so the what-if grades net of it
                 return dict(a_line=r['a']['line'], a_price=r['a']['over_rest'], b_line=r['b']['line'], b_price=r['b']['under_rest'], pairs=r['pairs'],
-                            cost=round(r['pairs'] * (r['a']['over_rest'] + r['b']['under_rest']) / 100, 2))
+                            cost=r['cost'])
             if rm:
                 out['rest_mid'] = rest_row(rm)
             if focus and len(mids) > 1:

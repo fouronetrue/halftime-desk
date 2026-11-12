@@ -41,7 +41,7 @@ def holdings():
         if not n:
             continue
         side = 'yes' if n > 0 else 'no'
-        fills = store.read('bets', {'select': 'count,cost', 'ticker': f"eq.{p['ticker']}", 'outcome_side': f'eq.{side}'})
+        fills = store.read('bets', {'select': 'count,cost,fee', 'ticker': f"eq.{p['ticker']}", 'outcome_side': f'eq.{side}'})
         cnt = sum(float(f.get('count') or 0) for f in fills)
         cost = sum(float(f.get('cost') or 0) for f in fills)
         if cnt > 0:
@@ -56,6 +56,9 @@ def holdings():
     return out
 
 
+ORDER = {'take': 'taker', 'rest': 'maker'}   # how the other side gets bought -> the fee engine.fee_per charges
+
+
 def held_win(h):
     """What the leg you hold nets if it wins, after the fee you already paid for it."""
     return h['shares'] * (1 - h['paid_c'] / 100) - float(h.get('fee') or 0)
@@ -63,13 +66,13 @@ def held_win(h):
 
 def protect_size(h, price_c, fill='take'):
     """Shares of the other side at price_c that the held leg pays for: its win covers the new leg all in (the
-    taker fee included when you take the ask; a resting order pays none), so your side winning alone nets $0
-    or a touch more."""
+    taker fee when you take the ask, the smaller maker fee when a resting order fills), so your side winning
+    alone nets $0 or a touch more."""
     pb = price_c / 100
     win = held_win(h)
-    fee = engine.fee_per(pb) if fill == 'take' else 0.0
-    n = int(win / (pb + fee) + 1e-9)
-    while n > 0 and n * pb + (engine.order_fee(n, pb) if fill == 'take' else 0.0) > win + 1e-9:   # order_fee rounds up per order
+    order = ORDER[fill]
+    n = int(win / (pb + engine.fee_per(pb, order)) + 1e-9)
+    while n > 0 and n * pb + engine.order_fee(n, pb, order) > win + 1e-9:   # order_fee rounds up per order
         n -= 1
     return n
 
@@ -78,7 +81,7 @@ def outcomes(h, price_c, n, fill='take'):
     """The three finals once n shares of the other side are bought at price_c, every fee in:
     your side wins alone, both win (inside the window), the other side wins alone."""
     pa, pb = h['paid_c'] / 100, price_c / 100
-    fee_b = engine.order_fee(n, pb) if fill == 'take' else 0.0
+    fee_b = engine.order_fee(n, pb, ORDER[fill])
     win = held_win(h)
     return dict(held_alone=round(win - n * pb - fee_b, 2),
                 both=round(win + n * (1 - pb) - fee_b, 2),
@@ -87,7 +90,7 @@ def outcomes(h, price_c, n, fill='take'):
 
 def free_c(h, fill='take'):
     """The most to pay, in cents, for the other side so that at the protect size no final loses. Taking the
-    ask costs the fee; a resting order does not, so it can pay a cent or two more."""
+    ask costs the taker fee; a resting order that fills costs a quarter of it, so it can pay about a cent more."""
     for c in range(BAND[1], BAND[0] - 1, -1):
         n = protect_size(h, c, fill)
         if n >= 1 and outcomes(h, c, n, fill)['other_alone'] >= 0:

@@ -156,6 +156,15 @@ orders2 = [order(1, 'BOSDET', 'half', 'yes', 210.5, 45, 100, 'rest_mid', 'p1', s
            order(4, 'NYKMIA', 'half', 'yes', 218.5, 40, 50, 'rest_mid', 'p3', status='touched', phase='half', secs=20, pnl=30.0, date='2026-11-10')]   # before go-live: in the table, not in the rule
 srow = ro.shadow_rows(orders2, '2026-11-13')[0]
 assert (srow['touched_break'], srow['touched_play'], srow['cost_break'], srow['cost_play'], srow['pnl_break'], srow['pnl_play']) == (2, 1, 65.0, 50.0, 6.0, -25.0), srow
+# the table's rows carry the final each was graded on, so the summary regrades every fill with the fee it pays: the
+# maker fee on a resting fill (which the pnl column left out on every row graded before Nov 12), the taker fee on a take
+graded = [dict(order(1, 'G', 'half', 'yes', 210.5, 45, 100, 'rest_mid', 'p1', status='touched', phase='half', secs=30, pnl=55.0, date='2026-11-09'), final_total=214.0),
+          dict(order(2, 'G', 'half', 'no', 214.5, 50, 100, 'rest_mid', 'p1', status='touched', phase='live', secs=900, pnl=50.0, date='2026-11-09'), final_total=214.0),
+          dict(order(3, 'G', 'half', 'yes', 212.5, 55, 40, 'single', None, kind='take', status='touched', phase='half', secs=5, pnl=17.3, date='2026-11-09'), final_total=214.0)]
+assert [ro.net_pnl(o) for o in graded] == [54.56, 49.56, 17.3], [ro.net_pnl(o) for o in graded]
+g = ro.shadow_rows(graded, '2026-11-09')[0]
+assert (g['pnl'], g['pnl_break'], g['pnl_play'], g['pnl_both'], g['takes_pnl']) == (104.12, 54.56, 49.56, 104.12, 17.3), g
+assert ro.net_pnl(dict(graded[0], pnl=None)) is None and ro.net_pnl(dict(graded[0], final_total=None)) == 55.0, 'ungraded stays ungraded; no final on the row, the column stands'
 fl = ro.fill_lines(orders2)
 assert '| NBA | 3 | $85 | $+36 | +42.4% | 1 | $50 | $-25 | -50.0% |' in fl and fl[-1].startswith('| ALL | 3 | $85 |'), fl
 rl = ro.rule_lines(w2, rows2, orders2, SPOTS)
