@@ -24,6 +24,37 @@ Misreads: 6 plays ($+370) from windows whose fair line sat 10+ points from the m
 
 End of 3rd (NBA): 155 windows graded, 3 with a play, $-13 on $354.
 
+## The tiers (live Nov 12)
+
+What each live play was made on: the price (the desk number against the ask) or a spot lane. Misreads and shadow plays are left out. Plays on price run at half stake and the live lane at a quarter of full size until the rules below say otherwise.
+
+| tier | when | plays | won | risked | P&L | return |
+|---|---|---|---|---|---|---|
+| plays on price | before Nov 12 | 20 | 6 | $881 | $-150 | -17.0% |
+| plays on price | Nov 12 on | 0 | 0 | $0 | $+0 |  |
+
+## Spot cells at the Kalshi line
+
+Every graded half that sat in a configured cell, live or shadow, counted on the side the cell leans: the final against the Kalshi 50-50 line at the break. A cell earns a lane here, at the market number, not against the model.
+
+| sport | cell | mode | lane side | halves | on the lane side of the line | finals past the line, lane side |
+|---|---|---|---|---|---|---|
+| CBB | 15+ point favorite not up by 15 | shadow | under | 71 | 36 of 71 (51%) | +0.8 |
+| CFB | favorite leading by 1-7 | shadow | over | 64 | 29 of 62 (47%) | +1.1 |
+| CFB | first half 10+ over the pace | shadow | over | 34 | 15 of 33 (45%) | +0.6 |
+| NFL | home favorite trailing | live | over | 7 | 4 of 7 (57%) | +2.0 |
+
+## The go-live rules, and where each stands
+
+Set on Nov 12, before the plays they judge (the Playbook has them in full).
+
+- Plays on price: 0 of 50 graded since Nov 12, 0 won, $+0 on $0. Half stake stays (50 more to the review).
+- Spot lane home_fav_trailing: 0 of 30 graded plays since Nov 12, 0 won, $+0 on $0. The lane stays at its stake (30 more to the review).
+- Shadow cell CBB 15+ point favorite not up by 15 (under): 36 of 71 on its side of Kalshi's line (51%). Stays in shadow (79 more to the first review).
+- Shadow cell CFB favorite leading by 1-7 (over): 29 of 62 on its side of Kalshi's line (47%). Stays in shadow (88 more to the first review).
+- Shadow cell CFB first half 10+ over the pace (over): 15 of 33 on its side of Kalshi's line (45%). Stays in shadow (117 more to the first review).
+- Resting orders, filled at the break (shadow fill model): 0 of 300 since Nov 12, $+0 on $0. The resting block stays on the push (300 more to the review).
+
 ## Model against the market
 
 Miss is the distance from the final total. Finals vs a line is the final minus that line (plus means the overs hit); the pregame total is the closing line the game was priced off.
@@ -58,7 +89,7 @@ Miss is the distance from the final total. Finals vs a line is the final minus t
 
 ## Mismatch lane (college 28+), shadow shots
 
-- no graded shots yet (the first Saturday of SHOT lines is Oct 31)
+- no graded shots yet (a shot needs a 28+ point college spread and a side at 80c or more that the narrowed ladder still calls cheap)
 
 ## Came and went (cleared between pushes, not played)
 
@@ -74,3 +105,13 @@ Per slate in data/desk/shadow/. A fill at the break is the market handing the mi
 | CFB | shadow | 3 | 22 | 46 | 37 | 22 | 15 of 23 | 1 | 7 | $-121 | $-11 | $-110 | $-19 | $-102 |
 | NBA | shadow | 19 | 138 | 861 | 640 | 202 | 167 of 524 | 5 | 306 | $-326 | $+481 | $-808 | $+795 | $-1,122 |
 | NFL | shadow | 2 | 14 | 28 | 22 | 16 | 8 of 14 | 2 | 6 | $-0 | $-12 | $+11 | $+36 | $-36 |
+
+The same fills as a return on the money behind them (the dollars above ride on the size the shadow ran that week):
+
+| sport | filled at the break | risked | P&L | return | filled in play | risked | P&L | return |
+|---|---|---|---|---|---|---|---|---|
+| CBB | 100 | $1,170 | $+20 | +1.7% | 146 | $1,715 | $-4 | -0.2% |
+| CFB | 22 | $328 | $-11 | -3.3% | 15 | $209 | $-110 | -52.6% |
+| NBA | 202 | $3,473 | $+481 | +13.9% | 438 | $7,980 | $-808 | -10.1% |
+| NFL | 16 | $224 | $-12 | -5.3% | 6 | $77 | $+11 | +14.8% |
+| ALL | 340 | $5,194 | $+479 | +9.2% | 605 | $9,980 | $-910 | -9.1% |
