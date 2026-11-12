@@ -891,12 +891,13 @@ class Desk:
                 cost = (sheet.get('mid') or {}).get('cost') if lead == 'mid' else (sheet.get('rev') or {}).get('cost') if lead == 'rev' else ((sheet.get('singles') or [{}])[0]).get('cost')
                 day = self.state.setdefault('day_spend', {})
                 day[g['date_et']] = round(max(0.0, float(day.get(g['date_et'], 0)) - float(cost or 0)), 2)
-        if self.trader and (rec.get('auto') or {}).get(stage):
+        if self.trader and ((rec.get('auto') or {}).get(stage) or (rec.get('auto') or {}).get(f'{stage}_live')):
             try:
                 self.trader.cancel_game(rec, f'scratched: bad {when} score')
             except Exception as e:
                 print(f"{g['short']}: cancel after scratch failed ({e})")
             rec['auto'].pop(stage, None)
+            # the pilot's record of the break stays: it planned once on the bad score and does not plan again
         for k in (key, K('break_read_at'), K('play_sheet'), K('sheet'), K('clear'), K('counted_day'), K('noted_unconfirmed'), K('noted_hold'), K('noted_no_center'), 'center_src'):
             rec.pop(k, None)
         slots.pop(slot, None)
@@ -1101,6 +1102,25 @@ class Desk:
             except Exception as e:   # the executor never blocks a push
                 print(f"auto {g['short']} failed: {e}")
                 rec.setdefault('auto', {})[stage] = dict(at=ts, n=0, note=f'failed: {e}'[:200], open=[])
+        # The pilot (trade.Trader.plan_pilot): for the sports config auto.pilot lists, and only when every switch
+        # in trade.Trader.armed is on, the worker posts this break's resting middle and takes its lead single at
+        # pilot size, once, at the first look. The push says what it did, so nobody places the same orders by hand.
+        live_key = f'{stage}_live'
+        if self.trader and self.trader.pilot_wants(g['sport']) and self.trader.armed() and not (rec.get('auto') or {}).get(live_key):
+            try:
+                plays_live = (((self.cfg.get('play_push') or {}).get(g['sport']) if isinstance(self.cfg.get('play_push'), dict) else None) or 'high') != 'min'
+                orders, note = self.trader.plan_pilot(g, stage, m, rows, sug, quotes, ev, sizing, ts, held_legs, plays_live)
+                done, held_back = self.trader.act_live(orders)
+                rec.setdefault('auto', {})[live_key] = dict(at=ts, n=len(done), note=note or held_back, mode='live',
+                                                           open=[o for o in done if o.get('status') in self.trader.OPEN])
+                line = self.trader.push_line(done)
+                if line:
+                    text += '\n' + line
+                if done or note or held_back:
+                    print(f"auto live {g['short']} ({stage}): {len(done)} orders" + (f"; {note or held_back}" if (note or held_back) else ''))
+            except Exception as e:   # the pilot never blocks a push
+                print(f"auto live {g['short']} failed: {e}")
+                rec.setdefault('auto', {})[live_key] = dict(at=ts, n=0, note=f'failed: {e}'[:200], mode='live', open=[])
         # Two pushes per game at most: one the first time it is seen at the half (as close to the end of Q2 as the
         # polling allows), one the first time it is seen after the Q3 kick while the score is still the
         # halftime score (the moved-score check above already returned otherwise). For the NBA the second slot
@@ -1206,6 +1226,10 @@ class Desk:
         auto = rec.get('auto') or {}
         if not any(st.get('open') for st in auto.values()):
             return
+        # a live resting order comes down when the second half starts (the push says the same to the phone); its
+        # expiration at Kalshi is the fallback if this pass never happens
+        if ph not in ('half', 'early3', 'q3end', 'early4') and self.trader.has_live_open(rec):
+            self.trader.cancel_game(rec, 'the break ended')
         tk = rec.get('kalshi_total_event')
         ev = next((e for e in self.events(g['sport'], 'total') if e.get('event_ticker') == tk), None) if tk else None
         if not ev:

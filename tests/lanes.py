@@ -204,32 +204,38 @@ requests.post = requests.request = requests.delete = requests.patch = requests.p
 for k in ('TRADE_ENABLED', 'KALSHI_TRADE_KEY_ID', 'KALSHI_TRADE_PRIVATE_KEY'):
     os.environ.pop(k, None)
 store.enabled = lambda: False
-def planned(mode):
-    """The NBA fixture half planned in a mode by an unarmed trader (no key, no TRADE_ENABLED): nothing leaves the test."""
-    c = dict(cfg0, sports=['nba'], auto=dict(cfg0['auto'], mode=mode, rest_until='q4'))
-    desk = watch.Desk(c, {}, os.path.join(ROOT, 'tests', 'fixtures_nba'))
-    desk.trader = trade.Trader(c, desk.cfg['bankroll'])
-    assert desk.trader.mode() == mode and not desk.trader.armed()
-    seen, plan = [], desk.trader.plan
-    def spy(*a, **k):
-        orders, note = plan(*a, **k)
-        seen.extend(copy.deepcopy(orders))
-        return orders, note
-    desk.trader.plan = spy
-    desk.run_pass()
-    a = desk.state['games']['501']['auto']['half']
-    assert all(o['status'] in ('planned', 'skipped') for o in a.get('open') or []), 'an unarmed trader sends nothing'
-    return [o for o in seen if o['stage'] == 'half'], a
-sh_orders, sh_auto = planned('shadow')
-lv_orders, lv_auto = planned('live')
-start = dt.datetime.fromisoformat(sh_auto['at'])
-rest_sh = [o for o in sh_orders if o['kind'] == 'rest']
-take_sh = [o for o in sh_orders if o['kind'] == 'take']
-rest_lv = [o for o in lv_orders if o['kind'] == 'rest']
-assert rest_sh and take_sh and rest_lv, (len(rest_sh), len(take_sh), len(rest_lv))
+# The college basketball fixture half, planned twice by one trader: the shadow orders (trade.Trader.plan), and what the
+# pilot would post (plan_pilot), with the pilot's switches held on by hand and its sender replaced, so nothing
+# leaves the test.
+c = dict(cfg0, sports=['cbb'], auto=dict(cfg0['auto'], rest_until='q4', pilot=dict(sports=['cbb'], wallet=500, night_cap=200, rest_pairs=5, single_cost=15)))
+desk = watch.Desk(c, {}, os.path.join(ROOT, 'tests', 'fixtures_cbb'))
+desk.trader = trade.Trader(c, desk.cfg['bankroll'])
+assert desk.trader.mode() == 'shadow' and not desk.trader.armed(), 'no key, no TRADE_ENABLED, no self-test: not armed'
+desk.trader.armed = lambda: True
+sh_orders, lv_orders = [], []
+plan, plan_pilot = desk.trader.plan, desk.trader.plan_pilot
+def spy(*a, **k):
+    orders, note = plan(*a, **k)
+    sh_orders.extend(copy.deepcopy(orders))
+    return orders, note
+def spy_pilot(*a, **k):
+    orders, note = plan_pilot(*a, **k)
+    lv_orders.extend(copy.deepcopy(orders))
+    return orders, note
+desk.trader.plan, desk.trader.plan_pilot = spy, spy_pilot
+desk.trader.act_live = lambda orders: ([], None)
+desk.run_pass()
+auto = desk.state['games']['604']['auto']
+start, start_lv = dt.datetime.fromisoformat(auto['half']['at']), dt.datetime.fromisoformat(auto['half_live']['at'])
+rest_sh = [o for o in sh_orders if o['kind'] == 'rest' and o['game_id'] == '604']
+rest_lv = [o for o in lv_orders if o['kind'] == 'rest' and o['game_id'] == '604']
+take_lv = [o for o in lv_orders if o['kind'] == 'take']
+assert len(rest_sh) == 2 and len(rest_lv) == 2 and take_lv, (len(rest_sh), len(rest_lv), len(take_lv))
+assert all(o['mode'] == 'shadow' for o in sh_orders) and all(o['mode'] == 'live' and o['status'] == 'planned' for o in lv_orders)
 mins = lambda o, t0: round((dt.datetime.fromisoformat(o['expire_at']) - t0).total_seconds() / 60)
-assert {mins(o, start) for o in rest_sh} == {trade.Q4_MIN['half']['nba']} and {mins(o, start) for o in take_sh} == {trade.BREAK_MIN['half']['nba']}, 'shadow rests to the 4th, the measuring window'
-assert {mins(o, dt.datetime.fromisoformat(lv_auto['at'])) for o in rest_lv} == {trade.BREAK_MIN['half']['nba']}, 'a live resting order must expire with the break, rest_until q4 or not'
+assert {mins(o, start) for o in rest_sh} == {trade.Q4_MIN['half']['cbb']}, 'shadow rests into the second half, the measuring window'
+assert {mins(o, start_lv) for o in rest_lv + take_lv} == {trade.BREAK_MIN['half']['cbb']}, 'a live order must expire with the break, rest_until q4 or not'
 assert {(o['side'], o['strike'], o['price_c']) for o in rest_lv} == {(o['side'], o['strike'], o['price_c']) for o in rest_sh}, 'the same legs at the same limits either way'
-print(f"trade: shadow rests {trade.Q4_MIN['half']['nba']} minutes to keep measuring; a live order would expire with the break ({trade.BREAK_MIN['half']['nba']} minutes); nothing sent")
+assert not {o['client_order_id'] for o in lv_orders} & {o['client_order_id'] for o in sh_orders}, 'a live order never shares an id with its shadow'
+print(f"trade: shadow rests {trade.Q4_MIN['half']['cbb']} minutes to keep measuring; a live order expires with the break ({trade.BREAK_MIN['half']['cbb']} minutes); nothing sent")
 print('lanes: ok')

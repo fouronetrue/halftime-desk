@@ -118,22 +118,23 @@ def write(table, rows, on_conflict=None, ignore_duplicates=False):
     return False
 
 
-def claim(table, row, on_conflict):
+def claim(table, row, on_conflict, strict=False):
     """Insert row only if no row with the same on_conflict key exists. Returns False when another process
     already holds that key (so the caller should not act), True when this call inserted it. When Supabase is
-    off or unreachable it returns True: a duplicate push beats a missed one."""
+    off or unreachable it returns True: a duplicate push beats a missed one. strict turns that around for a
+    caller that must not act twice or act unrecorded (a live order): True only when this call inserted the row."""
     if not enabled():
-        return True
+        return not strict
     try:
         r = requests.post(f'{_url()}/rest/v1/{table}', params={'on_conflict': on_conflict},
                           data=json.dumps(clean([row]), default=str),
                           headers=_headers('return=representation,resolution=ignore-duplicates'), timeout=10)
         if r.status_code < 300:
             return bool(r.json())   # [] means the row already existed
-        print(f'supabase {table}: claim failed (HTTP {r.status_code} {r.text[:200]}), acting anyway')
+        print(f"supabase {table}: claim failed (HTTP {r.status_code} {r.text[:200]}), {'not acting' if strict else 'acting anyway'}")
     except Exception as e:
-        print(f'supabase {table}: claim failed ({e}), acting anyway')
-    return True
+        print(f"supabase {table}: claim failed ({e}), {'not acting' if strict else 'acting anyway'}")
+    return not strict
 
 
 def read(table, params):
@@ -148,3 +149,34 @@ def read(table, params):
     except Exception as e:
         print(f'supabase {table}: read failed ({e})')
     return []
+
+
+def fetch_all(table, params, key, page=1000):
+    """Every row the filters match, paged on the table's key (PostgREST hands back at most 1,000 rows a request),
+    or None when any page could not be read. For a caller that must tell 'no rows' from 'could not read': the
+    pilot's money walls stop an order on an unreadable ledger, they do not wave it through on an empty one."""
+    if not enabled():
+        return None
+    rows, last = [], None
+    for _ in range(200):
+        q = dict(params, order=key, limit=page)
+        if last is not None:
+            q[key] = f'gt.{last}'
+        try:
+            r = requests.get(f'{_url()}/rest/v1/{table}', params=q, headers=_headers(), timeout=25)
+        except Exception as e:
+            print(f'supabase {table}: read failed ({e})')
+            return None
+        if r.status_code >= 300:
+            print(f'supabase {table}: read failed (HTTP {r.status_code} {r.text[:240]})')
+            return None
+        got = r.json()
+        if not isinstance(got, list):
+            return None
+        rows.extend(got)
+        if len(got) < page:
+            return rows
+        last = got[-1].get(key)
+        if last is None:
+            return None
+    return None

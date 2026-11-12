@@ -72,12 +72,9 @@ def net_pnl(o):
     on instead of trusting the column. None when the order was never graded."""
     if num(o.get('pnl')) is None:
         return None
-    T, strike, price = num(o.get('final_total')), num(o.get('strike')), num(o.get('price_c'))
-    if T is None or strike is None or price is None or o.get('side') not in ('yes', 'no'):
-        return num(o.get('pnl'))
-    n = num(o.get('filled_count')) if (o.get('mode') == 'live' and num(o.get('filled_count')) is not None) else num(o.get('count'))
-    if n is None:
-        return num(o.get('pnl'))
+    T, strike, price, n = num(o.get('final_total')), num(o.get('strike')), num(o.get('price_c')), num(o.get('count'))
+    if o.get('mode') == 'live' or T is None or strike is None or price is None or n is None or o.get('side') not in ('yes', 'no'):
+        return num(o.get('pnl'))   # a live order was graded on the fill and the fee Kalshi reported: the column stands
     return engine.fill_pnl(o['side'], strike, price, n, o.get('kind'), T)
 
 

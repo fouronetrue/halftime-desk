@@ -75,7 +75,16 @@
     "rest_capital_pct": 40,
     "singles": false,
     "max_orders_per_game": 12,
-    "max_orders_per_night": 200
+    "max_orders_per_night": 200,
+    "pilot": {
+      "sports": ["cbb"],
+      "wallet": 500,
+      "night_cap": 200,
+      "rest_pairs": 5,
+      "single_cost": 15,
+      "kinds": ["rest", "take"],
+      "leash": {"night_cap": 50, "rest_pairs": 3, "single_cost": 5}
+    }
   },
   "weather": {
     "nfl": {

@@ -83,7 +83,7 @@ if shutil.which('node'):
     for p, g in zip(prices, got['fees']):
         want = [engine.fee_per(p), engine.fee_per(p, 'maker'), engine.order_fee(37, p), engine.order_fee(37, p, 'maker'), engine.order_fee(1, p, 'maker')]
         assert all(abs(a - b) < 1e-9 for a, b in zip(g, want)), (p, g, want)
-    assert got['pnl'] == [trade.net_pnl(o) for o in orders] == [3.65, -4.25, 3.53, 1.46, None, 19.61], got['pnl']
+    assert got['pnl'] == [trade.net_pnl(o) for o in orders] == [3.65, -4.25, 3.53, 1.48, None, 19.61], got['pnl']   # the live row's own pnl stands
     print('fees: the app charges the same fees and grades a fill the same way')
 else:
     print('fees: node not found, app fee parity skipped')

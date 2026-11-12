@@ -11,13 +11,15 @@ import portfolio
 src = open(os.path.join(ROOT, 'portfolio.py')).read()
 for bad in ('requests.post', 'requests.put', 'requests.patch', 'requests.delete', 'requests.request'):
     assert bad not in src, f'portfolio.py must not use {bad}'
-# trade.py is the one module that may name an order endpoint (tests/trade_guard.py pins its walls); nothing else may
-ALLOWED = {os.path.abspath(os.path.join(ROOT, 'trade.py')), os.path.abspath(os.path.join(ROOT, 'tests', 'trade_guard.py')), os.path.abspath(__file__)}
+# trade.py is the one module that may name an order endpoint (tests/trade_guard.py and tests/pilot.py pin its walls,
+# the second against a fake Kalshi); nothing else may
+ALLOWED = {os.path.abspath(os.path.join(ROOT, 'trade.py')), os.path.abspath(os.path.join(ROOT, 'tests', 'trade_guard.py')),
+           os.path.abspath(os.path.join(ROOT, 'tests', 'pilot.py')), os.path.abspath(__file__)}
 for path in [p for ext in ('py', 'ts', 'tsx', 'js') for p in glob.glob(os.path.join(ROOT, '**', '*.' + ext), recursive=True) if '/node_modules/' not in p and '/.next/' not in p and '/out/' not in p]:
     if os.path.abspath(path) in ALLOWED:
         continue
     text = open(path).read()
-    for bad in ('portfolio/orders', 'create_order', 'cancel_order', 'amend_order', 'decrease_order', 'batched/orders'):
+    for bad in ('portfolio/orders', 'events/orders', 'create_order', 'cancel_order', 'amend_order', 'decrease_order', 'batched/orders'):
         assert bad not in text, f'{os.path.relpath(path, ROOT)} names an order endpoint ({bad}); only trade.py may'
 print('static: no order endpoints outside trade.py, no writing HTTP methods in portfolio.py')
 

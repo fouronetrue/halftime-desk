@@ -1,15 +1,18 @@
-"""The walls around trade.py, the one module that may send an order. No network.
-1. Static: only trade.py names an order endpoint (tests/readonly.py checks the rest of the repo); portfolio.py
-   still signs GET only.
-2. armed(): false unless config says live AND TRADE_ENABLED=1 AND the trade key is present AND the kill switch
-   is off. send() with any switch off records 'skipped' and never calls the network. send() refuses a price
-   outside 1 to 99, a count under 1, or anything that is not a buy limit order.
-3. The planner on the NBA fixtures, shadow mode: the resting middle legs at the resting limits, sized so the
+"""The walls around trade.py, the one module that may send an order. No network. (tests/pilot.py runs the pilot,
+the only sending path, against a fake Kalshi.)
+1. Static: only trade.py names an order endpoint (tests/readonly.py checks the rest of the repo), and the endpoints
+   are Kalshi's V2 event-order path to write and the order path to read; portfolio.py still signs GET only.
+2. armed(): false unless config carries a pilot block with a sport and a wallet AND TRADE_ENABLED=1 AND the trade
+   key is present AND the kill switch is off AND the self-test passed in this process. config auto.mode 'live' on
+   its own arms nothing. send() with any switch off records 'skipped' and never calls the network. send() refuses
+   a price outside 1 to 99, a count under 1, or anything that is not a buy limit order. With every switch on a
+   good order reaches the network, which this test forbids: with no clean answer it is recorded as unconfirmed.
+3. The shadow planner on the NBA fixtures: the resting middle legs at the resting limits, sized so the
    worst final loses at most the auto cap; the push's lead (the middle) as takes; deterministic ids; nothing
    sent. The night budget and a held middle spend the cap. fit_cap scales a set of legs under the cap.
 4. The shadow fill model: a resting bid is touched when the ask reaches it, not on the pass that planned it;
    an order past its expiry is expired. pnl_of grades a touched leg (the maker fee) and a take (the taker fee).
-5. The signer: POST and DELETE signatures verify."""
+5. The signer: GET, POST and DELETE signatures verify."""
 import sys, os, re, json, base64, tempfile, datetime as dt
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -17,37 +20,53 @@ import engine, watch, notify, store, trade
 
 # 1. static
 src = open(os.path.join(ROOT, 'trade.py')).read()
-assert "ORDER_PATH = '/portfolio/orders'" in src
+assert "ORDER_PATH = '/portfolio/events/orders'" in src and "ORDER_READ_PATH = '/portfolio/orders'" in src
+assert trade.ORDER_PATH == '/portfolio/events/orders', "Kalshi's V2 order calls: the old write path was retired in June 2026"
+assert "api('POST', ORDER_READ_PATH" not in src and "api('DELETE', f\"{ORDER_READ_PATH}" not in src and "api('DELETE', f'{ORDER_READ_PATH}" not in src, 'the old order path is read-only here'
 pf = open(os.path.join(ROOT, 'portfolio.py')).read()
-assert "if method != 'GET':" in pf and 'portfolio/orders' not in pf, 'portfolio.py must stay GET-only and name no order endpoint'
+assert "if method != 'GET':" in pf and 'portfolio/orders' not in pf and 'events/orders' not in pf, 'portfolio.py must stay GET-only and name no order endpoint'
 for name in ('watch.py', 'worker.py', 'held.py', 'feeds.py', 'store.py', 'engine.py'):
-    assert 'portfolio/orders' not in open(os.path.join(ROOT, name)).read(), f'{name} names an order endpoint'
+    text = open(os.path.join(ROOT, name)).read()
+    assert 'portfolio/orders' not in text and 'events/orders' not in text, f'{name} names an order endpoint'
 print('static: trade.py is the only module that names an order endpoint')
 
 # a network call anywhere in this test is a failure
 import requests
 def boom(*a, **k):
     raise AssertionError('network call attempted')
-requests.post = requests.request = requests.delete = requests.patch = requests.put = boom
+requests.get = requests.post = requests.request = requests.delete = requests.patch = requests.put = boom
 
 # 2. switches
 cfg = json.load(open(os.path.join(ROOT, 'config.json')))
-assert cfg.get('auto', {}).get('mode') == 'shadow', 'config.json auto.mode must be shadow until the shadow week reads clean'
+assert cfg.get('auto', {}).get('mode') == 'shadow', "config.json auto.mode stays shadow: it labels the planner's rows and sends nothing"
+pilot = cfg['auto'].get('pilot') or {}
+assert pilot.get('sports') == ['cbb'] and pilot.get('wallet') == 500, 'the pilot is college basketball with a $500 wallet'
+assert pilot['night_cap'] <= trade.PILOT_HARD['night_cap'] and pilot['wallet'] <= trade.PILOT_HARD['wallet'] and pilot['leash']['night_cap'] == 50, pilot
 for k in ('TRADE_ENABLED', 'KALSHI_TRADE_KEY_ID', 'KALSHI_TRADE_PRIVATE_KEY'):
     os.environ.pop(k, None)
-t = trade.Trader(cfg, 3590)
-assert t.on and t.mode() == 'shadow' and not t.armed()
-live = trade.Trader(dict(cfg, auto=dict(cfg['auto'], mode='live')), 3590)
-assert live.mode() == 'live' and not live.armed(), 'live in config alone must not arm'
+no_pilot = dict(cfg, auto={k: v for k, v in cfg['auto'].items() if k != 'pilot'})
+t = trade.Trader(no_pilot, 3590)
+assert t.on and t.mode() == 'shadow' and not t.armed() and t.pilot_sports() == []
+old = trade.Trader(dict(no_pilot, auto=dict(no_pilot['auto'], mode='live')), 3590)
+assert old.mode() == 'shadow' and not old.ready() and not old.armed(), "auto.mode 'live' in config arms nothing: the pilot block is the only way out"
+live = trade.Trader(cfg, 3590)
+assert live.pilot_sports() == ['cbb'] and not live.ready() and not live.armed(), 'the pilot block alone must not arm'
 os.environ['TRADE_ENABLED'] = '1'
-assert not live.armed(), 'TRADE_ENABLED without a key must not arm'
+assert not live.ready() and not live.armed(), 'TRADE_ENABLED without a key must not arm'
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 ed = ed25519.Ed25519PrivateKey.generate()
 os.environ['KALSHI_TRADE_KEY_ID'] = 'test-key'
 os.environ['KALSHI_TRADE_PRIVATE_KEY'] = ed.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode()
-# the kill switch: with Supabase on, a kill row stops it; with Supabase unreadable, kill() is True (no read, no send)
 store.enabled = lambda: True
+store.read = lambda table, params: [dict(kill=False)]
+live._kill = (None, 0.0)
+assert live.ready() and not live.armed(), 'every switch on and no self-test: not armed'
+# a self-test that cannot reach Kalshi is not a pass
+res = live.preflight([dict(event_ticker='E', markets=[dict(ticker='E-140', floor_strike=140.5, status='active', yes_ask_dollars='0.5200', no_ask_dollars='0.5000')])])
+assert not res['ok'] and 'network call attempted' in res['error'] and not live.armed(), res
+live.verified = dict(ok=True, walled=False)
+# the kill switch: with Supabase on, a kill row stops it; with Supabase unreadable, kill() is True (no read, no send)
 store.read = lambda table, params: [dict(kill=True)]
 live._kill = (None, 0.0)
 assert live.kill() and not live.armed(), 'kill true must disarm'
@@ -56,12 +75,15 @@ live._kill = (None, 0.0)
 assert live.kill() and not live.armed(), 'an unreadable control row must disarm'
 store.read = lambda table, params: [dict(kill=False)]
 live._kill = (None, 0.0)
-assert live.armed(), 'every switch on: armed'
-o = dict(kind='rest', side='yes', action='buy', price_c=45, count=10, market_ticker='KXNBATOTAL-26OCT22BOSDET-224', client_order_id='x', expire_at='2030-01-01T00:00:00+00:00', game='t', strike=224.5, reason='rest_mid')
+assert live.armed(), 'every switch on and the self-test passed: armed'
+soon = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=10)).isoformat()
+o = dict(kind='rest', side='yes', action='buy', price_c=45, count=3, sport='cbb', date_et='2026-11-12', market_ticker='KXNCAAMBTOTAL-26NOV12AB-140', client_order_id='x', expire_at=soon,
+         game='t', strike=140.5, reason='rest_mid', cost=1.35)
 os.environ['TRADE_ENABLED'] = '0'
 r = live.send(dict(o))
 assert r['status'] == 'skipped' and 'armed' in r['note'], r
 os.environ['TRADE_ENABLED'] = '1'
+store.fetch_all = lambda table, params, key, page=1000: []
 for bad in (dict(o, price_c=0), dict(o, price_c=100), dict(o, count=0), dict(o, action='sell'), dict(o, kind='market'), dict(o, side='over')):
     try:
         live.send(bad)
@@ -69,12 +91,18 @@ for bad in (dict(o, price_c=0), dict(o, price_c=100), dict(o, count=0), dict(o, 
     except AssertionError as e:
         if 'network' in str(e):
             raise SystemExit(f'send reached the network for {bad}')
-# a good order with every switch on reaches the network, which this test forbids: the rejection note is the proof
+# the ledger cannot be read: no send
+store.fetch_all = lambda table, params, key, page=1000: None
 r = live.send(dict(o))
-assert r['status'] == 'rejected' and 'network call attempted' in (r.get('note') or ''), r
+assert r['status'] == 'skipped' and 'no read, no send' in r['note'], r
+# a good order with every switch on reaches the network, which this test forbids: no clean answer came back, so the
+# order is recorded as one that may be live, never as one that was refused
+store.fetch_all = lambda table, params, key, page=1000: []
+r = live.send(dict(o))
+assert r['status'] == 'unconfirmed' and 'network call attempted' in (r.get('note') or ''), r
 store.enabled = lambda: False
 os.environ['TRADE_ENABLED'] = '0'
-print('switches: config live, TRADE_ENABLED, the trade key and the kill row all have to agree; bad orders refused')
+print('switches: the pilot block, TRADE_ENABLED, the trade key, the kill row and the self-test all have to agree; bad orders refused')
 
 # 3. the planner on the fixtures
 notify.push = lambda title, body, priority='default', tags='football': ['test']
@@ -163,10 +191,12 @@ assert trade.Trader.pnl_of(lv, 230) == round(4 * 0.37 - engine.order_fee(4, 0.63
 print('fill model: touched when the ask reaches the bid (break vs in play), expired past the window, graded at the final')
 
 # 5. the signer
-sig = base64.b64decode(trade.sign(ed, '1760000000000', 'POST', '/trade-api/v2/portfolio/orders'))
-ed.public_key().verify(sig, b'1760000000000POST/trade-api/v2/portfolio/orders')
-sig = base64.b64decode(trade.sign(ed, '1760000000000', 'DELETE', '/trade-api/v2/portfolio/orders/abc'))
-ed.public_key().verify(sig, b'1760000000000DELETE/trade-api/v2/portfolio/orders/abc')
+sig = base64.b64decode(trade.sign(ed, '1760000000000', 'POST', '/trade-api/v2' + trade.ORDER_PATH))
+ed.public_key().verify(sig, b'1760000000000POST/trade-api/v2/portfolio/events/orders')
+sig = base64.b64decode(trade.sign(ed, '1760000000000', 'DELETE', '/trade-api/v2' + trade.ORDER_PATH + '/abc'))
+ed.public_key().verify(sig, b'1760000000000DELETE/trade-api/v2/portfolio/events/orders/abc')
+sig = base64.b64decode(trade.sign(ed, '1760000000000', 'GET', '/trade-api/v2' + trade.ORDER_READ_PATH + '/abc'))
+ed.public_key().verify(sig, b'1760000000000GET/trade-api/v2/portfolio/orders/abc')
 assert type(trade.load_trade_key()) is type(ed)
 print('signer: POST and DELETE verify with the trade key')
 print('trade_guard: ok')

@@ -36,9 +36,9 @@ export const orderFee = (n, p, fill = 'take') => Math.ceil(n * feePer(p, fill) *
 export function fillPnl(o) {
   if (o.pnl === null || o.pnl === undefined) return null;
   const has = (v) => v !== null && v !== undefined && v !== '';
-  if (!has(o.final_total) || !has(o.strike) || !has(o.price_c) || !['yes', 'no'].includes(o.side)) return Number(o.pnl);
-  const T = Number(o.final_total), p = Number(o.price_c) / 100, strike = Number(o.strike);
-  const n = o.mode === 'live' && has(o.filled_count) ? Number(o.filled_count) : Number(o.count);
+  // a live order was graded on the fill and the fee Kalshi reported: its pnl column stands
+  if (o.mode === 'live' || !has(o.final_total) || !has(o.strike) || !has(o.price_c) || !['yes', 'no'].includes(o.side)) return Number(o.pnl);
+  const T = Number(o.final_total), p = Number(o.price_c) / 100, strike = Number(o.strike), n = Number(o.count);
   if (!Number.isFinite(n)) return Number(o.pnl);
   const win = o.side === 'yes' ? T > strike : T < strike;
   const fee = orderFee(Math.floor(n), p, o.kind === 'take' ? 'take' : 'rest');

@@ -28,8 +28,11 @@ A restart loads both rows. What a crash between writes can lose is at most a min
 slots are guarded by the alerts table, the orders by their client_order_id, and both are written as they happen.
 
 Auto orders (trade.py) are planned here and nowhere else: with an "auto" block in config.json the worker records
-what it would send at every break (shadow mode), and sends only in live mode with TRADE_ENABLED=1, the trade
-key in this service's variables and the kill switch off. The GitHub Actions backup never carries the trade key.
+what it would send at every break (the shadow planner, every sport in auto.sports). The pilot (auto.pilot) is the
+only thing that sends: for the sports it lists, at pilot size, and only with TRADE_ENABLED=1, the trade key in
+this service's variables, the kill switch off and its self-test passed in this process (two one-contract bids at
+1c, posted, read back and cancelled; the worker runs it once the switches are on and every ten minutes until it
+passes). The GitHub Actions backup never carries the trade key.
 
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY, NTFY_TOPIC, KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY (the last two optional),
      TRADE_ENABLED, KALSHI_TRADE_KEY_ID, KALSHI_TRADE_PRIVATE_KEY (live orders only).
@@ -45,6 +48,7 @@ ARCHIVE_GAP = 1800   # seconds between rewrites of the archive row
 PREGAME_EVERY = 60   # seconds: the pregame row at least this often, so its read times stay fresh on Today
 RETRY_GAP = 30       # seconds after a failed state write before the next try (a down database is not hammered)
 FEE_CHECK = 6 * 3600 # seconds between reads of Kalshi's fee record for the total series (watch.Desk.fee_check)
+PILOT_CHECK = 600    # seconds between tries of the pilot's self-test while it has not passed (trade.Trader.preflight)
 # Game fields rewritten on (nearly) every pass that nothing needs after a restart: the next pass reads them again.
 # A change to these alone is not a reason to write the state. (The pregame line's own 'at' stamp is the same
 # kind of field: see durable_view.) A field missing here only means more writes, never a lost one.
@@ -238,11 +242,9 @@ def main():
     trader = trade.Trader(cfg, desk.cfg['bankroll'])
     if trader.on:
         desk.trader = trader
-    auto_note = (f"auto {trader.mode()} for {', '.join(trader.cfg.get('sports') or [])}"
-                 + (f", {'ARMED' if trader.armed() else 'not armed'}" if trader.mode() == 'live' else '')) if trader.on else 'auto off'
     print(f"worker up: {len(desk.state.get('games', {}))} games in state, ntfy {'on' if os.environ.get('NTFY_TOPIC') else 'OFF'}, "
-          f"kalshi sync {'on' if portfolio.enabled() else 'off'}, {auto_note}", flush=True)
-    last_sync, last_held, last_refresh, last_fees, passes = 0.0, 0.0, 0.0, 0.0, 0
+          f"kalshi sync {'on' if portfolio.enabled() else 'off'}, {trader.status_line()}", flush=True)
+    last_sync, last_held, last_refresh, last_fees, last_pilot, passes = 0.0, 0.0, 0.0, 0.0, 0.0, 0
     killed = False
     saver = Saver()
     while not _stop:
@@ -284,7 +286,21 @@ def main():
                 portfolio.sync()
             except Exception as e:
                 print(f'portfolio sync failed: {e}', flush=True)
-        if desk.trader and trader.mode() == 'live' and wait <= LIVE and time.time() - last_refresh > 30:
+        if desk.trader and trader.ready() and not (trader.verified or {}).get('ok') and time.time() - last_pilot > PILOT_CHECK:
+            # the pilot's self-test: once every switch is on, and every ten minutes until it passes. Two one-contract
+            # bids at 1c go up and come down; the result goes to the phone once per distinct answer, not per restart.
+            last_pilot = time.time()
+            try:
+                res = trader.preflight([e for sp in trader.pilot_sports() for e in desk.events(sp, 'total')])
+                title, body, pri, sig = trader.preflight_push(res)
+                print(f"{watch.now_iso()} pilot self-test: {'passed' if res.get('ok') else 'waiting' if res.get('wait') else 'FAILED'} ({res.get('step')}"
+                      + (f": {res.get('error')}" if res.get('error') else '') + f"); {trader.status_line()}", flush=True)
+                if not res.get('wait') and (desk.state.get('pilot') or {}).get('sig') != sig:
+                    watch.notify.push(title, body, pri, 'robot')
+                    desk.state['pilot'] = dict(sig=sig, at=watch.now_iso())
+            except Exception as e:   # the self-test never touches the watch, and a test that could not run is not a pass
+                print(f'pilot self-test failed to run: {e}', flush=True)
+        if desk.trader and trader.pilot_sports() and trade.key_present() and wait <= LIVE and time.time() - last_refresh > 30:
             last_refresh = time.time()
             try:
                 # the kill switch pulls every resting order once; while it stays on nothing new is sent (armed() is false)
@@ -296,10 +312,17 @@ def main():
                 elif not trader.kill():
                     killed = False
                 for rec in desk.state.get('games', {}).values():
-                    if any(st.get('open') for st in (rec.get('auto') or {}).values()):
+                    if trader.has_live_open(rec):
                         trader.refresh(rec)
             except Exception as e:
                 print(f'order refresh failed: {e}', flush=True)
+        if desk.trader:
+            for title, body, pri in trader.drain():   # what the pilot has to say: a refusal, a night's summary
+                try:
+                    watch.notify.push(title, body, pri, 'robot')
+                    print(f'{watch.now_iso()} pushed {title}', flush=True)
+                except Exception as e:
+                    print(f'pilot push failed: {e}', flush=True)
         if wait <= LIVE and time.time() - last_held > 60:
             last_held = time.time()
             try:
