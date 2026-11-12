@@ -38,7 +38,7 @@ GO_LIVE = '2026-11-12'
 #   and down more than a tenth of the money risked turns them into reads (config stake_scale 0);
 #   a live spot lane is reviewed at 30 graded plays: 55 percent winners and a profit doubles its stake (a quarter to
 #   a half), under 48 percent sends it back to shadow;
-#   a shadow cell goes live at half size once 150 graded halves have landed on its side of Kalshi's line 55 percent
+#   a shadow cell goes live at a quarter stake once 150 graded halves have landed on its side of Kalshi's line 55 percent
 #   of the time, and is dropped if 300 have and it is under 50;
 #   the resting block stays on the push while the fills at the break return more than minus 5 percent on 300 more.
 RULES = dict(plays_n=50, plays_stop=-0.10, lane_n=30, lane_up=0.55, lane_down=0.48, cell_n=150, cell_up=0.55, cell_drop_n=300, rest_n=300, rest_stop=-0.05)
@@ -518,7 +518,7 @@ def rule_lines(wins, rows, orders, spots):
         dec = t['n'] - t['push']
         share = t['on'] / dec if dec else 0.0
         if dec >= R['cell_n'] and share >= R['cell_up']:
-            verdict = 'REVIEW: the cell has earned a live lane at half size'
+            verdict = 'REVIEW: the cell has earned a live lane at a quarter stake'
         elif dec >= R['cell_drop_n'] and share < 0.5:
             verdict = 'REVIEW: under half on 300, the cell is dropped'
         else:

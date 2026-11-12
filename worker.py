@@ -272,6 +272,9 @@ def main():
             last_fees = time.time()
             try:
                 desk.fee_check()
+                fees = desk.state.get('fees') or {}
+                # one line for the deploy log, so "no push" can be told from "not read"
+                print(f"{watch.now_iso()} fees: " + (', '.join(f"{k} {v.get('fee_type')} x{v.get('fee_multiplier')}" for k, v in sorted(fees.items())) or 'no series read'), flush=True)
             except Exception as e:   # a look at the fee record never touches the watch
                 print(f'fee check failed: {e}', flush=True)
         sync_every = 120 if wait <= LIVE else 1800

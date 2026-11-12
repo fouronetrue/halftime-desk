@@ -129,7 +129,7 @@ The rules that move any of this were written down before the plays they judge, a
 (`data/desk/scorecard.md`, section "The go-live rules, and where each stands") prints where each one is:
 plays on price go back to full stake at 50 graded plays with a profit, and become reads (`stake_scale` 0) if
 those 50 are down more than a tenth of the money risked; a live lane is reviewed at 30 graded plays (55% winners
-and a profit doubles its stake, under 48% sends it back to shadow); a shadow cell goes live at half size once 150 graded
+and a profit doubles its stake, under 48% sends it back to shadow); a shadow cell goes live at a quarter stake once 150 graded
 halves have landed on its side of Kalshi's line 55% of the time; the resting block stays on the push while the
 break fills return better than minus 5% on the next 300. `tests/lanes.py` pins the sizing and the lane's play.
 
