@@ -22,8 +22,9 @@ Two things live here.
      the wallet     the most the pilot may lose, ever. Its realized P&L (graded live orders; an order from an
                     earlier night that may have filled and was never graded counts as lost) is read from the orders
                     table before every order. At minus the wallet it stops for good.
-     the night cap  the most order money it may post in one night, filled or not. A resting order that expires
-                    unfilled still counts, so the worst night is bounded by a sum, not by a model.
+     the night cap  the most order money it may post in one night, filled or not, each order counted at its
+                    limit price with its fee. A resting order that expires unfilled still counts, so the worst
+                    night is bounded by a sum, not by a model.
      the leash      until the trade key is walled (locked to a numbered Kalshi subaccount that holds the wallet
                     and no more), the night cap and the sizes are the leash's: small. The full numbers apply only
                     to a walled key, where Kalshi itself refuses a cent past the wallet.
@@ -216,14 +217,23 @@ def order_body(o):
     return body
 
 
+def all_in(o):
+    """The most an order can lose: its count at its limit price, plus the fee on it (the taker fee on a take, the
+    maker fee on a resting order). This is what the pilot's walls count, so a night's cap and the wallet bound
+    what can be lost, fees included, not only what is posted."""
+    n, p = int(float(o.get('count') or 0)), float(o.get('price_c') or 0) / 100
+    return round(n * p + engine.order_fee(n, p, 'taker' if o.get('kind') == 'take' else 'maker'), 2)
+
+
 def fill_cost(o):
-    """Dollars a live order has in the game: what filled at the price it filled at, or the whole order when Kalshi
-    never said what became of it."""
+    """Dollars a live order has in the game, fee in: what filled at the price it filled at, or the whole order
+    when Kalshi never said what became of it."""
     n = fnum(o.get('filled_count'))
     if o.get('status') in ('filled', 'partial') and n is not None:
         p = fnum(o.get('fill_price_c'))
-        return round(n * (p if p is not None else float(o.get('price_c') or 0)) / 100, 2)
-    return float(o.get('cost') or 0)
+        p = (p if p is not None else float(o.get('price_c') or 0)) / 100
+        return round(n * p + engine.order_fee(int(n), p, 'taker' if o.get('kind') == 'take' else 'maker'), 2)
+    return all_in(o)
 
 
 def fee_note(note):
@@ -367,19 +377,19 @@ class Trader:
 
     def ledger(self, date_et):
         """What the pilot has done, from the orders table: dollars posted tonight (every live order that reached
-        Kalshi or may have, filled or not), how many orders that was, and its realized P&L for good (graded
-        orders; an order from an earlier night that may have filled and was never graded counts as lost). None
-        when the table cannot be read: no read, no send."""
+        Kalshi or may have, filled or not, each at its limit price with its fee), how many orders that was, and
+        its realized P&L for good (graded orders; an order from an earlier night that may have filled and was
+        never graded counts as lost). None when the table cannot be read: no read, no send."""
         if not store.enabled() or not self.db_ok:
             return None
-        rows = store.fetch_all(ORDERS, {'select': 'client_order_id,date_et,status,cost,pnl,count,filled_count,price_c,fill_price_c', 'mode': 'eq.live'}, 'client_order_id')
+        rows = store.fetch_all(ORDERS, {'select': 'client_order_id,date_et,status,kind,cost,pnl,count,filled_count,price_c,fill_price_c', 'mode': 'eq.live'}, 'client_order_id')
         if rows is None:
             return None
         posted, real, n = 0.0, 0.0, 0
         for r in rows:
             tonight = str(r.get('date_et')) == str(date_et)
             if tonight and r.get('status') not in ('skipped', 'rejected'):
-                posted += float(r.get('cost') or 0)
+                posted += all_in(r)
                 n += 1
             if r.get('pnl') is not None:
                 real += float(r['pnl'])
@@ -390,17 +400,17 @@ class Trader:
     def room(self, led, date_et):
         """Dollars the pilot may still post tonight, and what is left of the wallet, from a ledger read."""
         lim = self.limits()
-        left = lim['wallet'] + min(0.0, led['realized'])
+        left = round(lim['wallet'] + min(0.0, led['realized']), 2)
         posted = max(led['posted'], self.posted.get(str(date_et), 0.0))
-        return max(0.0, min(lim['night_cap'], left) - posted), max(0.0, left), posted
+        return round(max(0.0, min(lim['night_cap'], left) - posted), 2), max(0.0, left), posted
 
     def wall(self, o, led=None, need=None):
         """Why this order may not be sent, or None. need: the dollars that must fit tonight for it to go (both legs
         of a pair when it is one of two; its own cost otherwise)."""
         if not self.pilot_wants(o.get('sport')):
             return f"{o.get('sport')} is not a pilot sport"
-        cost = int(o['count']) * int(o['price_c']) / 100
-        if int(o['count']) > PILOT_HARD['order_count'] or cost > PILOT_HARD['order_cost'] + 1e-9:
+        cost = all_in(o)   # what it can lose: the limit price and the fee
+        if int(o['count']) > PILOT_HARD['order_count'] or int(o['count']) * int(o['price_c']) / 100 > PILOT_HARD['order_cost'] + 1e-9:
             return f"an order of {int(o['count'])} at {int(o['price_c'])}c is over the ceiling (${PILOT_HARD['order_cost']:.0f}, {PILOT_HARD['order_count']} contracts)"
         if o['kind'] == 'rest':
             exp, now = parse_ts(o.get('expire_at')), dt.datetime.now(dt.timezone.utc)
@@ -622,7 +632,7 @@ class Trader:
             groups.setdefault(o.get('pair') or o['client_order_id'], []).append(o)
         done, note = [], None
         for grp in groups.values():
-            need = sum(int(o['count']) * int(o['price_c']) / 100 for o in grp)
+            need = sum(all_in(o) for o in grp)
             why = next((w for w in (self.wall(o, led, need) for o in grp) if w), None)
             if why:
                 note = why
@@ -639,8 +649,8 @@ class Trader:
                     continue
                 self.send(o, led)
                 if o['status'] not in ('skipped', 'rejected'):
-                    self.posted[date_et] = round(self.posted.get(date_et, 0.0) + float(o['cost']), 2)
-                    led['posted'] = round(led['posted'] + float(o['cost']), 2)
+                    self.posted[date_et] = round(self.posted.get(date_et, 0.0) + all_in(o), 2)
+                    led['posted'] = round(led['posted'] + all_in(o), 2)
                     led['orders'] += 1
                 store.write(ORDERS, [o], on_conflict='client_order_id')
                 done.append(o)

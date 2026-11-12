@@ -433,8 +433,10 @@ the numbers in force, or not armed, with the step it stopped at and Kalshi's wor
 The walls, checked inside `send()` for every order whatever planned it:
 - **The wallet.** The pilot's realized P&L is read from the `orders` table before every order (an order from an
   earlier night that may have filled and was never graded counts as lost). At minus the wallet it stops.
-- **The night cap.** A sum of what was posted, not a model of what is at risk: a resting order that expires
-  unfilled still counts. A pair goes as a pair or not at all.
+- **The night cap.** A sum of what was posted, not a model of what is at risk: every order counts at its limit
+  price with its fee, and a resting order that expires unfilled still counts. A pair goes as a pair or not at
+  all. `tests/pilot.py` runs three nights of random orders with Kalshi timing out and the table dropping out at
+  random, grades every order a total loss, and checks the worst case stays inside the cap and the wallet.
 - **The leash.** A key is walled when it is locked to a numbered Kalshi subaccount that holds the wallet and no
   more; then Kalshi itself refuses a cent past it, and the full numbers apply. Any other key (one that can reach
   the whole account) gets the leash's numbers. Subaccounts are an API-only Kalshi feature: money moved into one

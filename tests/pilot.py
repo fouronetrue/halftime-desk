@@ -384,7 +384,8 @@ body = out[0][1]
 live_rows = [r for r in fs.t['orders'] if r['mode'] == 'live']
 assert f"College basketball: {len(live_rows)} orders posted" in body and 'Resting legs filled: 1 of ' in body and 'The shadow model had ' in body and 'Wallet left: $' in body and chr(8212) not in body, body
 led = d.trader.ledger(g1['date_et'])
-assert led['posted'] == round(sum(r['cost'] for r in live_rows), 2) and led['realized'] == round(sum(r['pnl'] for r in live_rows if r['pnl'] is not None), 2), led
+assert led['posted'] == round(sum(trade.all_in(r) for r in live_rows), 2) > round(sum(r['cost'] for r in live_rows), 2), 'the walls count each order at its limit price with its fee'
+assert led['realized'] == round(sum(r['pnl'] for r in live_rows if r['pnl'] is not None), 2), led
 d.trader.grade(dict(id='601', date_et=g1['date_et']), rec, 144)
 assert not d.trader.drain(), 'a night is summed once'
 print('pilot: a fill is read back with its price and fee, the other leg comes down at the second half, the final grades it, one push sums the night')
@@ -401,18 +402,20 @@ mk = lambda i, side, strike, price, n, kind='rest', pair='140.5/145.5', date='20
     action='buy', kind=kind, stage='half', price_c=price, count=n, cost=round(n * price / 100, 2), expire_at=soon(), reason='rest_mid' if kind == 'rest' else 'single', pair=pair if kind == 'rest' else None,
     mode='live', status='planned', kalshi_order_id=None, sent_at=None, filled_count=None, fill_price_c=None, filled_at=None, touched_at=None, touch_phase=None, touch_s=None, pnl=None,
     graded_at=None, final_total=None, note=None)
-# the night cap, on the leash: $50 of orders, filled or not. $47 is already posted; a $5.40 pair does not fit, so neither leg goes.
+# the night cap, on the leash: $50 of orders, filled or not, each counted at its limit price with its fee. An expired
+# order of $47 (47.44 with the maker fee it would have paid) is already posted; a $5.40 pair does not fit, so neither leg goes.
+assert trade.all_in(mk(90, 'yes', 130.5, 47, 100)) == 47.44 and trade.all_in(mk(5, 'yes', 140.5, 50, 4, kind='take')) == 2.07 and trade.all_in(dict(count=0, price_c=50)) == 0.0
 k = FakeKalshi(); tr = fresh(k, sub_walled=False)
 fs.t['orders'] = [dict(mk(90, 'yes', 130.5, 47, 100), status='expired', cost=47.0)]
 done, note = tr.act_live([mk(1, 'yes', 140.5, 50, 5), mk(2, 'no', 145.5, 58, 5)])
-assert done == [] and note.startswith('night cap: $47.00 posted, $3.00 of room') and not k.posts(), (done, note)
+assert done == [] and note.startswith('night cap: $47.44 posted, $2.56 of room') and not k.posts(), (done, note)
 say = tr.drain()
 assert len(say) == 1 and say[0][0] == 'AUTO: done for the night' and 'short leash' in say[0][1], say
 done, note = tr.act_live([mk(3, 'yes', 141.5, 50, 5), mk(4, 'no', 146.5, 58, 5)])
 assert done == [] and not tr.drain(), 'the cap is said once a night'
 # a single that fits still goes, and its cost is counted at once: the next one does not fit
-done, note = tr.act_live([mk(5, 'yes', 140.5, 50, 5, kind='take')])
-assert len(done) == 1 and done[0]['status'] == 'cancelled' and done[0]['note'] == 'the ask was gone' and tr.posted['2026-11-13'] == 2.5, done
+done, note = tr.act_live([mk(5, 'yes', 140.5, 50, 4, kind='take')])
+assert len(done) == 1 and done[0]['status'] == 'cancelled' and done[0]['note'] == 'the ask was gone' and tr.posted['2026-11-13'] == 2.07, done
 done, note = tr.act_live([mk(6, 'yes', 140.5, 50, 2, kind='take')])
 assert done == [] and 'night cap' in note
 # walled: the same night has $200 of room
@@ -427,13 +430,14 @@ fs.t['orders'] = [dict(mk(80, 'yes', 130.5, 50, 40, date='2026-11-10'), status='
                   dict(mk(82, 'yes', 132.5, 50, 40, date='2026-11-11'), status='filled', filled_count=30, fill_price_c=50, cost=20.0),
                   dict(mk(83, 'yes', 133.5, 50, 40, date='2026-11-11'), status='expired', cost=20.0)]
 led = tr.ledger('2026-11-13')
-assert led == dict(posted=0.0, realized=-455.0, orders=0), led     # -420 graded, -20 unconfirmed, -15 filled and ungraded; the expired order cost nothing
-assert tr.room(led, '2026-11-13') == (45.0, 45.0, 0.0)
+# -420 graded; the unconfirmed order whole, fee in (-20.18); the 30 that filled and were never graded, fee in (-15.14); the expired order nothing
+assert led == dict(posted=0.0, realized=-455.32, orders=0), led
+assert tr.room(led, '2026-11-13') == (44.68, 44.68, 0.0)
 done, note = tr.act_live([mk(1, 'yes', 140.5, 50, 40, kind='take'), mk(2, 'yes', 141.5, 50, 40, kind='take'), mk(3, 'yes', 142.5, 50, 40, kind='take')])
-assert len(done) == 2 and 'night cap' in note, (len(done), note)    # $20 and $20 fit in $45, the third does not
+assert len(done) == 2 and 'night cap' in note, (len(done), note)    # two at $20.70 with the fee fit in $44.68, the third does not
 fs.t['orders'].append(dict(mk(84, 'yes', 134.5, 50, 40, date='2026-11-12'), status='filled', filled_count=40, pnl=-60.0, graded_at='x'))
 done, note = tr.act_live([mk(4, 'yes', 143.5, 50, 2, kind='take', date='2026-11-14')])
-assert done == [] and note.startswith('the wallet is spent ($515.00 lost of $500)'), note
+assert done == [] and note.startswith('the wallet is spent ($515.32 lost of $500)'), note
 assert tr.drain()[-1][0] == 'AUTO: the wallet is spent'
 # an unreadable orders table stops everything, in the batch and inside send(); so does an unreadable control row
 k = FakeKalshi(); tr = fresh(k)
@@ -479,11 +483,11 @@ assert tr.armed()
 k = FakeKalshi(); tr = fresh(k)
 k.fail = lambda method, path, body: trade.ApiError('POST failed: timed out', None) if method == 'POST' else None
 done, _ = tr.act_live([mk(1, 'yes', 140.5, 50, 5, kind='take')])
-assert done[0]['status'] == 'unconfirmed' and tr.posted['2026-11-13'] == 2.5 and tr.ledger('2026-11-13')['posted'] == 2.5, done
+assert done[0]['status'] == 'unconfirmed' and tr.posted['2026-11-13'] == 2.59 and tr.ledger('2026-11-13')['posted'] == 2.59, done
 assert tr.drain()[0][0] == 'AUTO: an order got no answer'
 k.fail = lambda method, path, body: trade.ApiError('POST failed: HTTP 400 market closed', 400) if method == 'POST' else None
 done, _ = tr.act_live([mk(2, 'yes', 141.5, 50, 5, kind='take')])
-assert done[0]['status'] == 'rejected' and tr.posted['2026-11-13'] == 2.5 and tr.ledger('2026-11-13')['posted'] == 2.5, 'a refused order posted nothing'
+assert done[0]['status'] == 'rejected' and tr.posted['2026-11-13'] == 2.59 and tr.ledger('2026-11-13')['posted'] == 2.59, 'a refused order posted nothing'
 assert tr.drain()[0][0] == 'AUTO: Kalshi refused an order'
 # a resting leg Kalshi refuses as crossing is refused cleanly; the other leg still rests
 k = FakeKalshi(book={'E-140.5': dict(ya=50, yb=48)}); tr = fresh(k)
@@ -512,4 +516,59 @@ assert tr.plan_pilot(dict(id='g', sport='cbb', short='A @ B', date_et='2026-11-1
 tr.verified = None
 assert tr.plan_pilot(dict(id='g', sport='cbb', short='A @ B', date_et='2026-11-13'), 'half', None, [], {}, {}, {}, {}, trade.now_iso()) == ([], None)
 print('pilot: the night cap, the wallet, the ledger, the ceilings, the kill switch and an unanswered order each stop it the way they should')
+
+# 7. the walls under noise. Three nights of random orders (sane ones, oversized ones, pairs, repeats of an id), with
+# Kalshi timing out or refusing at random and the orders table dropping out at random. Whatever happens: no night
+# posts more than its cap, nothing goes out past the wallet, no id is sent twice, nothing over the ceiling is sent,
+# and nothing is sent while the table cannot be read. Seeded, so a failure repeats.
+import random
+for walled in (False, True):
+    rng = random.Random(20261112 + walled)
+    k = FakeKalshi(book={}); tr = fresh(k, sub_walled=walled)
+    lim = tr.limits()
+    sent_cost, seq, sent_ids = {}, 0, []
+    def chaos(method, path, body):
+        if method != 'POST':
+            return None
+        x = rng.random()
+        return trade.ApiError('POST failed: timed out', None) if x < 0.08 else trade.ApiError('POST failed: HTTP 400 no', 400) if x < 0.16 else trade.ApiError('POST failed: HTTP 503', 503) if x < 0.20 else None
+    k.fail = chaos
+    for night in ('2026-11-13', '2026-11-14', '2026-11-15'):
+        for _ in range(160):
+            seq += 1
+            fs.down = {'orders'} if rng.random() < 0.05 else set()
+            n_before = len(k.posts())
+            price, n = rng.choice([8, 31, 45, 50, 58, 70, 93]), rng.choice([1, 3, 5, 5, 12, 21, 40, 41, 80])
+            i = rng.choice([seq, max(1, seq - rng.randint(1, 4))])        # sometimes an id that was already used
+            if rng.random() < 0.5:
+                batch = [mk(i, 'yes', 140.5, price, n, date=night), mk(10**6 + i, 'no', 145.5, rng.choice([40, 55, 63]), n, date=night)]
+            else:
+                batch = [mk(i, rng.choice(['yes', 'no']), 141.5, price, n, kind='take', date=night)]
+            done, _ = tr.act_live(batch)
+            new = k.posts()[n_before:]
+            if fs.down:
+                assert not new and not done, 'an order went out while the orders table could not be read'
+            for body in new:
+                c = float(body['count']) * (float(body['price']) if body['side'] == 'bid' else 1 - float(body['price']))
+                assert float(body['count']) <= trade.PILOT_HARD['order_count'] and c <= trade.PILOT_HARD['order_cost'] + 1e-6, body
+                sent_ids.append(body['client_order_id'])
+            for o in done:   # what reached Kalshi or may have: everything but a clean refusal, at its limit price with its fee
+                if o['status'] not in ('skipped', 'rejected'):
+                    sent_cost[night] = sent_cost.get(night, 0.0) + trade.all_in(o)
+            fs.down = set()
+            led = tr.ledger(night)
+            assert sent_cost.get(night, 0.0) <= lim['night_cap'] + 1e-6, (night, sent_cost)
+            assert sent_cost.get(night, 0.0) <= lim['wallet'] + min(0.0, led['realized']) + 1e-6 or not new, (night, sent_cost, led)
+            assert abs(led['posted'] - sent_cost.get(night, 0.0)) < 0.011, (led, sent_cost.get(night))
+        # the night ends as badly as it can: every order that reached Kalshi filled whole and lost, fee and all
+        for r in fs.t['orders']:
+            if r['date_et'] == night and r['status'] not in ('skipped', 'rejected', 'planned'):
+                r.update(pnl=-trade.all_in(r), graded_at='x', status='filled', filled_count=r['count'])
+    assert len(sent_ids) == len(set(sent_ids)), 'an order id was sent twice'
+    total = sum(sent_cost.values())
+    lost = -tr.ledger('2026-11-16')['realized']
+    assert 0 < total <= 3 * lim['night_cap'] + 1e-6, (total, lim)
+    assert abs(lost - total) < 0.05 and lost <= lim['wallet'] + 1e-6, f'the worst three nights lost {lost:.2f} of a {lim["wallet"]:.0f} wallet ({total:.2f} posted)'
+    print(f"pilot: three worst-case nights of noise, {'walled' if walled else 'on the leash'}: {len(sent_ids)} orders sent, ${total:.2f} posted and lost against ${lim['night_cap']:.0f} a night and a ${lim['wallet']:.0f} wallet")
+fs.down = set()
 print('pilot: ok')
