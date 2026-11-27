@@ -1,6 +1,6 @@
 # Halftime Desk scorecard
 
-Written by the nightly export on 2026-11-26 (UTC) from the Supabase results table (1683 games, graded by the worker and the GitHub backup) plus the 0 games only log/results.csv has (graded before the mirror existed). One row a game window; 1938 windows on 1683 games. The repo scorecard (python watch.py --scorecard) sees only what reached the CSV; this one sees everything.
+Written by the nightly export on 2026-11-27 (UTC) from the Supabase results table (1706 games, graded by the worker and the GitHub backup) plus the 0 games only log/results.csv has (graded before the mirror existed). One row a game window; 1961 windows on 1706 games. The repo scorecard (python watch.py --scorecard) sees only what reached the CSV; this one sees everything.
 
 ## Lead play per game window
 
@@ -48,7 +48,7 @@ Every graded half that sat in a configured cell, live or shadow, counted on the 
 |---|---|---|---|---|---|---|
 | CBB | 15+ point favorite not up by 15 | shadow | under | 167 | 87 of 162 (54%) | +1.2 |
 | CFB | favorite leading by 1-7 | shadow | over | 97 | 44 of 93 (47%) | +0.5 |
-| CFB | first half 10+ over the pace | shadow | over | 54 | 25 of 53 (47%) | +0.5 |
+| CFB | first half 10+ over the pace | shadow | over | 55 | 26 of 54 (48%) | +0.8 |
 | NFL | home favorite trailing | live | over | 13 | 8 of 13 (62%) | +1.7 |
 
 ## The go-live rules, and where each stands
@@ -59,8 +59,8 @@ Set on Nov 12, before the plays they judge (the Playbook has them in full).
 - Spot lane home_fav_trailing: 3 of 30 graded plays since Nov 12, 2 won, $+2 on $11. The lane stays at its stake (27 more to the review).
 - Shadow cell CBB 15+ point favorite not up by 15 (under): 87 of 162 on its side of Kalshi's line (54%). Stays in shadow.
 - Shadow cell CFB favorite leading by 1-7 (over): 44 of 93 on its side of Kalshi's line (47%). Stays in shadow (57 more to the first review).
-- Shadow cell CFB first half 10+ over the pace (over): 25 of 53 on its side of Kalshi's line (47%). Stays in shadow (97 more to the first review).
-- Resting orders, filled at the break (shadow fill model): 245 of 300 since Nov 12, $-364 on $2,877 (-12.7%). The resting block stays on the push (55 more to the review).
+- Shadow cell CFB first half 10+ over the pace (over): 26 of 54 on its side of Kalshi's line (48%). Stays in shadow (96 more to the first review).
+- Resting orders, filled at the break (shadow fill model): 254 of 300 since Nov 12, $-326 on $2,951 (-11.1%). The resting block stays on the push (46 more to the review).
 
 ## Model against the market
 
@@ -68,31 +68,31 @@ Miss is the distance from the final total. Finals vs a line is the final minus t
 
 | sport | games | model closer | ties | miss: model | miss: market | finals vs the market at the break | finals vs the pregame total |
 |---|---|---|---|---|---|---|---|
-| CBB | 954 | 363 | 214 | 9.3 | 9.3 | +0.6 on 954 (+1.5 SE), over 51% | +0.3 on 954 (+0.6 SE), over 50% |
-| CFB | 361 | 134 | 80 | 8.6 | 8.5 | +0.6 on 361 (+1.1 SE), over 46% | +0.2 on 361 (+0.3 SE), over 47% |
+| CBB | 973 | 369 | 222 | 9.3 | 9.3 | +0.6 on 973 (+1.7 SE), over 51% | +0.4 on 973 (+0.8 SE), over 50% |
+| CFB | 362 | 134 | 80 | 8.6 | 8.5 | +0.6 on 362 (+1.1 SE), over 46% | +0.3 on 362 (+0.4 SE), over 47% |
 | NBA | 268 | 115 | 56 | 10.9 | 10.9 | +0.2 on 268 (+0.2 SE), over 45% | -0.9 on 268 (-0.8 SE), over 47% |
-| NFL | 84 | 30 | 16 | 7.7 | 7.7 | +0.5 on 84 (+0.4 SE), over 50% | +0.6 on 84 (+0.4 SE), over 54% |
+| NFL | 87 | 32 | 16 | 7.9 | 7.9 | +0.7 on 87 (+0.7 SE), over 51% | +0.8 on 87 (+0.5 SE), over 54% |
 
 ## Drift (this season against the model)
 
-- CBB: finals vs the model -0.4 on 956 games (-0.9 SE)
+- CBB: finals vs the model -0.3 on 975 games (-0.8 SE)
 - CFB: finals vs the fair line +0.4 on 58 games (+0.2 SE)
-- CFB: finals vs the model +0.2 on 305 games (+0.3 SE)
+- CFB: finals vs the model +0.3 on 306 games (+0.4 SE)
 - NBA: finals vs the fair line -0.5 on 3 games (-0.0 SE)
 - NBA: finals vs the model +0.2 on 265 games (+0.2 SE)
 - NFL: finals vs the fair line +3.6 on 13 games (+1.4 SE)
-- NFL: finals vs the model -0.1 on 71 games (-0.1 SE)
+- NFL: finals vs the model +0.2 on 74 games (+0.2 SE)
 
 ## Resting middles, what-if (assumes both legs filled)
 
 | sport | window | games | hits | P&L |
 |---|---|---|---|---|
-| CBB | half | 945 | 168 | $+2,226 |
+| CBB | half | 964 | 169 | $+2,207 |
 | CBB SHADOW | half | 7 | 3 | $+69 |
-| CFB | half | 302 | 42 | $+1,321 |
+| CFB | half | 303 | 42 | $+1,319 |
 | NBA | half | 264 | 33 | $+1,332 |
 | NBA | end of 3rd | 250 | 38 | $+596 |
-| NFL | half | 70 | 12 | $+317 |
+| NFL | half | 73 | 12 | $+312 |
 
 ## Mismatch lane (college 28+), shadow shots
 
@@ -112,17 +112,17 @@ Per slate in data/desk/shadow/. A fill at the break is the market handing the mi
 
 | sport | mode | nights | games | resting orders | would fill | at the break | middles both legs | both at the break | one leg | P&L all | P&L at the break | P&L in play | P&L (both) | P&L (lone) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| CBB | shadow | 20 | 571 | 1132 | 829 | 234 | 261 of 572 | 8 | 307 | $-657 | $-257 | $-400 | $+633 | $-1,290 |
-| CFB | shadow | 10 | 80 | 162 | 123 | 69 | 43 of 81 | 8 | 37 | $-288 | $-165 | $-123 | $+29 | $-317 |
+| CBB | shadow | 21 | 580 | 1150 | 845 | 239 | 267 of 581 | 8 | 311 | $-664 | $-203 | $-461 | $+623 | $-1,288 |
+| CFB | shadow | 11 | 85 | 172 | 129 | 72 | 44 of 86 | 8 | 41 | $-288 | $-165 | $-123 | $+29 | $-317 |
 | NBA | shadow | 30 | 190 | 1148 | 854 | 242 | 217 of 704 | 5 | 420 | $-600 | $+513 | $-1,113 | $+808 | $-1,408 |
-| NFL | shadow | 7 | 36 | 72 | 53 | 40 | 18 of 36 | 6 | 17 | $-30 | $-20 | $-10 | $+67 | $-97 |
+| NFL | shadow | 7 | 36 | 72 | 54 | 41 | 18 of 36 | 6 | 18 | $-47 | $-36 | $-10 | $+67 | $-113 |
 
 The same fills as a return on the money behind them (the dollars above ride on the size the shadow ran that week):
 
 | sport | filled at the break | risked | P&L | return | filled in play | risked | P&L | return |
 |---|---|---|---|---|---|---|---|---|
-| CBB | 234 | $2,777 | $-257 | -9.3% | 595 | $7,073 | $-400 | -5.7% |
-| CFB | 69 | $1,038 | $-165 | -15.9% | 54 | $781 | $-123 | -15.7% |
+| CBB | 239 | $2,834 | $-203 | -7.2% | 606 | $7,221 | $-461 | -6.4% |
+| CFB | 72 | $1,038 | $-165 | -15.9% | 57 | $781 | $-123 | -15.7% |
 | NBA | 242 | $3,707 | $+513 | +13.8% | 612 | $9,184 | $-1,113 | -12.1% |
-| NFL | 40 | $549 | $-20 | -3.7% | 13 | $178 | $-10 | -5.8% |
-| ALL | 585 | $8,071 | $+71 | +0.9% | 1274 | $17,216 | $-1,646 | -9.6% |
+| NFL | 41 | $566 | $-36 | -6.4% | 13 | $178 | $-10 | -5.8% |
+| ALL | 594 | $8,145 | $+108 | +1.3% | 1288 | $17,364 | $-1,707 | -9.8% |
